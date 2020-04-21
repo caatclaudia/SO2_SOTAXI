@@ -59,13 +59,13 @@ int _tmain() {
 	//	return 0;
 	//}
 
-	HANDLE ghEvents[3];
+	HANDLE ghEvents[1];
 	ghEvents[0] = hThreadComandos;
-	ghEvents[1] = hThreadMovimentaPassageiro;
-	ghEvents[2] = hThreadRespostaTransporte;
+	/*ghEvents[1] = hThreadMovimentaPassageiro;
+	ghEvents[2] = hThreadRespostaTransporte;*/
 	DWORD dwResultEspera;
 	do {
-		dwResultEspera = WaitForMultipleObjects(3, ghEvents, TRUE, WAITTIMEOUT);
+		dwResultEspera = WaitForMultipleObjects(1, ghEvents, TRUE, WAITTIMEOUT);
 		if (dwResultEspera == WAITTIMEOUT) {
 			for (int i = 0; i < dados.nPassageiros; i++)
 				dados.passageiros[i].terminar = 1;
@@ -117,17 +117,17 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 	for (int i = 0; i < MAX_PASS; i++)
 		dados->passageiros[i].terminar = 1;
 
-	return 0;
+	ExitThread(0);
 }
 
 DWORD WINAPI ThreadMovimentoPassageiro(LPVOID param) {	//ADMIN MANDA PASSAGEIRO
 	DADOS* dados = ((DADOS*)param);
 
-	return 0;
+	ExitThread(0);
 }
 
 DWORD WINAPI ThreadRespostaTransporte(LPVOID param) {	//ADMIN MANDA PASSAGEIRO
 	DADOS* dados = ((DADOS*)param);
 
-	return 0;
+	ExitThread(0);
 }

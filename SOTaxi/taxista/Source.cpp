@@ -12,6 +12,7 @@
 
 #define SHM_NAME TEXT("EspacoTaxis")
 #define NOME_MUTEX TEXT("MutexTaxi")
+#define EVENT_NAME TEXT("NovoTaxi")
 
 //ConTaxi
 //1 instancia por taxi
@@ -19,7 +20,7 @@
 //MOSTRA: NOVO PASSAGEIRO, INTERESSE EM TRANSPORTAR ENVIADO, CONFIRMACAO RECEBIDA, RECOLHA DE PASSAGEIRO INICIADA, PASSAGEIRO RECOLHIDO, PASSAGEIRO ENTREGUE
 
 typedef struct {
-	TCHAR matricula[6];
+	TCHAR matricula[7];
 	unsigned int X, Y, Xfinal, Yfinal;
 	int disponivel;
 	TCHAR idPassageiro[TAM];
@@ -29,6 +30,10 @@ typedef struct {
 	int terminar;
 	HANDLE hMutex;
 } TAXI;
+
+HANDLE EspTaxis;	//FileMapping
+TAXI* shared;
+HANDLE novoTaxi;
 
 unsigned int NQ = NQ_INICIAL;
 
@@ -81,6 +86,9 @@ int _tmain() {
 
 	_gettch();
 
+	UnmapViewOfFile(shared);
+	CloseHandle(EspTaxis);
+	CloseHandle(novoTaxi);
 	return 0;
 }
 
@@ -105,6 +113,7 @@ void inicializaTaxi(TAXI* taxi) {
 			if (isalpha(taxi->matricula[i]))
 				num++;
 	} while (num != 2);
+	taxi->matricula[6]='\0';
 
 	_tprintf(_T("\n Localizacao do Táxi (X Y) : "));
 	_tscanf_s(_T("%d"), &taxi->X);
@@ -116,7 +125,6 @@ void inicializaTaxi(TAXI* taxi) {
 		return;
 	}
 	WaitForSingleObject(taxi->hMutex, INFINITE);
-	ReleaseMutex(taxi->hMutex);
 
 	taxi->disponivel = 1;
 	taxi->velocidade = 1;
@@ -126,8 +134,37 @@ void inicializaTaxi(TAXI* taxi) {
 	taxi->Xfinal = 0;
 	taxi->Yfinal = 0;
 
+	novoTaxi = CreateEvent(NULL, TRUE, FALSE, EVENT_NAME);
+	if (novoTaxi == NULL) {
+		_tprintf(TEXT("CreateEvent failed.\n"));
+		return;
+	}
+	SetEvent(novoTaxi);
+	ResetEvent(novoTaxi);
+
+	EspTaxis = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(TAXI), SHM_NAME);
+	if (EspTaxis == NULL)
+	{
+		_tprintf(TEXT("CreateFileMapping failed.\n"));
+		return;
+	}
+
+	shared = (TAXI*)MapViewOfFile(EspTaxis, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(TAXI));
+	if (shared == NULL)
+	{
+		_tprintf(TEXT("Terminal failure: MapViewOfFile.\n"));
+		CloseHandle(EspTaxis);
+		return;
+	}
+
 	//VAI AO ADMIN VER SE PODE CRIAR	
+	CopyMemory(shared, taxi, sizeof(TAXI));					//VERIFICAR SE ESTA A MANDAR ISTO BEM
 	//VERIFICAR QUE É UNICA
+	ReleaseMutex(taxi->hMutex);
+
+	SetEvent(novoTaxi);
+	Sleep(500);
+	ResetEvent(novoTaxi);
 
 	return;
 }
@@ -141,22 +178,22 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 		WaitForSingleObject(taxi->hMutex, INFINITE);	//ARRANJAR FORMA DE ELE NAO PARAR AQUI - SE FOR DPS ELE NAO DEIXA ESCREVER FRASE COMPLETA
 		_fgetts(op, TAM, stdin);
 		op[_tcslen(op) - 1] = '\0';
-		if (_tcscmp(op, TEXT("aumentaV"))) {		//AUMENTA 0.5 DE VELOCIDADE
+		if (!_tcscmp(op, TEXT("aumentaV"))) {		//AUMENTA 0.5 DE VELOCIDADE
 			taxi->velocidade += 0.5;
 			_tprintf(_T("\n[COMANDO] Velocidade atual : %f"), taxi->velocidade);
 		}
-		else if (_tcscmp(op, TEXT("diminuiV"))) {		//DIMINUI 0.5 DE VELOCIDADE
+		else if (!_tcscmp(op, TEXT("diminuiV"))) {		//DIMINUI 0.5 DE VELOCIDADE
 			if (taxi->velocidade >= 0.5)
 				taxi->velocidade -= 0.5;
 			_tprintf(_T("\n[COMANDO] Velocidade atual : %f"), taxi->velocidade);
 		}
-		else if (_tcscmp(op, TEXT("numQuad"))) {		//DEFINIR NQ
+		else if (!_tcscmp(op, TEXT("numQuad"))) {		//DEFINIR NQ
 			_tprintf(_T("\n[COMANDO] Valor de NQ (número de quadriculas até ao passageiro) : "));
 			_tscanf_s(_T("%d"), &NQ);
 			if (NQ < 0)
 				NQ = NQ_INICIAL;
 		}
-		else if (_tcscmp(op, TEXT("respostaAuto"))) {		//LIGAR/DESLIGAR RESPOSTA AUTOMÁTICA AOS PEDIDOS DE TRANSPORTE
+		else if (!_tcscmp(op, TEXT("respostaAuto"))) {		//LIGAR/DESLIGAR RESPOSTA AUTOMÁTICA AOS PEDIDOS DE TRANSPORTE
 			if (taxi->autoResposta) {
 				taxi->autoResposta = 0;
 				_tprintf(_T("\n[COMANDO] Desligada resposta automática a pedidos de transporte"));
@@ -166,12 +203,12 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 				_tprintf(_T("\n[COMANDO] Ligada resposta automática a pedidos de transporte"));
 			}
 		}
-		else if (_tcscmp(op, TEXT("pass"))) {		//TRANSPORTAR PASSAGEIRO
+		else if (!_tcscmp(op, TEXT("pass"))) {		//TRANSPORTAR PASSAGEIRO
 			if (!taxi->autoResposta)
 				taxi->interessado = 1;
 			_tprintf(_T("\n[COMANDO] Tenho interesse neste passageiro!"));
 		}
-		else if (_tcscmp(op, TEXT("ajuda"))) {		//AJUDA NOS COMANDOS
+		else if (!_tcscmp(op, TEXT("ajuda"))) {		//AJUDA NOS COMANDOS
 			_tprintf(_T("\n[COMANDO] Aqui vai uma ajuda..."));
 			ajuda();
 		}
@@ -180,7 +217,7 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 
 	taxi->terminar = 1;
 
-	return 0;
+	ExitThread(0);
 }
 
 //ASSEGURAR TAMANHO DO MAPA
@@ -224,11 +261,11 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {	//MANDA TAXI AO ADMIN
 		Sleep(1000);
 	} while (1);
 
-	return 0;
+	ExitThread(0);
 }
 
 DWORD WINAPI ThreadRespostaTransporte(LPVOID param) {	//MANDA TAXI AO ADMIN E RECEBE PASSAGEIRO DO ADMIN -- BUFFER CIRCULAR
 	TAXI* taxi = ((TAXI*)param);
 
-	return 0;
+	ExitThread(0);
 }
