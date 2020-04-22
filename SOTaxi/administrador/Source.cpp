@@ -15,6 +15,7 @@
 #define NOME_MUTEX TEXT("MutexTaxi")
 #define EVENT_NOVOT TEXT("NovoTaxi")
 #define EVENT_SAIUT TEXT("SaiuTaxi")
+#define EVENT_MOVIMENTO TEXT("MovimentoTaxi")
 #define EVENT_RESPOSTA TEXT("RespostaDoAdmin")
 
 //CenTaxi
@@ -55,6 +56,7 @@ typedef struct {
 	TAXI* shared;
 	HANDLE novoTaxi;
 	HANDLE saiuTaxi;
+	HANDLE movimentoTaxi;
 } DADOS;
 
 
@@ -68,11 +70,12 @@ boolean removePassageiro(DADOS* dados, PASSAGEIRO novo);
 DWORD WINAPI ThreadComandos(LPVOID param);
 DWORD WINAPI ThreadNovoTaxi(LPVOID param);
 DWORD WINAPI ThreadSaiuTaxi(LPVOID param);
+DWORD WINAPI ThreadMovimento(LPVOID param);
 DWORD WINAPI ThreadNovoPassageiro(LPVOID param);
 
 
 int _tmain(int argc, LPTSTR argv[]) {
-	HANDLE hThreadComandos, hThreadNovoTaxi, hThreadSaiuTaxi, hThreadNovoPassageiro;
+	HANDLE hThreadComandos, hThreadNovoTaxi, hThreadSaiuTaxi, hThreadMovimento, hThreadNovoPassageiro;
 	DADOS dados;
 	dados.nTaxis = 0;
 	dados.nPassageiros = 0;
@@ -109,6 +112,14 @@ int _tmain(int argc, LPTSTR argv[]) {
 	SetEvent(dados.saiuTaxi);
 	ResetEvent(dados.saiuTaxi);
 
+	dados.movimentoTaxi = CreateEvent(NULL, TRUE, FALSE, EVENT_MOVIMENTO);
+	if (dados.movimentoTaxi == NULL) {
+		_tprintf(TEXT("CreateEvent failed.\n"));
+		return 0;
+	}
+	SetEvent(dados.movimentoTaxi);
+	ResetEvent(dados.movimentoTaxi);
+
 	dados.EspTaxis = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(TAXI), SHM_NAME);
 	if (dados.EspTaxis == NULL)
 	{
@@ -143,20 +154,26 @@ int _tmain(int argc, LPTSTR argv[]) {
 		_tprintf(TEXT("\nErro ao lançar Thread!\n"));
 		return 0;
 	}
+	hThreadMovimento = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadMovimento, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
+	if (hThreadMovimento == NULL) {
+		_tprintf(TEXT("\nErro ao lançar Thread!\n"));
+		return 0;
+	}
 	//hThreadNovoPassageiro = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadNovoPassageiro, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
 	//if (hThreadNovoPassageiro == NULL) {
 	//	_tprintf(TEXT("\nErro ao lançar Thread!\n"));
 	//	return 0;
 	//}
 
-	HANDLE ghEvents[3];
+	HANDLE ghEvents[4];
 	ghEvents[0] = hThreadComandos;
 	ghEvents[1] = hThreadNovoTaxi;
 	ghEvents[2] = hThreadSaiuTaxi;
+	ghEvents[3] = hThreadMovimento;
 	//ghEvents[2] = hThreadNovoPassageiro;
 	DWORD dwResultEspera;
 	do {
-		dwResultEspera = WaitForMultipleObjects(3, ghEvents, TRUE, WAITTIMEOUT);
+		dwResultEspera = WaitForMultipleObjects(4, ghEvents, TRUE, WAITTIMEOUT);
 		if (dwResultEspera == WAITTIMEOUT) {
 			dados.terminar = 1;
 			_tprintf(TEXT("As Threads vao parar!\n"));
@@ -225,7 +242,7 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 			//ENVIAR INFORMAÇÃO AOS TAXIS
 		}
 		else if (_tcscmp(op, TEXT("manifestacoes"))) {		//DEFINIR INTERVALO DE TEMPO DURANTE O QUAL AGUARDA MANIFESTAÇOES DOS TAXIS
-			_tprintf(_T("\nIntervalo de tempo durante o qual aguarda manifestações (em segundos): "));
+			_tprintf(_T("\n[COMANDO] Intervalo de tempo durante o qual aguarda manifestações (em segundos): "));
 			_tscanf_s(_T("%d"), &dados->esperaManifestacoes);
 			if (dados->esperaManifestacoes <= 0)
 				dados->esperaManifestacoes = TempoManifestacoes;
@@ -268,7 +285,7 @@ DWORD WINAPI ThreadNovoTaxi(LPVOID param) {		//VERIFICA SE HA NOVOS TAXIS
 	ExitThread(0);
 }
 
-DWORD WINAPI ThreadSaiuTaxi(LPVOID param) {		//VERIFICA SE HA NOVOS TAXIS
+DWORD WINAPI ThreadSaiuTaxi(LPVOID param) {		//VERIFICA SE SAIRAM TAXIS
 	DADOS* dados = ((DADOS*)param);
 	TAXI novo;
 
@@ -290,6 +307,31 @@ DWORD WINAPI ThreadSaiuTaxi(LPVOID param) {		//VERIFICA SE HA NOVOS TAXIS
 	ExitThread(0);
 }
 
+DWORD WINAPI ThreadMovimento(LPVOID param) {
+	DADOS* dados = ((DADOS*)param);
+	TAXI novo;
+
+	while (1) {
+		WaitForSingleObject(dados->movimentoTaxi, INFINITE);	//PERCEBER SE ENTRA AQUI
+
+		if (dados->terminar)
+			return 0;
+		WaitForSingleObject(dados->hMutexDados, INFINITE);
+
+		CopyMemory(&novo, dados->shared, sizeof(TAXI));
+		for (int i = 0; i < dados->nTaxis; i++)
+			if (!_tcscmp(novo.matricula, dados->taxis[i].matricula)) {
+				dados->taxis[i] = novo;
+				_tprintf(_T("\n[MOVIMENTO] Taxi %s -> (%d,%d)"), novo.matricula, novo.X, novo.Y);			//VERIFICAR DADOS DE X e Y
+			}
+
+		//ReleaseMutex(dados->hMutexDados);
+
+		Sleep(1000);
+	}
+
+	ExitThread(0);
+}
 
 DWORD WINAPI ThreadNovoPassageiro(LPVOID param) {		//VERIFICA SE HA NOVOS PASSAGEIROS
 	DADOS* dados = ((DADOS*)param);
@@ -306,7 +348,7 @@ boolean adicionaTaxi(DADOS* dados, TAXI novo) {
 
 	dados->taxis[dados->nTaxis] = novo;
 	dados->nTaxis++;
-	_tprintf(TEXT("Novo Taxi: %s\n"), novo.matricula);
+	_tprintf(TEXT("[NOVO TAXI] Novo Taxi: %s\n"), novo.matricula);
 	return TRUE;
 }
 
@@ -317,7 +359,7 @@ boolean removeTaxi(DADOS* dados, TAXI novo) {
 				dados->taxis[k] = dados->taxis[k + 1];
 			}
 			dados->nTaxis--;
-			_tprintf(TEXT("Saiu Taxi: %s\n"), novo.matricula);
+			_tprintf(TEXT("[SAIU TAXI] Saiu Taxi: %s\n"), novo.matricula);
 			return TRUE;
 		}
 	}

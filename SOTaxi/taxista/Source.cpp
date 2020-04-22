@@ -14,6 +14,7 @@
 #define NOME_MUTEX TEXT("MutexTaxi")
 #define EVENT_NOVOT TEXT("NovoTaxi")
 #define EVENT_SAIUT TEXT("SaiuTaxi")
+#define EVENT_MOVIMENTO TEXT("MovimentoTaxi")
 #define EVENT_RESPOSTA TEXT("RespostaDoAdmin")
 
 //ConTaxi
@@ -37,6 +38,7 @@ HANDLE EspTaxis;	//FileMapping
 TAXI* shared;
 HANDLE novoTaxi;
 HANDLE saiuTaxi;
+HANDLE movimentoTaxi;
 
 unsigned int NQ = NQ_INICIAL;
 
@@ -56,6 +58,8 @@ int _tmain() {
 #endif
 
 	inicializaTaxi(&taxi);
+
+	//WaitForSingleObject(taxi.hMutex, INFINITE);
 
 	hThreadComandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadComandos, (LPVOID)&taxi, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
 	if (hThreadComandos == NULL) {
@@ -143,11 +147,15 @@ void inicializaTaxi(TAXI* taxi) {
 		_tprintf(TEXT("CreateEvent failed.\n"));
 		return;
 	}
-	SetEvent(novoTaxi);
-	ResetEvent(novoTaxi);
 
 	saiuTaxi = CreateEvent(NULL, TRUE, FALSE, EVENT_SAIUT);
 	if (saiuTaxi == NULL) {
+		_tprintf(TEXT("CreateEvent failed.\n"));
+		return;
+	}
+
+	movimentoTaxi = CreateEvent(NULL, TRUE, FALSE, EVENT_MOVIMENTO);
+	if (movimentoTaxi == NULL) {
 		_tprintf(TEXT("CreateEvent failed.\n"));
 		return;
 	}
@@ -168,13 +176,14 @@ void inicializaTaxi(TAXI* taxi) {
 	}
 
 	//VAI AO ADMIN VER SE PODE CRIAR	
-	CopyMemory(shared, taxi, sizeof(TAXI));	
+	CopyMemory(shared, taxi, sizeof(TAXI));
 	//VERIFICAR QUE É UNICA
 	ReleaseMutex(taxi->hMutex);
 
 	SetEvent(novoTaxi);
 	Sleep(500);
 	ResetEvent(novoTaxi);
+	Sleep(1000);
 
 	return;
 }
@@ -253,7 +262,7 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {	//MANDA TAXI AO ADMIN
 
 	do {
 		valido = 0;
-		WaitForSingleObject(taxi->hMutex, INFINITE);
+		WaitForSingleObject(taxi->hMutex, INFINITE);		//DPS DE ENVIAR AO ADMIN, ENCRAVA AQUI
 		//MOVIMENTA
 		do {
 			val = rand() % 4;
@@ -281,9 +290,16 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {	//MANDA TAXI AO ADMIN
 			}
 		} while (!valido);
 
+		CopyMemory(shared, taxi, sizeof(TAXI));
+
 		ReleaseMutex(taxi->hMutex);
-		//MANDA PARA ADMIN
+
+		SetEvent(movimentoTaxi);
+		Sleep(500);
+		ResetEvent(movimentoTaxi);
+
 		Sleep(1000);
+		//MANDA PARA ADMIN
 	} while (!taxi->terminar);
 
 	ExitThread(0);
