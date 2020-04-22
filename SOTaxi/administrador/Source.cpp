@@ -14,6 +14,7 @@
 #define SHM_NAME TEXT("EspacoTaxis")
 #define NOME_MUTEX TEXT("MutexTaxi")
 #define EVENT_NOVOT TEXT("NovoTaxi")
+#define EVENT_SAIUT TEXT("SaiuTaxi")
 #define EVENT_RESPOSTA TEXT("RespostaDoAdmin")
 
 //CenTaxi
@@ -53,6 +54,7 @@ typedef struct {
 	HANDLE hMutexDados;
 	TAXI* shared;
 	HANDLE novoTaxi;
+	HANDLE saiuTaxi;
 } DADOS;
 
 
@@ -65,11 +67,12 @@ boolean adicionaPassageiro(DADOS* dados, PASSAGEIRO novo);
 boolean removePassageiro(DADOS* dados, PASSAGEIRO novo);
 DWORD WINAPI ThreadComandos(LPVOID param);
 DWORD WINAPI ThreadNovoTaxi(LPVOID param);
+DWORD WINAPI ThreadSaiuTaxi(LPVOID param);
 DWORD WINAPI ThreadNovoPassageiro(LPVOID param);
 
 
 int _tmain(int argc, LPTSTR argv[]) {
-	HANDLE hThreadComandos, hThreadNovoTaxi, hThreadNovoPassageiro;
+	HANDLE hThreadComandos, hThreadNovoTaxi, hThreadSaiuTaxi, hThreadNovoPassageiro;
 	DADOS dados;
 	dados.nTaxis = 0;
 	dados.nPassageiros = 0;
@@ -97,6 +100,14 @@ int _tmain(int argc, LPTSTR argv[]) {
 	}
 	SetEvent(dados.novoTaxi);
 	ResetEvent(dados.novoTaxi);
+
+	dados.saiuTaxi = CreateEvent(NULL, TRUE, FALSE, EVENT_SAIUT);
+	if (dados.saiuTaxi == NULL) {
+		_tprintf(TEXT("CreateEvent failed.\n"));
+		return 0;
+	}
+	SetEvent(dados.saiuTaxi);
+	ResetEvent(dados.saiuTaxi);
 
 	dados.EspTaxis = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(TAXI), SHM_NAME);
 	if (dados.EspTaxis == NULL)
@@ -127,19 +138,25 @@ int _tmain(int argc, LPTSTR argv[]) {
 		_tprintf(TEXT("\nErro ao lançar Thread!\n"));
 		return 0;
 	}
+	hThreadSaiuTaxi = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadSaiuTaxi, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
+	if (hThreadSaiuTaxi == NULL) {
+		_tprintf(TEXT("\nErro ao lançar Thread!\n"));
+		return 0;
+	}
 	//hThreadNovoPassageiro = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadNovoPassageiro, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
 	//if (hThreadNovoPassageiro == NULL) {
 	//	_tprintf(TEXT("\nErro ao lançar Thread!\n"));
 	//	return 0;
 	//}
 
-	HANDLE ghEvents[2];
+	HANDLE ghEvents[3];
 	ghEvents[0] = hThreadComandos;
 	ghEvents[1] = hThreadNovoTaxi;
+	ghEvents[2] = hThreadSaiuTaxi;
 	//ghEvents[2] = hThreadNovoPassageiro;
 	DWORD dwResultEspera;
 	do {
-		dwResultEspera = WaitForMultipleObjects(2, ghEvents, TRUE, WAITTIMEOUT);
+		dwResultEspera = WaitForMultipleObjects(3, ghEvents, TRUE, WAITTIMEOUT);
 		if (dwResultEspera == WAITTIMEOUT) {
 			dados.terminar = 1;
 			_tprintf(TEXT("As Threads vao parar!\n"));
@@ -234,6 +251,7 @@ DWORD WINAPI ThreadNovoTaxi(LPVOID param) {		//VERIFICA SE HA NOVOS TAXIS
 		WaitForSingleObject(dados->hMutexDados, INFINITE);
 
 		CopyMemory(&novo, dados->shared, sizeof(TAXI));
+		adicionaTaxi(dados, novo);
 		/*if (adicionaTaxi(dados, novo)) {
 			_tprintf(TEXT("Novo Taxi: %s\n"), dados->taxis[dados->nTaxis - 1].matricula);
 			CopyMemory(dados->shared, &dados->taxis[dados->nTaxis - 1], sizeof(TAXI));
@@ -242,9 +260,30 @@ DWORD WINAPI ThreadNovoTaxi(LPVOID param) {		//VERIFICA SE HA NOVOS TAXIS
 			novo.terminar = 1;
 			CopyMemory(dados->shared, &dados->taxis[dados->nTaxis - 1], sizeof(TAXI));
 		}*/
-		_tprintf(TEXT("Novo Taxi: %s\n"), novo.matricula);
 		ReleaseMutex(dados->hMutexDados);
 		
+		Sleep(1000);
+	}
+
+	ExitThread(0);
+}
+
+DWORD WINAPI ThreadSaiuTaxi(LPVOID param) {		//VERIFICA SE HA NOVOS TAXIS
+	DADOS* dados = ((DADOS*)param);
+	TAXI novo;
+
+	while (1) {
+		WaitForSingleObject(dados->saiuTaxi, INFINITE);
+
+		if (dados->terminar)
+			return 0;
+		WaitForSingleObject(dados->hMutexDados, INFINITE);
+
+		CopyMemory(&novo, dados->shared, sizeof(TAXI));
+		removeTaxi(dados, novo);
+
+		ReleaseMutex(dados->hMutexDados);
+
 		Sleep(1000);
 	}
 
@@ -267,6 +306,7 @@ boolean adicionaTaxi(DADOS* dados, TAXI novo) {
 
 	dados->taxis[dados->nTaxis] = novo;
 	dados->nTaxis++;
+	_tprintf(TEXT("Novo Taxi: %s\n"), novo.matricula);
 	return TRUE;
 }
 
@@ -277,6 +317,7 @@ boolean removeTaxi(DADOS* dados, TAXI novo) {
 				dados->taxis[k] = dados->taxis[k + 1];
 			}
 			dados->nTaxis--;
+			_tprintf(TEXT("Saiu Taxi: %s\n"), novo.matricula);
 			return TRUE;
 		}
 	}
