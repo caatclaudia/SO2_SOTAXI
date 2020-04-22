@@ -12,7 +12,9 @@
 
 #define SHM_NAME TEXT("EspacoTaxis")
 #define NOME_MUTEX TEXT("MutexTaxi")
-#define EVENT_NAME TEXT("NovoTaxi")
+#define EVENT_NOVOT TEXT("NovoTaxi")
+#define EVENT_SAIUT TEXT("SaiuTaxi")
+#define EVENT_RESPOSTA TEXT("RespostaDoAdmin")
 
 //ConTaxi
 //1 instancia por taxi
@@ -34,6 +36,7 @@ typedef struct {
 HANDLE EspTaxis;	//FileMapping
 TAXI* shared;
 HANDLE novoTaxi;
+HANDLE saiuTaxi;
 
 unsigned int NQ = NQ_INICIAL;
 
@@ -82,6 +85,7 @@ int _tmain() {
 			_tprintf(TEXT("As Threads vao parar!\n"));
 			break;
 		}
+		//SAIR QUANDO A DE COMANDOS CHEGA AO FIM
 	} while (1);
 
 	_gettch();
@@ -134,13 +138,19 @@ void inicializaTaxi(TAXI* taxi) {
 	taxi->Xfinal = 0;
 	taxi->Yfinal = 0;
 
-	novoTaxi = CreateEvent(NULL, TRUE, FALSE, EVENT_NAME);
+	novoTaxi = CreateEvent(NULL, TRUE, FALSE, EVENT_NOVOT);
 	if (novoTaxi == NULL) {
 		_tprintf(TEXT("CreateEvent failed.\n"));
 		return;
 	}
 	SetEvent(novoTaxi);
 	ResetEvent(novoTaxi);
+
+	saiuTaxi = CreateEvent(NULL, TRUE, FALSE, EVENT_SAIUT);
+	if (saiuTaxi == NULL) {
+		_tprintf(TEXT("CreateEvent failed.\n"));
+		return;
+	}
 
 	EspTaxis = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(TAXI), SHM_NAME);
 	if (EspTaxis == NULL)
@@ -158,7 +168,7 @@ void inicializaTaxi(TAXI* taxi) {
 	}
 
 	//VAI AO ADMIN VER SE PODE CRIAR	
-	CopyMemory(shared, taxi, sizeof(TAXI));					//VERIFICAR SE ESTA A MANDAR ISTO BEM
+	CopyMemory(shared, taxi, sizeof(TAXI));	
 	//VERIFICAR QUE É UNICA
 	ReleaseMutex(taxi->hMutex);
 
@@ -212,10 +222,24 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 			_tprintf(_T("\n[COMANDO] Aqui vai uma ajuda..."));
 			ajuda();
 		}
-		ReleaseMutex(taxi->hMutex);
+		if(_tcscmp(op, TEXT("fim")))
+			ReleaseMutex(taxi->hMutex);
 	} while (_tcscmp(op, TEXT("fim")));
 
 	taxi->terminar = 1;
+
+	SetEvent(saiuTaxi);
+	ResetEvent(saiuTaxi);
+
+	CopyMemory(shared, taxi, sizeof(TAXI));
+
+	ReleaseMutex(taxi->hMutex);
+
+	SetEvent(saiuTaxi);
+	Sleep(500);
+	ResetEvent(saiuTaxi);
+
+	Sleep(1000);
 
 	ExitThread(0);
 }
@@ -256,10 +280,11 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {	//MANDA TAXI AO ADMIN
 				break;
 			}
 		} while (!valido);
+
 		ReleaseMutex(taxi->hMutex);
 		//MANDA PARA ADMIN
 		Sleep(1000);
-	} while (1);
+	} while (!taxi->terminar);
 
 	ExitThread(0);
 }

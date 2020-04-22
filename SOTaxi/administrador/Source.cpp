@@ -9,9 +9,13 @@
 #define MAXTAXIS 10
 #define MAXPASS 10
 #define TempoManifestacoes 5
+#define WAITTIMEOUT 2000
 
 #define SHM_NAME TEXT("EspacoTaxis")
 #define NOME_MUTEX TEXT("MutexTaxi")
+#define EVENT_NOVOT TEXT("NovoTaxi")
+#define EVENT_SAIUT TEXT("SaiuTaxi")
+#define EVENT_RESPOSTA TEXT("RespostaDoAdmin")
 
 //CenTaxi
 //1 instancia
@@ -47,6 +51,10 @@ typedef struct {
 	int esperaManifestacoes;
 	int terminar;
 	HANDLE EspTaxis;	//FileMapping
+	HANDLE hMutexDados;
+	TAXI* shared;
+	HANDLE novoTaxi;
+	HANDLE saiuTaxi;
 } DADOS;
 
 
@@ -57,12 +65,14 @@ boolean adicionaTaxi(DADOS* dados, TAXI novo);
 boolean removeTaxi(DADOS* dados, TAXI novo);
 boolean adicionaPassageiro(DADOS* dados, PASSAGEIRO novo);
 boolean removePassageiro(DADOS* dados, PASSAGEIRO novo);
+DWORD WINAPI ThreadComandos(LPVOID param);
 DWORD WINAPI ThreadNovoTaxi(LPVOID param);
+DWORD WINAPI ThreadSaiuTaxi(LPVOID param);
 DWORD WINAPI ThreadNovoPassageiro(LPVOID param);
 
 
 int _tmain(int argc, LPTSTR argv[]) {
-	TCHAR op[TAM];
+	HANDLE hThreadComandos, hThreadNovoTaxi, hThreadSaiuTaxi, hThreadNovoPassageiro;
 	DADOS dados;
 	dados.nTaxis = 0;
 	dados.nPassageiros = 0;
@@ -75,35 +85,91 @@ int _tmain(int argc, LPTSTR argv[]) {
 	_setmode(_fileno(stdout), _O_WTEXT);
 #endif
 
-	do {
-		_tprintf(_T("\n>>"));
-		_fgetts(op, TAM, stdin);
-		op[_tcslen(op) - 1] = '\0';
-		if (_tcscmp(op, TEXT("expulsar"))) {		//EXPULSAR TAXI
+	dados.hMutexDados = CreateMutex(NULL, FALSE, TEXT("MutexDados"));
+	if (dados.hMutexDados == NULL) {
+		_tprintf(TEXT("\nErro ao criar Mutex!\n"));
+		return 0;
+	}
+	WaitForSingleObject(dados.hMutexDados, INFINITE);
+	ReleaseMutex(dados.hMutexDados);
 
+	dados.novoTaxi = CreateEvent(NULL, TRUE, FALSE, EVENT_NOVOT);
+	if (dados.novoTaxi == NULL) {
+		_tprintf(TEXT("CreateEvent failed.\n"));
+		return 0;
+	}
+	SetEvent(dados.novoTaxi);
+	ResetEvent(dados.novoTaxi);
+
+	dados.saiuTaxi = CreateEvent(NULL, TRUE, FALSE, EVENT_SAIUT);
+	if (dados.saiuTaxi == NULL) {
+		_tprintf(TEXT("CreateEvent failed.\n"));
+		return 0;
+	}
+	SetEvent(dados.saiuTaxi);
+	ResetEvent(dados.saiuTaxi);
+
+	dados.EspTaxis = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(TAXI), SHM_NAME);
+	if (dados.EspTaxis == NULL)
+	{
+		_tprintf(TEXT("CreateFileMapping failed.\n"));
+		return 0;
+	}
+
+	dados.shared = (TAXI*)MapViewOfFile(dados.EspTaxis, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(TAXI));
+	if (dados.shared == NULL)
+	{
+		_tprintf(TEXT("Terminal failure: MapViewOfFile.\n"));
+		CloseHandle(dados.EspTaxis);
+		return 0;
+	}
+
+	SetEvent(dados.novoTaxi);
+	Sleep(500);
+	ResetEvent(dados.novoTaxi);
+
+	hThreadComandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadComandos, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
+	if (hThreadComandos == NULL) {
+		_tprintf(TEXT("\nErro ao lançar Thread!\n"));
+		return 0;
+	}
+	hThreadNovoTaxi = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadNovoTaxi, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
+	if (hThreadNovoTaxi == NULL) {
+		_tprintf(TEXT("\nErro ao lançar Thread!\n"));
+		return 0;
+	}
+	hThreadSaiuTaxi = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadSaiuTaxi, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
+	if (hThreadSaiuTaxi == NULL) {
+		_tprintf(TEXT("\nErro ao lançar Thread!\n"));
+		return 0;
+	}
+	//hThreadNovoPassageiro = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadNovoPassageiro, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
+	//if (hThreadNovoPassageiro == NULL) {
+	//	_tprintf(TEXT("\nErro ao lançar Thread!\n"));
+	//	return 0;
+	//}
+
+	HANDLE ghEvents[3];
+	ghEvents[0] = hThreadComandos;
+	ghEvents[1] = hThreadNovoTaxi;
+	ghEvents[2] = hThreadSaiuTaxi;
+	//ghEvents[2] = hThreadNovoPassageiro;
+	DWORD dwResultEspera;
+	do {
+		dwResultEspera = WaitForMultipleObjects(3, ghEvents, TRUE, WAITTIMEOUT);
+		if (dwResultEspera == WAITTIMEOUT) {
+			dados.terminar = 1;
+			_tprintf(TEXT("As Threads vao parar!\n"));
+			break;
 		}
-		else if (_tcscmp(op, TEXT("listar"))) {		//LISTAR TAXIS
-			listarTaxis(&dados);
-		}
-		else if (_tcscmp(op, TEXT("aceitacaoT"))) {		//PAUSAR/RECOMECAR ACEITAÇÃO DE TAXIS
-			if (dados.respostaAuto)
-				dados.respostaAuto = 0;
-			else
-				dados.respostaAuto = 1;
-			//ENVIAR INFORMAÇÃO AOS TAXIS
-		}
-		else if (_tcscmp(op, TEXT("manifestacoes"))) {		//DEFINIR INTERVALO DE TEMPO DURANTE O QUAL AGUARDA MANIFESTAÇOES DOS TAXIS
-			_tprintf(_T("\nIntervalo de tempo durante o qual aguarda manifestações (em segundos): "));
-			_tscanf_s(_T("%d"), &dados.esperaManifestacoes);
-			if (dados.esperaManifestacoes <= 0)
-				dados.esperaManifestacoes = TempoManifestacoes;
-		}
-		else if (_tcscmp(op, TEXT("ajuda"))) {		//AJUDA NOS COMANDOS
-			ajuda();
-		}
-	} while (_tcscmp(op, TEXT("fim")));
+	} while (1);
 
 	_tprintf(_T("\nAdministrador vai encerrar!"));
+	_gettch();
+
+	UnmapViewOfFile(dados.shared);
+	CloseHandle(dados.EspTaxis);
+	CloseHandle(dados.novoTaxi);
 	return 0;
 }
 
@@ -136,16 +202,99 @@ void listarPassageiros(DADOS* dados) {
 	return;
 }
 
-DWORD WINAPI ThreadNovoTaxi(LPVOID param) {		//VERIFICA SE HA NOVOS TAXIS
+DWORD WINAPI ThreadComandos(LPVOID param) {
+	TCHAR op[TAM];
 	DADOS* dados = ((DADOS*)param);
 
-	return 0;
+	do {
+		_tprintf(_T("\n>>"));
+		_fgetts(op, TAM, stdin);
+		WaitForSingleObject(dados->hMutexDados, INFINITE);
+		op[_tcslen(op) - 1] = '\0';
+		if (_tcscmp(op, TEXT("expulsar"))) {		//EXPULSAR TAXI
+
+		}
+		else if (_tcscmp(op, TEXT("listar"))) {		//LISTAR TAXIS
+			listarTaxis(dados);
+		}
+		else if (_tcscmp(op, TEXT("aceitacaoT"))) {		//PAUSAR/RECOMECAR ACEITAÇÃO DE TAXIS
+			if (dados->respostaAuto)
+				dados->respostaAuto = 0;
+			else
+				dados->respostaAuto = 1;
+			//ENVIAR INFORMAÇÃO AOS TAXIS
+		}
+		else if (_tcscmp(op, TEXT("manifestacoes"))) {		//DEFINIR INTERVALO DE TEMPO DURANTE O QUAL AGUARDA MANIFESTAÇOES DOS TAXIS
+			_tprintf(_T("\nIntervalo de tempo durante o qual aguarda manifestações (em segundos): "));
+			_tscanf_s(_T("%d"), &dados->esperaManifestacoes);
+			if (dados->esperaManifestacoes <= 0)
+				dados->esperaManifestacoes = TempoManifestacoes;
+		}
+		else if (_tcscmp(op, TEXT("ajuda"))) {		//AJUDA NOS COMANDOS
+			ajuda();
+		}
+		ReleaseMutex(dados->hMutexDados);
+	} while (_tcscmp(op, TEXT("fim")));
+
+	ExitThread(0);
 }
+
+DWORD WINAPI ThreadNovoTaxi(LPVOID param) {		//VERIFICA SE HA NOVOS TAXIS
+	DADOS* dados = ((DADOS*)param);
+	TAXI novo;
+
+	while (1) {
+		WaitForSingleObject(dados->novoTaxi, INFINITE);
+
+		if (dados->terminar)
+			return 0;
+		WaitForSingleObject(dados->hMutexDados, INFINITE);
+
+		CopyMemory(&novo, dados->shared, sizeof(TAXI));
+		adicionaTaxi(dados, novo);
+		/*if (adicionaTaxi(dados, novo)) {
+			_tprintf(TEXT("Novo Taxi: %s\n"), dados->taxis[dados->nTaxis - 1].matricula);
+			CopyMemory(dados->shared, &dados->taxis[dados->nTaxis - 1], sizeof(TAXI));
+		}
+		else {
+			novo.terminar = 1;
+			CopyMemory(dados->shared, &dados->taxis[dados->nTaxis - 1], sizeof(TAXI));
+		}*/
+		ReleaseMutex(dados->hMutexDados);
+		
+		Sleep(1000);
+	}
+
+	ExitThread(0);
+}
+
+DWORD WINAPI ThreadSaiuTaxi(LPVOID param) {		//VERIFICA SE HA NOVOS TAXIS
+	DADOS* dados = ((DADOS*)param);
+	TAXI novo;
+
+	while (1) {
+		WaitForSingleObject(dados->saiuTaxi, INFINITE);
+
+		if (dados->terminar)
+			return 0;
+		WaitForSingleObject(dados->hMutexDados, INFINITE);
+
+		CopyMemory(&novo, dados->shared, sizeof(TAXI));
+		removeTaxi(dados, novo);
+
+		ReleaseMutex(dados->hMutexDados);
+
+		Sleep(1000);
+	}
+
+	ExitThread(0);
+}
+
 
 DWORD WINAPI ThreadNovoPassageiro(LPVOID param) {		//VERIFICA SE HA NOVOS PASSAGEIROS
 	DADOS* dados = ((DADOS*)param);
 
-	return 0;
+	ExitThread(0);
 }
 
 boolean adicionaTaxi(DADOS* dados, TAXI novo) {
@@ -157,6 +306,7 @@ boolean adicionaTaxi(DADOS* dados, TAXI novo) {
 
 	dados->taxis[dados->nTaxis] = novo;
 	dados->nTaxis++;
+	_tprintf(TEXT("Novo Taxi: %s\n"), novo.matricula);
 	return TRUE;
 }
 
@@ -167,6 +317,7 @@ boolean removeTaxi(DADOS* dados, TAXI novo) {
 				dados->taxis[k] = dados->taxis[k + 1];
 			}
 			dados->nTaxis--;
+			_tprintf(TEXT("Saiu Taxi: %s\n"), novo.matricula);
 			return TRUE;
 		}
 	}
