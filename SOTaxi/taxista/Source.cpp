@@ -12,7 +12,8 @@
 
 #define SHM_NAME TEXT("EspacoTaxis")
 #define NOME_MUTEX TEXT("MutexTaxi")
-#define EVENT_NAME TEXT("NovoTaxi")
+#define EVENT_NOVOT TEXT("NovoTaxi")
+#define EVENT_RESPOSTA TEXT("RespostaDoAdmin")
 
 //ConTaxi
 //1 instancia por taxi
@@ -134,7 +135,7 @@ void inicializaTaxi(TAXI* taxi) {
 	taxi->Xfinal = 0;
 	taxi->Yfinal = 0;
 
-	novoTaxi = CreateEvent(NULL, TRUE, FALSE, EVENT_NAME);
+	novoTaxi = CreateEvent(NULL, TRUE, FALSE, EVENT_NOVOT);
 	if (novoTaxi == NULL) {
 		_tprintf(TEXT("CreateEvent failed.\n"));
 		return;
