@@ -194,9 +194,9 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 
 	do {
 		_tprintf(_T("\n>>"));
-		WaitForSingleObject(hMutex, INFINITE);	//ARRANJAR FORMA DE ELE NAO PARAR AQUI - SE FOR DPS ELE NAO DEIXA ESCREVER FRASE COMPLETA
 		_fgetts(op, TAM, stdin);
 		op[_tcslen(op) - 1] = '\0';
+		WaitForSingleObject(hMutex, INFINITE);
 		if (!_tcscmp(op, TEXT("aumentaV"))) {		//AUMENTA 0.5 DE VELOCIDADE
 			taxi->velocidade += 0.5;
 			_tprintf(_T("\n[COMANDO] Velocidade atual : %f"), taxi->velocidade);
@@ -262,7 +262,7 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {	//MANDA TAXI AO ADMIN
 
 	do {
 		valido = 0;
-		WaitForSingleObject(hMutex, INFINITE);		//DPS DE ENVIAR AO ADMIN, ENCRAVA AQUI
+		WaitForSingleObject(hMutex, INFINITE);
 		//MOVIMENTA
 		do {
 			val = rand() % 4;
