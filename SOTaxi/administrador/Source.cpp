@@ -89,7 +89,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 
 	dados.hMutexDados = CreateMutex(NULL, FALSE, TEXT("MutexDados"));
 	if (dados.hMutexDados == NULL) {
-		_tprintf(TEXT("\nErro ao criar Mutex!\n"));
+		_tprintf(TEXT("\n[ERRO] Erro ao criar Mutex!\n"));
 		return 0;
 	}
 	WaitForSingleObject(dados.hMutexDados, INFINITE);
@@ -97,7 +97,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 
 	dados.novoTaxi = CreateEvent(NULL, TRUE, FALSE, EVENT_NOVOT);
 	if (dados.novoTaxi == NULL) {
-		_tprintf(TEXT("CreateEvent failed.\n"));
+		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
 		return 0;
 	}
 	SetEvent(dados.novoTaxi);
@@ -105,7 +105,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 
 	dados.saiuTaxi = CreateEvent(NULL, TRUE, FALSE, EVENT_SAIUT);
 	if (dados.saiuTaxi == NULL) {
-		_tprintf(TEXT("CreateEvent failed.\n"));
+		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
 		return 0;
 	}
 	SetEvent(dados.saiuTaxi);
@@ -113,7 +113,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 
 	dados.movimentoTaxi = CreateEvent(NULL, TRUE, FALSE, EVENT_MOVIMENTO);
 	if (dados.movimentoTaxi == NULL) {
-		_tprintf(TEXT("CreateEvent failed.\n"));
+		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
 		return 0;
 	}
 	SetEvent(dados.movimentoTaxi);
@@ -122,14 +122,14 @@ int _tmain(int argc, LPTSTR argv[]) {
 	dados.EspTaxis = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(TAXI), SHM_NAME);
 	if (dados.EspTaxis == NULL)
 	{
-		_tprintf(TEXT("CreateFileMapping failed.\n"));
+		_tprintf(TEXT("\n[ERRO] Erro ao criar FileMapping!\n"));
 		return 0;
 	}
 
 	dados.shared = (TAXI*)MapViewOfFile(dados.EspTaxis, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(TAXI));
 	if (dados.shared == NULL)
 	{
-		_tprintf(TEXT("Terminal failure: MapViewOfFile.\n"));
+		_tprintf(TEXT("\n[ERRO] Erro em MapViewOfFile!\n"));
 		CloseHandle(dados.EspTaxis);
 		return 0;
 	}
@@ -140,22 +140,22 @@ int _tmain(int argc, LPTSTR argv[]) {
 
 	hThreadComandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadComandos, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
 	if (hThreadComandos == NULL) {
-		_tprintf(TEXT("\nErro ao lançar Thread!\n"));
+		_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
 		return 0;
 	}
 	hThreadNovoTaxi = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadNovoTaxi, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
 	if (hThreadNovoTaxi == NULL) {
-		_tprintf(TEXT("\nErro ao lançar Thread!\n"));
+		_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
 		return 0;
 	}
 	hThreadSaiuTaxi = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadSaiuTaxi, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
 	if (hThreadSaiuTaxi == NULL) {
-		_tprintf(TEXT("\nErro ao lançar Thread!\n"));
+		_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
 		return 0;
 	}
 	hThreadMovimento = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadMovimento, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
 	if (hThreadMovimento == NULL) {
-		_tprintf(TEXT("\nErro ao lançar Thread!\n"));
+		_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
 		return 0;
 	}
 	//hThreadNovoPassageiro = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadNovoPassageiro, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
@@ -170,17 +170,10 @@ int _tmain(int argc, LPTSTR argv[]) {
 	ghEvents[2] = hThreadSaiuTaxi;
 	ghEvents[3] = hThreadMovimento;
 	//ghEvents[2] = hThreadNovoPassageiro;
-	DWORD dwResultEspera;
-	do {
-		dwResultEspera = WaitForMultipleObjects(4, ghEvents, TRUE, WAITTIMEOUT);
-		if (dwResultEspera == WAITTIMEOUT) {
-			dados.terminar = 1;
-			_tprintf(TEXT("As Threads vao parar!\n"));
-			break;
-		}
-	} while (1);
+	WaitForMultipleObjects(4, ghEvents, TRUE, WAITTIMEOUT);
 
-	_tprintf(_T("\nAdministrador vai encerrar!"));
+	_tprintf(_T("Administrador vai encerrar!\n"));
+	_tprintf(TEXT("Prima uma tecla...\n"));
 	_gettch();
 
 	UnmapViewOfFile(dados.shared);
@@ -200,7 +193,7 @@ void ajuda() {
 
 void listarTaxis(DADOS* dados) {
 	for (int i = 0; i < dados->nTaxis; i++) {
-		_tprintf(_T("\nTaxi %d : "), i);
+		_tprintf(_T("\n[LISTAR TAXIS] Taxi %d : "), i);
 		_tprintf(_T("\n (%d, %d) "), dados->taxis[i].X, dados->taxis[i].Y);
 		if (dados->taxis[i].disponivel)
 			_tprintf(_T("sem passageiro!\n"));
@@ -212,7 +205,7 @@ void listarTaxis(DADOS* dados) {
 
 void listarPassageiros(DADOS* dados) {
 	for (int i = 0; i < dados->nPassageiros; i++) {
-		_tprintf(_T("\nPassageiro %d : "), i);
+		_tprintf(_T("\n[LISTAR PASSAGEIRO] Passageiro %d : "), i);
 		_tprintf(_T("\n (%d, %d) -> (%d, %d)\n"), dados->passageiros[i].X, dados->passageiros[i].Y, dados->passageiros[i].Xfinal, dados->passageiros[i].Yfinal);
 	}
 	return;
@@ -234,10 +227,14 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 			listarTaxis(dados);
 		}
 		else if (_tcscmp(op, TEXT("aceitacaoT"))) {		//PAUSAR/RECOMECAR ACEITAÇÃO DE TAXIS
-			if (dados->respostaAuto)
+			if (dados->respostaAuto) {
 				dados->respostaAuto = 0;
-			else
+				_tprintf(_T("\n[COMANDO] Pausar aceitação automática de passageiros"));
+			}
+			else {
 				dados->respostaAuto = 1;
+				_tprintf(_T("\n[COMANDO] Recomeçar aceitação automática de passageiros"));
+			}
 			//ENVIAR INFORMAÇÃO AOS TAXIS
 		}
 		else if (_tcscmp(op, TEXT("manifestacoes"))) {		//DEFINIR INTERVALO DE TEMPO DURANTE O QUAL AGUARDA MANIFESTAÇOES DOS TAXIS
@@ -251,6 +248,8 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 		}
 		ReleaseMutex(dados->hMutexDados);
 	} while (_tcscmp(op, TEXT("fim")));
+
+	dados->terminar = 1;
 
 	ExitThread(0);
 }
@@ -371,6 +370,7 @@ boolean adicionaPassageiro(DADOS* dados, PASSAGEIRO novo) {
 
 	dados->passageiros[dados->nPassageiros] = novo;
 	dados->nPassageiros++;
+	_tprintf(TEXT("[NOVO PASSAGEIRO] Novo Passageiro: %s\n"), novo.id);
 	return TRUE;
 }
 
@@ -381,6 +381,7 @@ boolean removePassageiro(DADOS* dados, PASSAGEIRO novo) {
 				dados->passageiros[k] = dados->passageiros[k + 1];
 			}
 			dados->nPassageiros--;
+			_tprintf(TEXT("[SAIU PASSAGEIRO] Saiu Passageiro: %s\n"), novo.id);
 			return TRUE;
 		}
 	}

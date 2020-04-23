@@ -25,6 +25,7 @@ typedef struct {
 typedef struct {
 	int nPassageiros;
 	PASSAGEIRO passageiros[MAX_PASS];
+	int terminar;
 } DADOS;
 
 void novoPassageiro(DADOS* dados);
@@ -37,6 +38,7 @@ int _tmain() {
 	TCHAR op[TAM];
 	DADOS dados;
 	dados.nPassageiros = 0;
+	dados.terminar = 0;
 
 #ifdef UNICODE
 	_setmode(_fileno(stdin), _O_WTEXT);
@@ -45,7 +47,7 @@ int _tmain() {
 
 	hThreadComandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadComandos, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
 	if (hThreadComandos == NULL) {
-		_tprintf(TEXT("\nErro ao lançar Thread!\n"));
+		_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
 		return 0;
 	}
 	//hThreadMovimentaPassageiro = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadMovimentaPassageiro, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
@@ -63,17 +65,10 @@ int _tmain() {
 	ghEvents[0] = hThreadComandos;
 	/*ghEvents[1] = hThreadMovimentaPassageiro;
 	ghEvents[2] = hThreadRespostaTransporte;*/
-	DWORD dwResultEspera;
-	do {
-		dwResultEspera = WaitForMultipleObjects(1, ghEvents, TRUE, WAITTIMEOUT);
-		if (dwResultEspera == WAITTIMEOUT) {
-			for (int i = 0; i < dados.nPassageiros; i++)
-				dados.passageiros[i].terminar = 1;
-			_tprintf(TEXT("As Threads vao parar!\n"));
-			break;
-		}
-	} while (1);
+	 WaitForMultipleObjects(1, ghEvents, TRUE, WAITTIMEOUT);
 
+	 _tprintf(TEXT("Passageiros vão sair!\n"));
+	 _tprintf(TEXT("Prima uma tecla...\n"));
 	_gettch();
 
 	return 0;
@@ -81,15 +76,15 @@ int _tmain() {
 
 void novoPassageiro(DADOS* dados) {
 
-	_tprintf(_T("\n Id do Passageiro: "));
+	_tprintf(_T("\n[NOVO] Id do Passageiro: "));
 	_fgetts(dados->passageiros[dados->nPassageiros].id, TAM, stdin);
 	dados->passageiros[dados->nPassageiros].id[_tcslen(dados->passageiros[dados->nPassageiros].id) - 1] = '\0';
 
-	_tprintf(_T("\n Localizacao do Passageiro (X Y) : "));
+	_tprintf(_T("\n[NOVO]  Localizacao do Passageiro (X Y) : "));
 	_tscanf_s(_T("%d"), &dados->passageiros[dados->nPassageiros].X);
 	_tscanf_s(_T("%d"), &dados->passageiros[dados->nPassageiros].Y);
 
-	_tprintf(_T("\n Local de destino do Passageiro (X Y) : "));
+	_tprintf(_T("\n[NOVO]  Local de destino do Passageiro (X Y) : "));
 	_tscanf_s(_T("%d"), &dados->passageiros[dados->nPassageiros].Xfinal);
 	_tscanf_s(_T("%d"), &dados->passageiros[dados->nPassageiros].Yfinal);
 	dados->passageiros[dados->nPassageiros].movimento = 0;
@@ -116,6 +111,8 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 
 	for (int i = 0; i < MAX_PASS; i++)
 		dados->passageiros[i].terminar = 1;
+
+	dados->terminar = 1;
 
 	ExitThread(0);
 }

@@ -63,12 +63,12 @@ int _tmain() {
 
 	hThreadComandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadComandos, (LPVOID)&taxi, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
 	if (hThreadComandos == NULL) {
-		_tprintf(TEXT("\nErro ao lançar Thread!\n"));
+		_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
 		return 0;
 	}
 	hThreadMovimentaTaxi = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadMovimentaTaxi, (LPVOID)&taxi, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
 	if (hThreadMovimentaTaxi == NULL) {
-		_tprintf(TEXT("\nErro ao lançar Thread!\n"));
+		_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
 		return 0;
 	}
 	//hThreadRespostaTransporte = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadRespostaTransporte, (LPVOID)&taxi, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
@@ -81,17 +81,10 @@ int _tmain() {
 	ghEvents[0] = hThreadComandos;
 	ghEvents[1] = hThreadMovimentaTaxi;
 	//ghEvents[2] = hThreadRespostaTransporte;
-	DWORD dwResultEspera;
-	do {
-		dwResultEspera = WaitForMultipleObjects(2, ghEvents, TRUE, WAITTIMEOUT);
-		if (dwResultEspera == WAITTIMEOUT) {
-			taxi.terminar = 1;
-			_tprintf(TEXT("As Threads vao parar!\n"));
-			break;
-		}
-		//SAIR QUANDO A DE COMANDOS CHEGA AO FIM
-	} while (1);
-
+	WaitForMultipleObjects(2, ghEvents, TRUE, WAITTIMEOUT);
+	
+	_tprintf(TEXT("Taxi a sair!\n"));
+	_tprintf(TEXT("Prima uma tecla...\n"));
 	_gettch();
 
 	UnmapViewOfFile(shared);
@@ -128,7 +121,7 @@ void inicializaTaxi(TAXI* taxi) {
 
 	hMutex = CreateMutex(NULL, FALSE, NOME_MUTEX);
 	if (hMutex == NULL) {
-		_tprintf(TEXT("\nErro ao criar Mutex!\n"));
+		_tprintf(TEXT("\n[ERRO] Erro ao criar Mutex!\n"));
 		return;
 	}
 	WaitForSingleObject(hMutex, INFINITE);
@@ -143,33 +136,33 @@ void inicializaTaxi(TAXI* taxi) {
 
 	novoTaxi = CreateEvent(NULL, TRUE, FALSE, EVENT_NOVOT);
 	if (novoTaxi == NULL) {
-		_tprintf(TEXT("CreateEvent failed.\n"));
+		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
 		return;
 	}
 
 	saiuTaxi = CreateEvent(NULL, TRUE, FALSE, EVENT_SAIUT);
 	if (saiuTaxi == NULL) {
-		_tprintf(TEXT("CreateEvent failed.\n"));
+		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
 		return;
 	}
 
 	movimentoTaxi = CreateEvent(NULL, TRUE, FALSE, EVENT_MOVIMENTO);
 	if (movimentoTaxi == NULL) {
-		_tprintf(TEXT("CreateEvent failed.\n"));
+		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
 		return;
 	}
 
 	EspTaxis = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(TAXI), SHM_NAME);
 	if (EspTaxis == NULL)
 	{
-		_tprintf(TEXT("CreateFileMapping failed.\n"));
+		_tprintf(TEXT("\n[ERRO] Erro ao criar FileMapping!\n"));
 		return;
 	}
 
 	shared = (TAXI*)MapViewOfFile(EspTaxis, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(TAXI));
 	if (shared == NULL)
 	{
-		_tprintf(TEXT("Terminal failure: MapViewOfFile.\n"));
+		_tprintf(TEXT("\n[ERRO] Erro em MapViewOfFile!\n"));
 		CloseHandle(EspTaxis);
 		return;
 	}
@@ -263,6 +256,8 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {	//MANDA TAXI AO ADMIN
 	do {
 		valido = 0;
 		WaitForSingleObject(hMutex, INFINITE);
+		if (taxi->terminar)
+			return 0;
 		//MOVIMENTA
 		do {
 			val = rand() % 4;
