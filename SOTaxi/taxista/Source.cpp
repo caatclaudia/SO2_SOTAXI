@@ -31,8 +31,8 @@ typedef struct {
 	int autoResposta;
 	int interessado;
 	int terminar;
-	HANDLE hMutex;
 } TAXI;
+HANDLE hMutex;				//NAO DEVE SER PARTILHADO NA MEMORIA
 
 HANDLE EspTaxis;	//FileMapping
 TAXI* shared;
@@ -124,15 +124,14 @@ void inicializaTaxi(TAXI* taxi) {
 	taxi->matricula[6]='\0';
 
 	_tprintf(_T("\n Localizacao do Táxi (X Y) : "));
-	_tscanf_s(_T("%d"), &taxi->X);
-	_tscanf_s(_T("%d"), &taxi->Y);
+	_tscanf_s(_T("%d %d"), &taxi->X, &taxi->Y);
 
-	taxi->hMutex = CreateMutex(NULL, FALSE, NOME_MUTEX);
-	if (taxi->hMutex == NULL) {
+	hMutex = CreateMutex(NULL, FALSE, NOME_MUTEX);
+	if (hMutex == NULL) {
 		_tprintf(TEXT("\nErro ao criar Mutex!\n"));
 		return;
 	}
-	WaitForSingleObject(taxi->hMutex, INFINITE);
+	WaitForSingleObject(hMutex, INFINITE);
 
 	taxi->disponivel = 1;
 	taxi->velocidade = 1;
@@ -177,8 +176,9 @@ void inicializaTaxi(TAXI* taxi) {
 
 	//VAI AO ADMIN VER SE PODE CRIAR	
 	CopyMemory(shared, taxi, sizeof(TAXI));
+	FlushViewOfFile(novoTaxi, 0);
 	//VERIFICAR QUE É UNICA
-	ReleaseMutex(taxi->hMutex);
+	ReleaseMutex(hMutex);
 
 	SetEvent(novoTaxi);
 	Sleep(500);
@@ -194,7 +194,7 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 
 	do {
 		_tprintf(_T("\n>>"));
-		WaitForSingleObject(taxi->hMutex, INFINITE);	//ARRANJAR FORMA DE ELE NAO PARAR AQUI - SE FOR DPS ELE NAO DEIXA ESCREVER FRASE COMPLETA
+		WaitForSingleObject(hMutex, INFINITE);	//ARRANJAR FORMA DE ELE NAO PARAR AQUI - SE FOR DPS ELE NAO DEIXA ESCREVER FRASE COMPLETA
 		_fgetts(op, TAM, stdin);
 		op[_tcslen(op) - 1] = '\0';
 		if (!_tcscmp(op, TEXT("aumentaV"))) {		//AUMENTA 0.5 DE VELOCIDADE
@@ -232,7 +232,7 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 			ajuda();
 		}
 		if(_tcscmp(op, TEXT("fim")))
-			ReleaseMutex(taxi->hMutex);
+			ReleaseMutex(hMutex);
 	} while (_tcscmp(op, TEXT("fim")));
 
 	taxi->terminar = 1;
@@ -242,7 +242,7 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 
 	CopyMemory(shared, taxi, sizeof(TAXI));
 
-	ReleaseMutex(taxi->hMutex);
+	ReleaseMutex(hMutex);
 
 	SetEvent(saiuTaxi);
 	Sleep(500);
@@ -262,7 +262,7 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {	//MANDA TAXI AO ADMIN
 
 	do {
 		valido = 0;
-		WaitForSingleObject(taxi->hMutex, INFINITE);		//DPS DE ENVIAR AO ADMIN, ENCRAVA AQUI
+		WaitForSingleObject(hMutex, INFINITE);		//DPS DE ENVIAR AO ADMIN, ENCRAVA AQUI
 		//MOVIMENTA
 		do {
 			val = rand() % 4;
@@ -292,7 +292,7 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {	//MANDA TAXI AO ADMIN
 
 		CopyMemory(shared, taxi, sizeof(TAXI));
 
-		ReleaseMutex(taxi->hMutex);
+		ReleaseMutex(hMutex);
 
 		SetEvent(movimentoTaxi);
 		Sleep(500);

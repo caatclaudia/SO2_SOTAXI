@@ -31,7 +31,7 @@ typedef struct {
 } PASSAGEIRO;
 
 typedef struct {
-	TCHAR matricula[6];
+	TCHAR matricula[7];
 	unsigned int X, Y, Xfinal, Yfinal;
 	int disponivel;
 	TCHAR idPassageiro[TAM];
@@ -39,7 +39,6 @@ typedef struct {
 	int autoResposta;
 	int interessado;
 	int terminar;
-	HANDLE hMutex;
 } TAXI;
 
 
