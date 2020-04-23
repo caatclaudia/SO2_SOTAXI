@@ -9,7 +9,6 @@
 #define MAXTAXIS 10
 #define MAXPASS 10
 #define TempoManifestacoes 5
-#define WAITTIMEOUT 2000
 
 #define SHM_NAME TEXT("EspacoTaxis")
 #define NOME_MUTEX TEXT("MutexTaxi")
@@ -56,6 +55,7 @@ typedef struct {
 	HANDLE novoTaxi;
 	HANDLE saiuTaxi;
 	HANDLE movimentoTaxi;
+	HANDLE respostaAdmin;
 } DADOS;
 
 
@@ -119,6 +119,12 @@ int _tmain(int argc, LPTSTR argv[]) {
 	SetEvent(dados.movimentoTaxi);
 	ResetEvent(dados.movimentoTaxi);
 
+	dados.respostaAdmin = CreateEvent(NULL, TRUE, FALSE, EVENT_RESPOSTA);
+	if (dados.respostaAdmin == NULL) {
+		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
+		return 0;
+	}
+
 	dados.EspTaxis = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(TAXI), SHM_NAME);
 	if (dados.EspTaxis == NULL)
 	{
@@ -133,10 +139,6 @@ int _tmain(int argc, LPTSTR argv[]) {
 		CloseHandle(dados.EspTaxis);
 		return 0;
 	}
-
-	SetEvent(dados.novoTaxi);
-	Sleep(500);
-	ResetEvent(dados.novoTaxi);
 
 	hThreadComandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadComandos, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
 	if (hThreadComandos == NULL) {
@@ -170,7 +172,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 	ghEvents[2] = hThreadSaiuTaxi;
 	ghEvents[3] = hThreadMovimento;
 	//ghEvents[2] = hThreadNovoPassageiro;
-	WaitForMultipleObjects(4, ghEvents, TRUE, WAITTIMEOUT);
+	WaitForMultipleObjects(4, ghEvents, TRUE, INFINITE);
 
 	_tprintf(_T("Administrador vai encerrar!\n"));
 	_tprintf(TEXT("Prima uma tecla...\n"));
@@ -179,6 +181,9 @@ int _tmain(int argc, LPTSTR argv[]) {
 	UnmapViewOfFile(dados.shared);
 	CloseHandle(dados.EspTaxis);
 	CloseHandle(dados.novoTaxi);
+	CloseHandle(dados.saiuTaxi);
+	CloseHandle(dados.movimentoTaxi);
+	CloseHandle(dados.respostaAdmin);
 	return 0;
 }
 
@@ -266,17 +271,21 @@ DWORD WINAPI ThreadNovoTaxi(LPVOID param) {		//VERIFICA SE HA NOVOS TAXIS
 		WaitForSingleObject(dados->hMutexDados, INFINITE);
 
 		CopyMemory(&novo, dados->shared, sizeof(TAXI));
-		adicionaTaxi(dados, novo);
-		/*if (adicionaTaxi(dados, novo)) {
+		//adicionaTaxi(dados, novo);
+		if (adicionaTaxi(dados, novo)) {
 			_tprintf(TEXT("Novo Taxi: %s\n"), dados->taxis[dados->nTaxis - 1].matricula);
 			CopyMemory(dados->shared, &dados->taxis[dados->nTaxis - 1], sizeof(TAXI));
 		}
 		else {
 			novo.terminar = 1;
-			CopyMemory(dados->shared, &dados->taxis[dados->nTaxis - 1], sizeof(TAXI));
-		}*/
+			CopyMemory(dados->shared, &novo, sizeof(TAXI));
+		}
+		SetEvent(dados->respostaAdmin);
+		Sleep(500);
+		ResetEvent(dados->respostaAdmin);
+
 		ReleaseMutex(dados->hMutexDados);
-		
+
 		Sleep(1000);
 	}
 

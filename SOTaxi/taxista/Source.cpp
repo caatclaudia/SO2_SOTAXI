@@ -8,7 +8,6 @@
 
 #define NQ_INICIAL 10
 #define TAM 200
-#define WAITTIMEOUT 2000
 
 #define SHM_NAME TEXT("EspacoTaxis")
 #define NOME_MUTEX TEXT("MutexTaxi")
@@ -39,6 +38,7 @@ TAXI* shared;
 HANDLE novoTaxi;
 HANDLE saiuTaxi;
 HANDLE movimentoTaxi;
+HANDLE respostaAdmin;
 
 unsigned int NQ = NQ_INICIAL;
 
@@ -58,31 +58,34 @@ int _tmain() {
 #endif
 
 	inicializaTaxi(&taxi);
+	if (!taxi.terminar) {
 
-	//WaitForSingleObject(taxi.hMutex, INFINITE);
 
-	hThreadComandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadComandos, (LPVOID)&taxi, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
-	if (hThreadComandos == NULL) {
-		_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
-		return 0;
+		//WaitForSingleObject(taxi.hMutex, INFINITE);
+
+		hThreadComandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadComandos, (LPVOID)&taxi, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
+		if (hThreadComandos == NULL) {
+			_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
+			return 0;
+		}
+		hThreadMovimentaTaxi = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadMovimentaTaxi, (LPVOID)&taxi, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
+		if (hThreadMovimentaTaxi == NULL) {
+			_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
+			return 0;
+		}
+		//hThreadRespostaTransporte = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadRespostaTransporte, (LPVOID)&taxi, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
+		//if (hThreadRespostaTransporte == NULL) {
+		//	_tprintf(TEXT("\nErro ao lançar Thread!\n"));
+		//	return 0;
+		//}
+
+		HANDLE ghEvents[2];
+		ghEvents[0] = hThreadComandos;
+		ghEvents[1] = hThreadMovimentaTaxi;
+		//ghEvents[2] = hThreadRespostaTransporte;
+		WaitForMultipleObjects(2, ghEvents, TRUE, INFINITE);
 	}
-	hThreadMovimentaTaxi = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadMovimentaTaxi, (LPVOID)&taxi, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
-	if (hThreadMovimentaTaxi == NULL) {
-		_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
-		return 0;
-	}
-	//hThreadRespostaTransporte = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadRespostaTransporte, (LPVOID)&taxi, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
-	//if (hThreadRespostaTransporte == NULL) {
-	//	_tprintf(TEXT("\nErro ao lançar Thread!\n"));
-	//	return 0;
-	//}
 
-	HANDLE ghEvents[2];
-	ghEvents[0] = hThreadComandos;
-	ghEvents[1] = hThreadMovimentaTaxi;
-	//ghEvents[2] = hThreadRespostaTransporte;
-	WaitForMultipleObjects(2, ghEvents, TRUE, WAITTIMEOUT);
-	
 	_tprintf(TEXT("Taxi a sair!\n"));
 	_tprintf(TEXT("Prima uma tecla...\n"));
 	_gettch();
@@ -90,6 +93,9 @@ int _tmain() {
 	UnmapViewOfFile(shared);
 	CloseHandle(EspTaxis);
 	CloseHandle(novoTaxi);
+	CloseHandle(saiuTaxi);
+	CloseHandle(movimentoTaxi);
+	CloseHandle(respostaAdmin);
 	return 0;
 }
 
@@ -114,7 +120,7 @@ void inicializaTaxi(TAXI* taxi) {
 			if (isalpha(taxi->matricula[i]))
 				num++;
 	} while (num != 2);
-	taxi->matricula[6]='\0';
+	taxi->matricula[6] = '\0';
 
 	_tprintf(_T("\n Localizacao do Táxi (X Y) : "));
 	_tscanf_s(_T("%d %d"), &taxi->X, &taxi->Y);
@@ -152,6 +158,15 @@ void inicializaTaxi(TAXI* taxi) {
 		return;
 	}
 
+	respostaAdmin = CreateEvent(NULL, TRUE, FALSE, EVENT_RESPOSTA);
+	if (respostaAdmin == NULL) {
+		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
+		return;
+	}
+	SetEvent(respostaAdmin);
+	Sleep(500);
+	ResetEvent(respostaAdmin);
+
 	EspTaxis = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(TAXI), SHM_NAME);
 	if (EspTaxis == NULL)
 	{
@@ -171,11 +186,19 @@ void inicializaTaxi(TAXI* taxi) {
 	CopyMemory(shared, taxi, sizeof(TAXI));
 	FlushViewOfFile(novoTaxi, 0);
 	//VERIFICAR QUE É UNICA
-	ReleaseMutex(hMutex);
 
 	SetEvent(novoTaxi);
 	Sleep(500);
 	ResetEvent(novoTaxi);
+
+	WaitForSingleObject(respostaAdmin, INFINITE);
+
+	CopyMemory(taxi, shared, sizeof(TAXI));
+	if (!taxi->terminar)
+		_tprintf(TEXT("\nBem Vindo!\n"));
+
+	ReleaseMutex(hMutex);
+
 	Sleep(1000);
 
 	return;
@@ -224,7 +247,7 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 			_tprintf(_T("\n[COMANDO] Aqui vai uma ajuda..."));
 			ajuda();
 		}
-		if(_tcscmp(op, TEXT("fim")))
+		if (_tcscmp(op, TEXT("fim")))
 			ReleaseMutex(hMutex);
 	} while (_tcscmp(op, TEXT("fim")));
 

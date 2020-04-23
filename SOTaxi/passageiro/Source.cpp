@@ -7,7 +7,6 @@
 
 #define TAM 200
 #define MAX_PASS 20
-#define WAITTIMEOUT 2000
 
 //ConPass
 //1 instancia
@@ -65,10 +64,10 @@ int _tmain() {
 	ghEvents[0] = hThreadComandos;
 	/*ghEvents[1] = hThreadMovimentaPassageiro;
 	ghEvents[2] = hThreadRespostaTransporte;*/
-	 WaitForMultipleObjects(1, ghEvents, TRUE, WAITTIMEOUT);
+	WaitForMultipleObjects(1, ghEvents, TRUE, INFINITE);
 
-	 _tprintf(TEXT("Passageiros vão sair!\n"));
-	 _tprintf(TEXT("Prima uma tecla...\n"));
+	_tprintf(TEXT("Passageiros vão sair!\n"));
+	_tprintf(TEXT("Prima uma tecla...\n"));
 	_gettch();
 
 	return 0;
