@@ -15,6 +15,7 @@
 #define EVENT_SAIUT TEXT("SaiuTaxi")
 #define EVENT_MOVIMENTO TEXT("MovimentoTaxi")
 #define EVENT_RESPOSTA TEXT("RespostaDoAdmin")
+#define EVENT_SAIUA TEXT("SaiuAdmin")
 
 //ConTaxi
 //1 instancia por taxi
@@ -39,6 +40,7 @@ HANDLE novoTaxi;
 HANDLE saiuTaxi;
 HANDLE movimentoTaxi;
 HANDLE respostaAdmin;
+HANDLE saiuAdmin;
 
 unsigned int NQ = NQ_INICIAL;
 
@@ -46,10 +48,11 @@ void ajuda();
 void inicializaTaxi(TAXI* taxi);
 DWORD WINAPI ThreadComandos(LPVOID param);
 DWORD WINAPI ThreadMovimentaTaxi(LPVOID param);
+DWORD WINAPI ThreadSaiuAdmin(LPVOID param);
 DWORD WINAPI ThreadRespostaTransporte(LPVOID param);
 
 int _tmain() {
-	HANDLE hThreadComandos, hThreadMovimentaTaxi, hThreadRespostaTransporte;
+	HANDLE hThreadComandos, hThreadMovimentaTaxi, hThreadRespostaTransporte, hThreadSaiuAdmin;
 	TAXI taxi;
 
 #ifdef UNICODE
@@ -73,21 +76,27 @@ int _tmain() {
 			_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
 			return 0;
 		}
+		hThreadSaiuAdmin = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadSaiuAdmin, (LPVOID)&taxi, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
+		if (hThreadSaiuAdmin == NULL) {
+			_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
+			return 0;
+		}
 		//hThreadRespostaTransporte = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadRespostaTransporte, (LPVOID)&taxi, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
 		//if (hThreadRespostaTransporte == NULL) {
 		//	_tprintf(TEXT("\nErro ao lançar Thread!\n"));
 		//	return 0;
 		//}
 
-		HANDLE ghEvents[2];
+		HANDLE ghEvents[3];
 		ghEvents[0] = hThreadComandos;
 		ghEvents[1] = hThreadMovimentaTaxi;
-		//ghEvents[2] = hThreadRespostaTransporte;
-		WaitForMultipleObjects(2, ghEvents, TRUE, INFINITE);
+		ghEvents[2] = hThreadSaiuAdmin;
+		//ghEvents[3] = hThreadRespostaTransporte;
+		WaitForMultipleObjects(3, ghEvents, FALSE, INFINITE);
 	}
 
-	_tprintf(TEXT("Taxi a sair!\n"));
-	_tprintf(TEXT("Prima uma tecla...\n"));
+	_tprintf(TEXT("\nTaxi a sair!"));
+	_tprintf(TEXT("\nPrima uma tecla...\n"));
 	_gettch();
 
 	UnmapViewOfFile(shared);
@@ -96,6 +105,7 @@ int _tmain() {
 	CloseHandle(saiuTaxi);
 	CloseHandle(movimentoTaxi);
 	CloseHandle(respostaAdmin);
+	CloseHandle(saiuAdmin);
 	return 0;
 }
 
@@ -166,6 +176,15 @@ void inicializaTaxi(TAXI* taxi) {
 	SetEvent(respostaAdmin);
 	Sleep(500);
 	ResetEvent(respostaAdmin);
+
+	saiuAdmin = CreateEvent(NULL, TRUE, FALSE, EVENT_SAIUA);
+	if (saiuAdmin == NULL) {
+		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
+		return;
+	}
+	SetEvent(saiuAdmin);
+	Sleep(500);
+	ResetEvent(saiuAdmin);
 
 	EspTaxis = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(TAXI), SHM_NAME);
 	if (EspTaxis == NULL)
@@ -319,6 +338,23 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {	//MANDA TAXI AO ADMIN
 		Sleep(1000);
 		//MANDA PARA ADMIN
 	} while (!taxi->terminar);
+
+	ExitThread(0);
+}
+
+DWORD WINAPI ThreadSaiuAdmin(LPVOID param) {
+	TAXI* taxi = ((TAXI*)param);
+
+	WaitForSingleObject(saiuAdmin, INFINITE);
+		
+	WaitForSingleObject(hMutex, INFINITE);
+
+	taxi->terminar = 1;
+
+	ReleaseMutex(hMutex);
+	_tprintf(_T("\n[AVISO] Administrador encerrou!"));
+
+	Sleep(1000);
 
 	ExitThread(0);
 }

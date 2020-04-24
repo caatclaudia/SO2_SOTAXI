@@ -16,6 +16,7 @@
 #define EVENT_SAIUT TEXT("SaiuTaxi")
 #define EVENT_MOVIMENTO TEXT("MovimentoTaxi")
 #define EVENT_RESPOSTA TEXT("RespostaDoAdmin")
+#define EVENT_SAIUA TEXT("SaiuAdmin")
 
 //CenTaxi
 //1 instancia
@@ -56,6 +57,7 @@ typedef struct {
 	HANDLE saiuTaxi;
 	HANDLE movimentoTaxi;
 	HANDLE respostaAdmin;
+	HANDLE saiuAdmin;
 } DADOS;
 
 
@@ -125,6 +127,12 @@ int _tmain(int argc, LPTSTR argv[]) {
 		return 0;
 	}
 
+	dados.saiuAdmin = CreateEvent(NULL, TRUE, FALSE, EVENT_SAIUA);
+	if (dados.saiuAdmin == NULL) {
+		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
+		return 0;
+	}
+
 	dados.EspTaxis = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(TAXI), SHM_NAME);
 	if (dados.EspTaxis == NULL)
 	{
@@ -172,7 +180,21 @@ int _tmain(int argc, LPTSTR argv[]) {
 	ghEvents[2] = hThreadSaiuTaxi;
 	ghEvents[3] = hThreadMovimento;
 	//ghEvents[2] = hThreadNovoPassageiro;
-	WaitForMultipleObjects(4, ghEvents, TRUE, INFINITE);
+	WaitForMultipleObjects(4, ghEvents, FALSE, INFINITE);
+
+	WaitForSingleObject(dados.hMutexDados, INFINITE);
+
+	for (int i = 0; i < dados.nTaxis; i++)
+		dados.taxis[i].terminar = 1;
+	for (int i = 0; i < dados.nPassageiros; i++)
+		dados.passageiros[i].terminar = 1;
+	
+	SetEvent(dados.saiuAdmin);
+	Sleep(500);
+	ResetEvent(dados.saiuAdmin);
+
+	ReleaseMutex(dados.hMutexDados);
+	Sleep(1000);
 
 	_tprintf(_T("Administrador vai encerrar!\n"));
 	_tprintf(TEXT("Prima uma tecla...\n"));
@@ -184,6 +206,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 	CloseHandle(dados.saiuTaxi);
 	CloseHandle(dados.movimentoTaxi);
 	CloseHandle(dados.respostaAdmin);
+	CloseHandle(dados.saiuAdmin);
 	return 0;
 }
 
@@ -223,8 +246,8 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 	do {
 		_tprintf(_T("\n>>"));
 		_fgetts(op, TAM, stdin);
-		WaitForSingleObject(dados->hMutexDados, INFINITE);
 		op[_tcslen(op) - 1] = '\0';
+		WaitForSingleObject(dados->hMutexDados, INFINITE);
 		if (_tcscmp(op, TEXT("expulsar"))) {		//EXPULSAR TAXI
 
 		}
@@ -251,10 +274,13 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 		else if (_tcscmp(op, TEXT("ajuda"))) {		//AJUDA NOS COMANDOS
 			ajuda();
 		}
-		ReleaseMutex(dados->hMutexDados);
+		if (_tcscmp(op, TEXT("fim")))
+			ReleaseMutex(dados->hMutexDados);
 	} while (_tcscmp(op, TEXT("fim")));
 
 	dados->terminar = 1;
+
+	ReleaseMutex(dados->hMutexDados);
 
 	ExitThread(0);
 }
@@ -332,7 +358,7 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 				_tprintf(_T("\n[MOVIMENTO] Taxi %s -> (%d,%d)"), novo.matricula, novo.X, novo.Y);			//VERIFICAR DADOS DE X e Y
 			}
 
-		//ReleaseMutex(dados->hMutexDados);
+		ReleaseMutex(dados->hMutexDados);
 
 		Sleep(1000);
 	}
