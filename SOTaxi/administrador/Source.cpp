@@ -9,6 +9,7 @@
 #define MAXTAXIS 10
 #define MAXPASS 10
 #define TempoManifestacoes 5
+#define WAITTIMEOUT 1000
 
 #define SHM_NAME TEXT("EspacoTaxis")
 #define NOME_MUTEX TEXT("MutexTaxi")
@@ -180,7 +181,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 	ghEvents[2] = hThreadSaiuTaxi;
 	ghEvents[3] = hThreadMovimento;
 	//ghEvents[2] = hThreadNovoPassageiro;
-	WaitForMultipleObjects(4, ghEvents, FALSE, INFINITE);
+	WaitForMultipleObjects(4, ghEvents, TRUE, INFINITE);
 
 	WaitForSingleObject(dados.hMutexDados, INFINITE);
 
@@ -188,7 +189,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 		dados.taxis[i].terminar = 1;
 	for (int i = 0; i < dados.nPassageiros; i++)
 		dados.passageiros[i].terminar = 1;
-	
+
 	SetEvent(dados.saiuAdmin);
 	Sleep(500);
 	ResetEvent(dados.saiuAdmin);
@@ -290,7 +291,11 @@ DWORD WINAPI ThreadNovoTaxi(LPVOID param) {		//VERIFICA SE HA NOVOS TAXIS
 	TAXI novo;
 
 	while (1) {
-		WaitForSingleObject(dados->novoTaxi, INFINITE);
+		while (1) {
+			WaitForSingleObject(dados->novoTaxi, WAITTIMEOUT);
+			if (dados->terminar)
+				return 0;
+		}
 
 		if (dados->terminar)
 			return 0;
@@ -323,7 +328,11 @@ DWORD WINAPI ThreadSaiuTaxi(LPVOID param) {		//VERIFICA SE SAIRAM TAXIS
 	TAXI novo;
 
 	while (1) {
-		WaitForSingleObject(dados->saiuTaxi, INFINITE);
+		while (1) {
+			WaitForSingleObject(dados->saiuTaxi, WAITTIMEOUT);
+			if (dados->terminar)
+				return 0;
+		}
 
 		if (dados->terminar)
 			return 0;
@@ -345,7 +354,11 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 	TAXI novo;
 
 	while (1) {
-		WaitForSingleObject(dados->movimentoTaxi, INFINITE);	//PERCEBER SE ENTRA AQUI
+		while (1) {
+			WaitForSingleObject(dados->movimentoTaxi, WAITTIMEOUT);
+			if (dados->terminar)
+				return 0;
+		}
 
 		if (dados->terminar)
 			return 0;
@@ -355,7 +368,7 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 		for (int i = 0; i < dados->nTaxis; i++)
 			if (!_tcscmp(novo.matricula, dados->taxis[i].matricula)) {
 				dados->taxis[i] = novo;
-				_tprintf(_T("\n[MOVIMENTO] Taxi %s -> (%d,%d)"), novo.matricula, novo.X, novo.Y);			//VERIFICAR DADOS DE X e Y
+				_tprintf(_T("\n[MOVIMENTO] Taxi %s -> (%d,%d)"), novo.matricula, novo.X, novo.Y);
 			}
 
 		ReleaseMutex(dados->hMutexDados);

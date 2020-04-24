@@ -8,6 +8,7 @@
 
 #define NQ_INICIAL 10
 #define TAM 200
+#define WAITTIMEOUT 1000
 
 #define SHM_NAME TEXT("EspacoTaxis")
 #define NOME_MUTEX TEXT("MutexTaxi")
@@ -92,7 +93,7 @@ int _tmain() {
 		ghEvents[1] = hThreadMovimentaTaxi;
 		ghEvents[2] = hThreadSaiuAdmin;
 		//ghEvents[3] = hThreadRespostaTransporte;
-		WaitForMultipleObjects(3, ghEvents, FALSE, INFINITE);
+		WaitForMultipleObjects(3, ghEvents, TRUE, INFINITE);
 	}
 
 	_tprintf(TEXT("\nTaxi a sair!"));
@@ -345,10 +346,13 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {	//MANDA TAXI AO ADMIN
 DWORD WINAPI ThreadSaiuAdmin(LPVOID param) {
 	TAXI* taxi = ((TAXI*)param);
 
-	WaitForSingleObject(saiuAdmin, INFINITE);
-		
+	while (1) {
+		WaitForSingleObject(saiuAdmin, WAITTIMEOUT);
+		if (taxi->terminar)
+			return 0;
+	}
 	WaitForSingleObject(hMutex, INFINITE);
-
+		
 	taxi->terminar = 1;
 
 	ReleaseMutex(hMutex);
