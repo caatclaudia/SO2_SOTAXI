@@ -29,7 +29,7 @@
 //sabe dos taxis, posicoes e estado
 
 typedef struct {
-	TCHAR caracter;
+	char caracter;
 } MAPA;
 
 typedef struct {
@@ -286,9 +286,13 @@ void recebeMapa(DADOS* dados) {
 
 	WaitForSingleObject(dados->hMutexDados, INFINITE);
 
-	CopyMemory(&dados->mapa, dados->sharedMapa, sizeof(MAPA));
+	CopyMemory(&dados->mapa, dados->sharedMapa, sizeof(MAPA));								//NÃO RECEBE BEM OS VALORES 
 	_tprintf(TEXT("\n[MAPA] Mapa lido com sucesso!\n"));
-	//NÃO CONSEGUE REGISTAR BEM OS VALORES POR CAUSA DE PROBLEMAS DE UNICODE (MAPA NÃO ESTÁ EM UNICODE)
+	for (int x = 0; x < 50; x++) {
+		for (int y = 0; y < 51; y++)
+			_tprintf(TEXT("%c"), dados->mapa[x][y].caracter);
+		_tprintf(TEXT("\n"));
+	}
 
 	ReleaseMutex(dados->hMutexDados);
 	Sleep(1000);

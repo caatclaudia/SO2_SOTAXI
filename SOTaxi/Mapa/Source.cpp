@@ -12,12 +12,12 @@
 #define NOME_MUTEXMAPA TEXT("MutexMapa")
 
 typedef struct {
-	TCHAR caracter;
+	char caracter;
 } MAPA;
 
 typedef struct {
 	MAPA mapa[TAM][TAM];
-	TCHAR* pView;
+	char* pView = NULL;
 	int terminar;
 } DADOS;
 
@@ -117,7 +117,7 @@ int _tmain(int argc, TCHAR argv[]) {
 }
 
 void leFicheiro(DADOS* dados) {
-	dados->pView = (TCHAR*)MapViewOfFile(map, FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, 50 * 52);
+	dados->pView = (char*)MapViewOfFile(map, FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, 50 * 52);
 	if (dados->pView == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro em MapViewOfFile!\n"));
@@ -126,7 +126,7 @@ void leFicheiro(DADOS* dados) {
 		return;
 	}
 
-	TCHAR aux;
+	char aux;
 	int x = 0, y = 0;
 	for (int i = 0; i < 50 * 52; i++) {
 		aux = dados->pView[i];
@@ -148,7 +148,7 @@ void leFicheiro(DADOS* dados) {
 
 void mostraMapa(DADOS* dados) {
 	for (int x = 0; x < 50; x++) {
-		for (int y = 0; y < 52; y++)
+		for (int y = 0; y < 51; y++)
 			_tprintf(TEXT("%c"), dados->mapa[x][y].caracter);
 		_tprintf(TEXT("\n"));
 	}
@@ -163,7 +163,7 @@ void enviaMapa(DADOS* dados) {
 		return;
 	}
 
-	CopyMemory(shared, dados->mapa, sizeof(MAPA));
+	CopyMemory(shared, &dados->mapa, sizeof(MAPA));
 
 	SetEvent(enviaMap);
 	Sleep(500);
