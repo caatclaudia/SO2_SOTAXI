@@ -27,7 +27,7 @@ int _tmain(int argc, TCHAR argv[]) {
 
 	if (hFile == INVALID_HANDLE_VALUE)
 	{
-		_tprintf(TEXT("Terminal failure: Unable to open file.\n"));
+		_tprintf(TEXT("\n[ERRO] Erro ao Abrir Ficheiro!\n"));
 		return -1;
 	}
 
@@ -35,7 +35,7 @@ int _tmain(int argc, TCHAR argv[]) {
 
 	if (map == NULL)
 	{
-		_tprintf(TEXT("Terminal failure: Unable to create file mapping.\n"));
+		_tprintf(TEXT("\n[ERRO] Erro ao criar FileMapping!\n"));
 		CloseHandle(hFile);
 		return -1;
 	}
@@ -43,18 +43,22 @@ int _tmain(int argc, TCHAR argv[]) {
 	pView = (MAPA*)MapViewOfFile(map, FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, 50 * 52);
 	if (pView == NULL)
 	{
-		_tprintf(TEXT("Terminal failure: MapViewOfFile.\n"));
+		_tprintf(TEXT("\n[ERRO] Erro em MapViewOfFile!\n"));
 		CloseHandle(hFile);
 		CloseHandle(map);
 		return -1;
 	}
 
-	for (int i = 0; i < 50 * 52; i++) {
-		aux = pView[i].caracter;
-		_tprintf(TEXT("%c"), aux);
+	while (1) {
+		for (int i = 0; i < 50 * 52; i++) {
+			aux = pView[i].caracter;
+			_tprintf(TEXT("%c"), aux);
+		}
+		system("cls");
+		Sleep(1000);
 	}
 
-	_tprintf(TEXT("\n\nCarregue numa tecla!\n"));
+	_tprintf(TEXT("\nPrima uma tecla...\n"));
 	_gettch();
 
 	UnmapViewOfFile(pView);
