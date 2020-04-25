@@ -352,7 +352,7 @@ DWORD WINAPI ThreadSaiuAdmin(LPVOID param) {
 			return 0;
 	}
 	WaitForSingleObject(hMutex, INFINITE);
-		
+
 	taxi->terminar = 1;
 
 	ReleaseMutex(hMutex);
