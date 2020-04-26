@@ -24,7 +24,7 @@ typedef struct {
 #define PATH TEXT("..\\mapa.txt")
 
 HANDLE EspMapa;	//FileMapping
-MAPA* shared;
+char* shared;
 HANDLE enviaMap;
 HANDLE hFile, map;
 HANDLE hMutex;
@@ -69,14 +69,16 @@ int _tmain(int argc, TCHAR argv[]) {
 		return -1;
 	}
 
-	EspMapa = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(MAPA), SHM_NAME);
+	leFicheiro(&dados);
+
+	EspMapa = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(char) * 50 * 52, SHM_NAME);
 	if (EspMapa == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro ao criar FileMapping!\n"));
 		return -1;
 	}
 
-	shared = (MAPA*)MapViewOfFile(EspMapa, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(MAPA));
+	shared = (char*)MapViewOfFile(EspMapa, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(char) * 50 * 52);
 	if (shared == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro em MapViewOfFile!\n"));
@@ -84,7 +86,6 @@ int _tmain(int argc, TCHAR argv[]) {
 		return -1;
 	}
 
-	leFicheiro(&dados);
 	enviaMapa(&dados);
 	ReleaseMutex(hMutex);
 
@@ -163,7 +164,7 @@ void enviaMapa(DADOS* dados) {
 		return;
 	}
 
-	CopyMemory(shared, &dados->mapa, sizeof(MAPA));
+	CopyMemory(shared, dados->pView, sizeof(char) * 50 * 52);
 
 	SetEvent(enviaMap);
 	Sleep(500);

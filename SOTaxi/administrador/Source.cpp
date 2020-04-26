@@ -69,7 +69,7 @@ typedef struct {
 
 	MAPA mapa[TAM][TAM];
 	HANDLE EspMapa;	//FileMapping
-	MAPA* sharedMapa;
+	char* sharedMapa;
 	HANDLE recebeMap;
 
 	int terminar;
@@ -259,14 +259,15 @@ void listarPassageiros(DADOS* dados) {
 }
 
 void recebeMapa(DADOS* dados) {
-	dados->EspMapa = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(MAPA), SHM_MAPA);
+	char* aux = (char*)malloc(sizeof(char) * 50 * 52);
+	dados->EspMapa = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(char) * 50 * 52, SHM_MAPA);
 	if (dados->EspMapa == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro ao criar FileMapping!\n"));
 		return;
 	}
 
-	dados->sharedMapa = (MAPA*)MapViewOfFile(dados->EspMapa, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(MAPA));
+	dados->sharedMapa = (char*)MapViewOfFile(dados->EspMapa, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(char) * 50 * 52);
 	if (dados->sharedMapa == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro em MapViewOfFile!\n"));
@@ -286,7 +287,20 @@ void recebeMapa(DADOS* dados) {
 
 	WaitForSingleObject(dados->hMutexDados, INFINITE);
 
-	CopyMemory(&dados->mapa, dados->sharedMapa, sizeof(MAPA));								//NÃO RECEBE BEM OS VALORES 
+	CopyMemory(aux, dados->sharedMapa, sizeof(char) * 50 * 52);								//NÃO RECEBE BEM OS VALORES 
+	int x = 0, y = 0;
+	for (int i = 0; i < 50 * 52; i++) {
+		if (aux[i] == '\n') {
+			x = 0;
+			y++;
+		}
+		else {
+			x++;
+		}
+		if (aux[i] != '\n') {
+			dados->mapa[y][x].caracter = aux[i];
+		}
+	}
 	_tprintf(TEXT("\n[MAPA] Mapa lido com sucesso!\n"));
 	for (int x = 0; x < 50; x++) {
 		for (int y = 0; y < 51; y++)
