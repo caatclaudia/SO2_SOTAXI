@@ -33,7 +33,7 @@ typedef struct {
 	int interessado;
 	int terminar;
 } TAXI;
-HANDLE hMutex;				//NAO DEVE SER PARTILHADO NA MEMORIA
+HANDLE hMutex;
 
 HANDLE EspTaxis;	//FileMapping
 TAXI* shared;

@@ -6,7 +6,7 @@
 #include <conio.h>
 #include <io.h>
 
-#define TAM 200
+#define TAM 50
 #define WAITTIMEOUT 1000
 #define SHM_NAME TEXT("EspacoMapa")
 #define EVENT_ENVIAMAP TEXT("MapaInicial")
@@ -75,14 +75,14 @@ int _tmain(int argc, TCHAR argv[]) {
 
 	leFicheiro(&dados);
 
-	EspMapa = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(char) * 50 * 52, SHM_NAME);
+	EspMapa = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(char) * TAM * TAM, SHM_NAME);
 	if (EspMapa == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro ao criar FileMapping!\n"));
 		return -1;
 	}
 
-	shared = (char*)MapViewOfFile(EspMapa, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(char) * 50 * 52);
+	shared = (char*)MapViewOfFile(EspMapa, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(char) * TAM * TAM);
 	if (shared == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro em MapViewOfFile!\n"));
@@ -130,7 +130,7 @@ int _tmain(int argc, TCHAR argv[]) {
 }
 
 void leFicheiro(DADOS* dados) {
-	dados->pView = (char*)MapViewOfFile(map, FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, 50 * 52);
+	dados->pView = (char*)MapViewOfFile(map, FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, TAM * TAM);
 	if (dados->pView == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro em MapViewOfFile!\n"));
@@ -140,10 +140,11 @@ void leFicheiro(DADOS* dados) {
 	}
 
 	char aux;
-	int x = -1, y = -1;
-	for (int i = 0; i < 50 * 52; i++) {
+	int x = 0, y = 0;
+	for (int i = 0; i < TAM * (TAM + 1); i++) {
 		aux = dados->pView[i];
 		_tprintf(TEXT("%c"), aux);
+		dados->mapa[y][x].caracter = aux;
 		if (aux == '\n') {
 			x = 0;
 			y++;
@@ -151,17 +152,14 @@ void leFicheiro(DADOS* dados) {
 		else {
 			x++;
 		}
-		if (aux != '\n') {
-			dados->mapa[y][x].caracter = aux;
-		}
 	}
 
 	return;
 }
 
 void mostraMapa(DADOS* dados) {
-	for (int x = 0; x < 49; x++) {
-		for (int y = 0; y < 51; y++)
+	for (int x = 0; x < TAM - 1; x++) {
+		for (int y = 0; y < TAM; y++)
 			_tprintf(TEXT("%c"), dados->mapa[x][y].caracter);
 		_tprintf(TEXT("\n"));
 	}
@@ -225,9 +223,9 @@ DWORD WINAPI ThreadAtualizaMapa(LPVOID param) {
 
 		WaitForSingleObject(hMutex, INFINITE);
 
-		CopyMemory(dados->pView, shared, sizeof(char) * 50 * 52);
+		CopyMemory(dados->pView, shared, sizeof(char) * TAM * TAM);
 		int x = -1, y = -1;
-		for (int i = 0; i < 50 * 52; i++) {
+		for (int i = 0; i < TAM * TAM; i++) {
 			aux = dados->pView[i];
 			if (aux == '\n') {
 				x = 0;

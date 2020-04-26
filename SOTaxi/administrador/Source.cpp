@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define TAM 200
+#define TAM 50
 #define MAXTAXIS 10
 #define MAXPASS 10
 #define TempoManifestacoes 5
@@ -266,14 +266,14 @@ void listarPassageiros(DADOS* dados) {
 }
 
 void recebeMapa(DADOS* dados) {
-	dados->EspMapa = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(char) * 50 * 52, SHM_MAPA);
+	dados->EspMapa = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(char) * TAM * TAM, SHM_MAPA);
 	if (dados->EspMapa == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro ao criar FileMapping!\n"));
 		return;
 	}
 
-	dados->sharedMapa = (char*)MapViewOfFile(dados->EspMapa, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(char) * 50 * 52);
+	dados->sharedMapa = (char*)MapViewOfFile(dados->EspMapa, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(char) * TAM * TAM);
 	if (dados->sharedMapa == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro em MapViewOfFile!\n"));
@@ -293,9 +293,10 @@ void recebeMapa(DADOS* dados) {
 
 	WaitForSingleObject(dados->hMutexDados, INFINITE);
 
-	CopyMemory(aux, dados->sharedMapa, sizeof(char) * 50 * 52);								//NÃO RECEBE BEM OS VALORES 
+	CopyMemory(aux, dados->sharedMapa, sizeof(char) * 50 * 52);
 	int x = 0, y = 0;
-	for (int i = 0; i < 50 * 52; i++) {
+	for (int i = 0; i < TAM * (TAM + 1); i++) {
+		dados->mapa[y][x].caracter = aux[i];
 		if (aux[i] == '\n') {
 			x = 0;
 			y++;
@@ -303,13 +304,10 @@ void recebeMapa(DADOS* dados) {
 		else {
 			x++;
 		}
-		if (aux[i] != '\n') {
-			dados->mapa[y][x].caracter = aux[i];
-		}
 	}
 	_tprintf(TEXT("\n[MAPA] Mapa lido com sucesso!\n"));
-	for (int x = 0; x < 50; x++) {
-		for (int y = 0; y < 51; y++)
+	for (int x = 0; x < TAM - 1; x++) {
+		for (int y = 0; y < TAM; y++)
 			_tprintf(TEXT("%c"), dados->mapa[x][y].caracter);
 		_tprintf(TEXT("\n"));
 	}
@@ -378,7 +376,6 @@ DWORD WINAPI ThreadNovoTaxi(LPVOID param) {		//VERIFICA SE HA NOVOS TAXIS
 		WaitForSingleObject(dados->hMutexDados, INFINITE);
 
 		CopyMemory(&novo, dados->sharedTaxi, sizeof(TAXI));
-		//adicionaTaxi(dados, novo);
 		if (adicionaTaxi(dados, novo)) {
 			_tprintf(TEXT("Novo Taxi: %s\n"), dados->taxis[dados->nTaxis - 1].matricula);
 			CopyMemory(dados->sharedTaxi, &dados->taxis[dados->nTaxis - 1], sizeof(TAXI));
@@ -446,17 +443,21 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 			}
 
 		int x = 0, y = 0;
-		for (int i = 0; i < 50 * 52; i++) {
-			aux[i] = dados->mapa[x][y].caracter;
-			if (aux[i] == '\n') {
+		for (int i = 0; i < TAM * (TAM + 1); i++) {
+			if (y == (TAM - 1)) {
+				aux[i] = '\r';
+				i++;
+				aux[i] = '\n';
+				i++;
 				y = 0;
 				x++;
 			}
 			else {
 				y++;
 			}
+			aux[i] = dados->mapa[x][y].caracter;
 		}
-		CopyMemory(dados->sharedMapa, aux, sizeof(char) * 50 * 52);				//ESTA A MANDAR A PRIMEIRA LINHA TODA, OU SEJA VAI COM A PRIMEIRA LINHA + 'IIII'
+		CopyMemory(dados->sharedMapa, aux, sizeof(char) * TAM * TAM);
 		_tprintf(TEXT("\n[MAPA] Mapa atualizado com sucesso!\n"));
 
 		ReleaseMutex(dados->hMutexDados);
