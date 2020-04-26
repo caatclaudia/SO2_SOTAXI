@@ -93,7 +93,8 @@ int _tmain() {
 		ghEvents[1] = hThreadMovimentaTaxi;
 		ghEvents[2] = hThreadSaiuAdmin;
 		//ghEvents[3] = hThreadRespostaTransporte;
-		WaitForMultipleObjects(3, ghEvents, TRUE, INFINITE);
+		WaitForMultipleObjects(3, ghEvents, FALSE, INFINITE);
+		TerminateThread(hThreadSaiuAdmin, 0);
 	}
 
 	_tprintf(TEXT("\nTaxi a sair!"));
@@ -346,11 +347,8 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {	//MANDA TAXI AO ADMIN
 DWORD WINAPI ThreadSaiuAdmin(LPVOID param) {
 	TAXI* taxi = ((TAXI*)param);
 
-	while (1) {
-		WaitForSingleObject(saiuAdmin, WAITTIMEOUT);
-		if (taxi->terminar)
-			return 0;
-	}
+	WaitForSingleObject(saiuAdmin, INFINITE);
+
 	WaitForSingleObject(hMutex, INFINITE);
 
 	taxi->terminar = 1;

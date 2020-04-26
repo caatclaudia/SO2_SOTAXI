@@ -7,8 +7,10 @@
 #include <io.h>
 
 #define TAM 200
+#define WAITTIMEOUT 1000
 #define SHM_NAME TEXT("EspacoMapa")
 #define EVENT_ENVIAMAP TEXT("MapaInicial")
+#define EVENT_ATUALIZAMAP TEXT("AtualizaMapa")
 #define NOME_MUTEXMAPA TEXT("MutexMapa")
 
 typedef struct {
@@ -26,17 +28,19 @@ typedef struct {
 HANDLE EspMapa;	//FileMapping
 char* shared;
 HANDLE enviaMap;
+HANDLE atualizaMap;
 HANDLE hFile, map;
 HANDLE hMutex;
 
 DWORD WINAPI ThreadPrincipal(LPVOID param);
+DWORD WINAPI ThreadAtualizaMapa(LPVOID param);
 DWORD WINAPI ThreadSair(LPVOID param);
 void enviaMapa(DADOS* dados);
 void leFicheiro(DADOS* dados);
 void mostraMapa(DADOS* dados);
 
 int _tmain(int argc, TCHAR argv[]) {
-	HANDLE hThreadSair, hThreadPrincipal;
+	HANDLE hThreadSair, hThreadPrincipal, hThreadAtualizaMapa;
 	DADOS dados;
 	TCHAR nome[100] = PATH;
 	int x = 0, y = 0;
@@ -95,16 +99,24 @@ int _tmain(int argc, TCHAR argv[]) {
 		return 0;
 	}
 
+	hThreadAtualizaMapa = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadAtualizaMapa, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
+	if (hThreadAtualizaMapa == NULL) {
+		_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
+		return 0;
+	}
+
 	hThreadSair = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadSair, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
 	if (hThreadSair == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
 		return 0;
 	}
 
-	HANDLE ghEvents[2];
+	HANDLE ghEvents[3];
 	ghEvents[0] = hThreadPrincipal;
-	ghEvents[1] = hThreadSair;
-	WaitForMultipleObjects(2, ghEvents, TRUE, INFINITE);
+	ghEvents[1] = hThreadAtualizaMapa;
+	ghEvents[2] = hThreadSair;
+	WaitForMultipleObjects(3, ghEvents, TRUE, INFINITE);
+	TerminateThread(hThreadAtualizaMapa, 0);
 
 
 	_tprintf(TEXT("\nPrima uma tecla...\n"));
@@ -128,7 +140,7 @@ void leFicheiro(DADOS* dados) {
 	}
 
 	char aux;
-	int x = 0, y = 0;
+	int x = -1, y = -1;
 	for (int i = 0; i < 50 * 52; i++) {
 		aux = dados->pView[i];
 		_tprintf(TEXT("%c"), aux);
@@ -148,7 +160,7 @@ void leFicheiro(DADOS* dados) {
 }
 
 void mostraMapa(DADOS* dados) {
-	for (int x = 0; x < 50; x++) {
+	for (int x = 0; x < 49; x++) {
 		for (int y = 0; y < 51; y++)
 			_tprintf(TEXT("%c"), dados->mapa[x][y].caracter);
 		_tprintf(TEXT("\n"));
@@ -188,6 +200,54 @@ DWORD WINAPI ThreadPrincipal(LPVOID param) {
 	}
 
 	Sleep(500);
+
+	ExitThread(0);
+}
+
+DWORD WINAPI ThreadAtualizaMapa(LPVOID param) {
+	DADOS* dados = ((DADOS*)param);
+	char aux;
+
+	atualizaMap = CreateEvent(NULL, TRUE, FALSE, EVENT_ATUALIZAMAP);
+	if (atualizaMap == NULL) {
+		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
+		return 0;
+	}
+	SetEvent(atualizaMap);
+	Sleep(500);
+	ResetEvent(atualizaMap);
+
+	while (1) {
+		WaitForSingleObject(atualizaMap, INFINITE);
+
+		if (dados->terminar)
+			return 0;
+
+		WaitForSingleObject(hMutex, INFINITE);
+
+		CopyMemory(dados->pView, shared, sizeof(char) * 50 * 52);
+		int x = -1, y = -1;
+		for (int i = 0; i < 50 * 52; i++) {
+			aux = dados->pView[i];
+			if (aux == '\n') {
+				x = 0;
+				y++;
+			}
+			else {
+				x++;
+			}
+			if (aux != '\n') {
+				dados->mapa[y][x].caracter = aux;
+			}
+		}
+
+		ReleaseMutex(hMutex);
+
+		Sleep(3000);
+	}
+
+	Sleep(500);
+
 
 	ExitThread(0);
 }

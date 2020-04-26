@@ -21,6 +21,7 @@
 
 #define SHM_MAPA TEXT("EspacoMapa")
 #define EVENT_RECEBEMAP TEXT("MapaInicial")
+#define EVENT_ATUALIZAMAP TEXT("AtualizaMapa")
 #define NOME_MUTEX_MAPA TEXT("MutexMapa")
 
 //CenTaxi
@@ -71,6 +72,7 @@ typedef struct {
 	HANDLE EspMapa;	//FileMapping
 	char* sharedMapa;
 	HANDLE recebeMap;
+	HANDLE atualizaMap;
 
 	int terminar;
 	HANDLE saiuAdmin;
@@ -90,6 +92,8 @@ DWORD WINAPI ThreadNovoTaxi(LPVOID param);
 DWORD WINAPI ThreadSaiuTaxi(LPVOID param);
 DWORD WINAPI ThreadMovimento(LPVOID param);
 DWORD WINAPI ThreadNovoPassageiro(LPVOID param);
+
+char* aux = (char*)malloc(sizeof(char) * 50 * 52);
 
 
 int _tmain(int argc, LPTSTR argv[]) {
@@ -199,7 +203,10 @@ int _tmain(int argc, LPTSTR argv[]) {
 	ghEvents[2] = hThreadSaiuTaxi;
 	ghEvents[3] = hThreadMovimento;
 	//ghEvents[2] = hThreadNovoPassageiro;
-	WaitForMultipleObjects(4, ghEvents, TRUE, INFINITE);
+	WaitForMultipleObjects(4, ghEvents, FALSE, INFINITE);
+	TerminateThread(hThreadNovoTaxi, 0);
+	TerminateThread(hThreadSaiuTaxi, 0);
+	TerminateThread(hThreadMovimento, 0);
 
 	WaitForSingleObject(dados.hMutexDados, INFINITE);
 
@@ -259,7 +266,6 @@ void listarPassageiros(DADOS* dados) {
 }
 
 void recebeMapa(DADOS* dados) {
-	char* aux = (char*)malloc(sizeof(char) * 50 * 52);
 	dados->EspMapa = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(char) * 50 * 52, SHM_MAPA);
 	if (dados->EspMapa == NULL)
 	{
@@ -365,11 +371,7 @@ DWORD WINAPI ThreadNovoTaxi(LPVOID param) {		//VERIFICA SE HA NOVOS TAXIS
 	TAXI novo;
 
 	while (1) {
-		while (1) {
-			WaitForSingleObject(dados->novoTaxi, WAITTIMEOUT);
-			if (dados->terminar)
-				return 0;
-		}
+		WaitForSingleObject(dados->novoTaxi, INFINITE);
 
 		if (dados->terminar)
 			return 0;
@@ -402,11 +404,7 @@ DWORD WINAPI ThreadSaiuTaxi(LPVOID param) {		//VERIFICA SE SAIRAM TAXIS
 	TAXI novo;
 
 	while (1) {
-		while (1) {
-			WaitForSingleObject(dados->saiuTaxi, WAITTIMEOUT);
-			if (dados->terminar)
-				return 0;
-		}
+		WaitForSingleObject(dados->saiuTaxi, INFINITE);
 
 		if (dados->terminar)
 			return 0;
@@ -427,12 +425,14 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 	DADOS* dados = ((DADOS*)param);
 	TAXI novo;
 
+	dados->atualizaMap = CreateEvent(NULL, TRUE, FALSE, EVENT_ATUALIZAMAP);
+	if (dados->atualizaMap == NULL) {
+		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
+		return 0;
+	}
+
 	while (1) {
-		while (1) {
-			WaitForSingleObject(dados->movimentoTaxi, WAITTIMEOUT);
-			if (dados->terminar)
-				return 0;
-		}
+		WaitForSingleObject(dados->movimentoTaxi, INFINITE);
 
 		if (dados->terminar)
 			return 0;
@@ -445,7 +445,25 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 				_tprintf(_T("\n[MOVIMENTO] Taxi %s -> (%d,%d)"), novo.matricula, novo.X, novo.Y);
 			}
 
+		int x = 0, y = 0;
+		for (int i = 0; i < 50 * 52; i++) {
+			aux[i] = dados->mapa[x][y].caracter;
+			if (aux[i] == '\n') {
+				y = 0;
+				x++;
+			}
+			else {
+				y++;
+			}
+		}
+		CopyMemory(dados->sharedMapa, aux, sizeof(char) * 50 * 52);				//ESTA A MANDAR A PRIMEIRA LINHA TODA, OU SEJA VAI COM A PRIMEIRA LINHA + 'IIII'
+		_tprintf(TEXT("\n[MAPA] Mapa atualizado com sucesso!\n"));
+
 		ReleaseMutex(dados->hMutexDados);
+
+		SetEvent(dados->atualizaMap);
+		Sleep(500);
+		ResetEvent(dados->atualizaMap);
 
 		Sleep(1000);
 	}
