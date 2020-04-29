@@ -32,12 +32,13 @@ HANDLE atualizaMap;
 HANDLE hFile, map;
 HANDLE hMutex;
 
-DWORD WINAPI ThreadPrincipal(LPVOID param);
-DWORD WINAPI ThreadAtualizaMapa(LPVOID param);
-DWORD WINAPI ThreadSair(LPVOID param);
+void inicializaVariaveis();
 void enviaMapa(DADOS* dados);
 void leFicheiro(DADOS* dados);
 void mostraMapa(DADOS* dados);
+DWORD WINAPI ThreadPrincipal(LPVOID param);
+DWORD WINAPI ThreadAtualizaMapa(LPVOID param);
+DWORD WINAPI ThreadSair(LPVOID param);
 
 int _tmain(int argc, TCHAR argv[]) {
 	HANDLE hThreadSair, hThreadPrincipal, hThreadAtualizaMapa;
@@ -50,6 +51,8 @@ int _tmain(int argc, TCHAR argv[]) {
 	_setmode(_fileno(stdin), _O_WTEXT);
 	_setmode(_fileno(stdout), _O_WTEXT);
 #endif
+
+	inicializaVariaveis();
 
 	hMutex = CreateMutex(NULL, FALSE, NOME_MUTEXMAPA);
 	if (hMutex == NULL) {
@@ -127,6 +130,77 @@ int _tmain(int argc, TCHAR argv[]) {
 	CloseHandle(map);
 
 	return 0;
+}
+
+void inicializaVariaveis() {
+	HKEY chave;
+	DWORD queAconteceu, tamanho, opcao;
+	TCHAR str[TAM], op;
+
+	//Criar/abrir uma chave em HKEY_CURRENT_USER\Software\MinhaAplicacao
+	if (RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("Software\\Mapa"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &chave, &queAconteceu) != ERROR_SUCCESS) {
+		_tprintf(TEXT("[ERRO] Erro ao criar/abrir chave (%d)\n"), GetLastError());
+		return;
+	}
+	else {
+		//Se a chave foi criada, inicializar os valores
+		if (queAconteceu == REG_CREATED_NEW_KEY) {
+			_tprintf(TEXT("[DETALHES] Chave: HKEY_CURRENT_USER\\Software\\Mapa\n"));
+			//Criar valor "TaxiOcupado"
+			RegSetValueEx(chave, TEXT("TaxiOcupado"), 0, REG_SZ, (LPBYTE)TEXT("Vermelho"), _tcslen(TEXT("Vermelho")) * sizeof(TCHAR));
+			//Criar valor "TaxiLivre"
+			RegSetValueEx(chave, TEXT("TaxiLivre"), 0, REG_SZ, (LPBYTE)TEXT("Verde"), _tcslen(TEXT("Verde")) * sizeof(TCHAR));
+			//Criar valor "TaxiBuscarPassageiro"
+			RegSetValueEx(chave, TEXT("TaxiBuscarPassageiro"), 0, REG_SZ, (LPBYTE)TEXT("Laranja"), _tcslen(TEXT("Laranja")) * sizeof(TCHAR));
+			_tprintf(TEXT("[DETALHES] Valores TaxiOcupado, TaxiLivre e TaxiBuscarPassageiro guardados\n"));
+		}
+		//Se a chave foi aberta, ler os valores lá guardados
+		else if (queAconteceu == REG_OPENED_EXISTING_KEY) {
+			_tprintf(TEXT("Chave: HKEY_CURRENT_USER\\Software\\Mapa\n"));
+			tamanho = TAM;
+			RegQueryValueEx(chave, TEXT("TaxiOcupado"), NULL, NULL, (LPBYTE)str, &tamanho);
+			str[tamanho / sizeof(TCHAR)] = '\0';
+			_tprintf(TEXT("[DETALHES] TaxiOcupado: %s\n"), str);
+			RegQueryValueEx(chave, TEXT("TaxiLivre"), NULL, NULL, (LPBYTE)str, &tamanho);
+			str[tamanho / sizeof(TCHAR)] = '\0';
+			_tprintf(TEXT("[DETALHES] TaxiLivre: %s\n"), str);
+			RegQueryValueEx(chave, TEXT("TaxiBuscarPassageiro"), NULL, NULL, (LPBYTE)str, &tamanho);
+			str[tamanho / sizeof(TCHAR)] = '\0';
+			_tprintf(TEXT("[DETALHES] TaxiBuscarPassageiro: %s\n"), str);
+		}
+		do {
+			_tprintf(TEXT("\n[DETALHES] Deseja alterar algum destes valores (s/n)? "));
+			_tscanf_s(_T("%c"), &op);
+		} while (op != 's' && op != 'n');
+		if (op == 's') {
+			do {
+				_tprintf(TEXT("\n[DETALHES] 1- Valor TaxiOcupado"));
+				_tprintf(TEXT("\n[DETALHES] 2- Valor TaxiLivre"));
+				_tprintf(TEXT("\n[DETALHES] 3- Valor TaxiBuscarPassageiro"));
+				_tprintf(TEXT("\n[DETALHES] 4- Voltar"));
+				_tscanf_s(_T("%d"), &opcao);
+				if (opcao == 1) {
+					_tprintf(TEXT("\n[DETALHES] Valor TaxiOcupado: "));
+					_tscanf_s(_T("%s"), str, sizeof(str));
+					RegSetValueEx(chave, TEXT("TaxiOcupado"), 0, REG_SZ, (LPBYTE)str, _tcslen(str) * sizeof(TCHAR));
+				}
+				else if (opcao == 2) {
+					_tprintf(TEXT("\n[DETALHES] Valor TaxiLivre: "));
+					_tscanf_s(_T("%s"), str, sizeof(str));
+					RegSetValueEx(chave, TEXT("TaxiLivre"), 0, REG_SZ, (LPBYTE)str, _tcslen(str) * sizeof(TCHAR));
+				}
+				else if (opcao == 3) {
+					_tprintf(TEXT("\n[DETALHES] Valor TaxiBuscarPassageiro: "));
+					_tscanf_s(_T("%s"), str, sizeof(str));
+					RegSetValueEx(chave, TEXT("TaxiBuscarPassageiro"), 0, REG_SZ, (LPBYTE)str, _tcslen(str) * sizeof(TCHAR));
+				}
+			} while (opcao!=4);
+		}
+		
+		RegCloseKey(chave);
+	}
+
+	return;
 }
 
 void leFicheiro(DADOS* dados) {
