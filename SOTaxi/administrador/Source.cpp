@@ -24,6 +24,9 @@
 #define EVENT_ATUALIZAMAP TEXT("AtualizaMapa")
 #define NOME_MUTEX_MAPA TEXT("MutexMapa")
 
+#define SEMAPHORE_NAME TEXT("SEMAPHORE")
+HANDLE Semaphore;
+
 //CenTaxi
 //1 instancia
 //le o mapa e gere-o
@@ -109,6 +112,15 @@ int _tmain(int argc, LPTSTR argv[]) {
 	_setmode(_fileno(stdin), _O_WTEXT);
 	_setmode(_fileno(stdout), _O_WTEXT);
 #endif
+
+	Semaphore = CreateSemaphore(NULL, 1, 1, SEMAPHORE_NAME);
+	if (Semaphore == NULL) {
+		_tprintf(TEXT("CreateSemaphore failed.\n"));
+		return FALSE;
+	}
+	_tprintf(TEXT("\nAinda não tenho autorização para entrar! Esperar...\n"));
+	WaitForSingleObject(Semaphore, INFINITE);
+	_tprintf(TEXT("\nEntrei!\n"));
 
 	dados.hMutexDados = CreateMutex(NULL, FALSE, TEXT("MutexDados"));
 	if (dados.hMutexDados == NULL) {
@@ -233,6 +245,11 @@ int _tmain(int argc, LPTSTR argv[]) {
 	CloseHandle(dados.movimentoTaxi);
 	CloseHandle(dados.respostaAdmin);
 	CloseHandle(dados.saiuAdmin);
+
+	ReleaseSemaphore(Semaphore, 1, NULL);
+
+	CloseHandle(Semaphore);
+
 	return 0;
 }
 

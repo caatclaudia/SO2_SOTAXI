@@ -8,6 +8,9 @@
 #define TAM 200
 #define MAX_PASS 20
 
+#define SEMAPHORE_NAME TEXT("SEMAPHORE")
+HANDLE Semaphore;
+
 //ConPass
 //1 instancia
 //Passageiros tem um id(assumir que já é unico)
@@ -44,6 +47,15 @@ int _tmain() {
 	_setmode(_fileno(stdout), _O_WTEXT);
 #endif
 
+	Semaphore = CreateSemaphore(NULL, 1, 1, SEMAPHORE_NAME);
+	if (Semaphore == NULL) {
+		_tprintf(TEXT("CreateSemaphore failed.\n"));
+		return FALSE;
+	}
+	_tprintf(TEXT("\nAinda não tenho autorização para entrar! Esperar...\n"));
+	WaitForSingleObject(Semaphore, INFINITE);
+	_tprintf(TEXT("\nEntrei!\n"));
+
 	hThreadComandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadComandos, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
 	if (hThreadComandos == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
@@ -69,6 +81,10 @@ int _tmain() {
 	_tprintf(TEXT("Passageiros vão sair!\n"));
 	_tprintf(TEXT("Prima uma tecla...\n"));
 	_gettch();
+
+	ReleaseSemaphore(Semaphore, 1, NULL);
+
+	CloseHandle(Semaphore);
 
 	return 0;
 }
