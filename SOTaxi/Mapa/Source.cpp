@@ -9,7 +9,6 @@
 #define TAM 50
 #define WAITTIMEOUT 1000
 #define SHM_NAME TEXT("EspacoMapa")
-#define EVENT_ENVIAMAP TEXT("MapaInicial")
 #define EVENT_ATUALIZAMAP TEXT("AtualizaMapa")
 #define NOME_MUTEXMAPA TEXT("MutexMapa")
 
@@ -19,7 +18,6 @@ typedef struct {
 
 typedef struct {
 	MAPA mapa[TAM][TAM];
-	char* pView = NULL;
 	int terminar;
 } DADOS;
 
@@ -27,14 +25,11 @@ typedef struct {
 
 HANDLE EspMapa;	//FileMapping
 char* shared;
-HANDLE enviaMap;
 HANDLE atualizaMap;
-HANDLE hFile, map;
 HANDLE hMutex;
 
 void inicializaVariaveis();
-void enviaMapa(DADOS* dados);
-void leFicheiro(DADOS* dados);
+void recebeMapa(DADOS* dados);
 void mostraMapa(DADOS* dados);
 DWORD WINAPI ThreadPrincipal(LPVOID param);
 DWORD WINAPI ThreadAtualizaMapa(LPVOID param);
@@ -60,23 +55,7 @@ int _tmain(int argc, TCHAR argv[]) {
 		return -1;
 	}
 	WaitForSingleObject(hMutex, INFINITE);
-
-	hFile = CreateFile(PATH, GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-	if (hFile == INVALID_HANDLE_VALUE)
-	{
-		_tprintf(TEXT("\n[ERRO] Erro ao Abrir Ficheiro!\n"));
-		return -1;
-	}
-
-	map = CreateFileMapping(hFile, NULL, PAGE_READWRITE, 0, 50 * 52, NULL);
-	if (map == NULL)
-	{
-		_tprintf(TEXT("\n[ERRO] Erro ao criar FileMapping!\n"));
-		CloseHandle(hFile);
-		return -1;
-	}
-
-	leFicheiro(&dados);
+	ReleaseMutex(hMutex);
 
 	EspMapa = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(char) * TAM * TAM, SHM_NAME);
 	if (EspMapa == NULL)
@@ -93,8 +72,7 @@ int _tmain(int argc, TCHAR argv[]) {
 		return -1;
 	}
 
-	enviaMapa(&dados);
-	ReleaseMutex(hMutex);
+	recebeMapa(&dados);
 
 	hThreadPrincipal = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadPrincipal, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
 	if (hThreadPrincipal == NULL) {
@@ -124,10 +102,6 @@ int _tmain(int argc, TCHAR argv[]) {
 
 	_tprintf(TEXT("\nPrima uma tecla...\n"));
 	_gettch();
-
-	UnmapViewOfFile(dados.pView);
-	CloseHandle(hFile);
-	CloseHandle(map);
 
 	return 0;
 }
@@ -178,6 +152,7 @@ void inicializaVariaveis() {
 				_tprintf(TEXT("\n[DETALHES] 2- Valor TaxiLivre"));
 				_tprintf(TEXT("\n[DETALHES] 3- Valor TaxiBuscarPassageiro"));
 				_tprintf(TEXT("\n[DETALHES] 4- Voltar"));
+				_tprintf(TEXT("\n[DETALHES] Opção: "));
 				_tscanf_s(_T("%d"), &opcao);
 				if (opcao == 1) {
 					_tprintf(TEXT("\n[DETALHES] Valor TaxiOcupado: "));
@@ -194,32 +169,23 @@ void inicializaVariaveis() {
 					_tscanf_s(_T("%s"), str, sizeof(str));
 					RegSetValueEx(chave, TEXT("TaxiBuscarPassageiro"), 0, REG_SZ, (LPBYTE)str, _tcslen(str) * sizeof(TCHAR));
 				}
-			} while (opcao!=4);
+			} while (opcao != 4);
 		}
-		
+
 		RegCloseKey(chave);
 	}
 
 	return;
 }
 
-void leFicheiro(DADOS* dados) {
-	dados->pView = (char*)MapViewOfFile(map, FILE_MAP_READ | FILE_MAP_WRITE, 0, 0, TAM * TAM);
-	if (dados->pView == NULL)
-	{
-		_tprintf(TEXT("\n[ERRO] Erro em MapViewOfFile!\n"));
-		CloseHandle(hFile);
-		CloseHandle(map);
-		return;
-	}
+void recebeMapa(DADOS* dados) {
+	char* aux = (char*)malloc(sizeof(char) * 50 * 52);
 
-	char aux;
+	CopyMemory(aux, shared, sizeof(char) * 50 * 52);
 	int x = 0, y = 0;
-	for (int i = 0; i < TAM * (TAM + 1); i++) {
-		aux = dados->pView[i];
-		_tprintf(TEXT("%c"), aux);
-		dados->mapa[y][x].caracter = aux;
-		if (aux == '\n') {
+	for (int i = 0; i < TAM * TAM; i++) {
+		dados->mapa[y][x].caracter = aux[i];
+		if (aux[i] == '\n') {
 			x = 0;
 			y++;
 		}
@@ -227,34 +193,20 @@ void leFicheiro(DADOS* dados) {
 			x++;
 		}
 	}
-
-	return;
-}
-
-void mostraMapa(DADOS* dados) {
+	_tprintf(TEXT("\n[MAPA] Mapa lido com sucesso!\n"));
 	for (int x = 0; x < TAM - 1; x++) {
 		for (int y = 0; y < TAM; y++)
 			_tprintf(TEXT("%c"), dados->mapa[x][y].caracter);
 		_tprintf(TEXT("\n"));
 	}
-
-	return;
 }
 
-void enviaMapa(DADOS* dados) {
-	enviaMap = CreateEvent(NULL, TRUE, FALSE, EVENT_ENVIAMAP);
-	if (enviaMap == NULL) {
-		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
-		return;
+void mostraMapa(DADOS* dados) {
+	for (int x = 0; x < TAM - 2; x++) {
+		for (int y = 0; y < TAM; y++)
+			_tprintf(TEXT("%c"), dados->mapa[x][y].caracter);
+		_tprintf(TEXT("\n"));
 	}
-
-	CopyMemory(shared, dados->pView, sizeof(char) * 50 * 52);
-
-	SetEvent(enviaMap);
-	Sleep(500);
-	ResetEvent(enviaMap);
-
-	Sleep(1000);
 
 	return;
 }
@@ -264,9 +216,7 @@ DWORD WINAPI ThreadPrincipal(LPVOID param) {
 
 	while (!dados->terminar) {
 		system("cls");
-		WaitForSingleObject(hMutex, INFINITE);
 		mostraMapa(dados);
-		ReleaseMutex(hMutex);
 
 		Sleep(3000);
 	}
@@ -278,7 +228,7 @@ DWORD WINAPI ThreadPrincipal(LPVOID param) {
 
 DWORD WINAPI ThreadAtualizaMapa(LPVOID param) {
 	DADOS* dados = ((DADOS*)param);
-	char aux;
+	char* aux = (char*)malloc(sizeof(char) * 50 * 52);
 
 	atualizaMap = CreateEvent(NULL, TRUE, FALSE, EVENT_ATUALIZAMAP);
 	if (atualizaMap == NULL) {
@@ -294,32 +244,25 @@ DWORD WINAPI ThreadAtualizaMapa(LPVOID param) {
 
 		if (dados->terminar)
 			return 0;
+		_tprintf(TEXT("\n[ATUALIZAÇÃO] Atualizei o Mapa!\n"));
 
-		WaitForSingleObject(hMutex, INFINITE);
-
-		CopyMemory(dados->pView, shared, sizeof(char) * TAM * TAM);
+		CopyMemory(aux, shared, sizeof(char) * TAM * TAM);
 		int x = -1, y = -1;
 		for (int i = 0; i < TAM * TAM; i++) {
-			aux = dados->pView[i];
-			if (aux == '\n') {
+			if (aux[i] == '\n') {
 				x = 0;
 				y++;
 			}
 			else {
 				x++;
 			}
-			if (aux != '\n') {
-				dados->mapa[y][x].caracter = aux;
+			if (aux[i] != '\n') {
+				dados->mapa[y][x].caracter = aux[i];
 			}
 		}
-
-		ReleaseMutex(hMutex);
-
 		Sleep(3000);
 	}
-
 	Sleep(500);
-
 
 	ExitThread(0);
 }

@@ -11,6 +11,8 @@
 #define TempoManifestacoes 5
 #define WAITTIMEOUT 1000
 
+#define PATH TEXT("..\\mapa.txt")
+
 #define SHM_TAXI TEXT("EspacoTaxis")
 #define NOME_MUTEX_TAXI TEXT("MutexTaxi")
 #define EVENT_NOVOT TEXT("NovoTaxi")
@@ -20,7 +22,6 @@
 #define EVENT_SAIUA TEXT("SaiuAdmin")
 
 #define SHM_MAPA TEXT("EspacoMapa")
-#define EVENT_RECEBEMAP TEXT("MapaInicial")
 #define EVENT_ATUALIZAMAP TEXT("AtualizaMapa")
 #define NOME_MUTEX_MAPA TEXT("MutexMapa")
 
@@ -75,9 +76,9 @@ typedef struct {
 	PASSAGEIRO passageiros[MAXPASS];
 
 	MAPA mapa[TAM][TAM];
+	HANDLE hFile;
 	HANDLE EspMapa;	//FileMapping
-	char* sharedMapa;
-	HANDLE recebeMap;
+	char* sharedMapa = NULL;
 	HANDLE atualizaMap;
 
 	int terminar;
@@ -88,7 +89,7 @@ typedef struct {
 void ajuda();
 void listarTaxis(DADOS* dados);
 void listarPassageiros(DADOS* dados);
-void recebeMapa(DADOS* dados);
+void leMapa(DADOS* dados);
 boolean adicionaTaxi(DADOS* dados, TAXI novo);
 boolean removeTaxi(DADOS* dados, TAXI novo);
 boolean adicionaPassageiro(DADOS* dados, PASSAGEIRO novo);
@@ -129,7 +130,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 	}
 	_tprintf(TEXT("\nAinda não tenho autorização para entrar! Esperar...\n"));
 	WaitForSingleObject(Semaphore, INFINITE);
-	_tprintf(TEXT("\nEntrei!\n"));
+	_tprintf(TEXT("\nEntrei!\n\n"));
 
 	dados.hMutexDados = CreateMutex(NULL, FALSE, TEXT("MutexDados"));
 	if (dados.hMutexDados == NULL) {
@@ -190,7 +191,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 		return 0;
 	}
 
-	recebeMapa(&dados);
+	leMapa(&dados);
 
 	hThreadComandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadComandos, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
 	if (hThreadComandos == NULL) {
@@ -292,8 +293,15 @@ void listarPassageiros(DADOS* dados) {
 	return;
 }
 
-void recebeMapa(DADOS* dados) {
-	dados->EspMapa = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(char) * TAM * TAM, SHM_MAPA);
+void leMapa(DADOS* dados) {
+	dados->hFile = CreateFile(PATH, GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (dados->hFile == INVALID_HANDLE_VALUE)
+	{
+		_tprintf(TEXT("\n[ERRO] Erro ao Abrir Ficheiro!\n"));
+		return;
+	}
+
+	dados->EspMapa = CreateFileMapping(dados->hFile, NULL, PAGE_READWRITE, 0, sizeof(char) * TAM * TAM, SHM_MAPA);
 	if (dados->EspMapa == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro ao criar FileMapping!\n"));
@@ -308,23 +316,13 @@ void recebeMapa(DADOS* dados) {
 		return;
 	}
 
-	dados->recebeMap = CreateEvent(NULL, TRUE, FALSE, EVENT_RECEBEMAP);
-	if (dados->recebeMap == NULL) {
-		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
-		return;
-	}
-	SetEvent(dados->recebeMap);
-	ResetEvent(dados->recebeMap);
-
-	WaitForSingleObject(dados->recebeMap, WAITTIMEOUT);
-
-	WaitForSingleObject(dados->hMutexDados, INFINITE);
-
-	CopyMemory(aux, dados->sharedMapa, sizeof(char) * 50 * 52);
+	char aux;
 	int x = 0, y = 0;
-	for (int i = 0; i < TAM * (TAM + 1); i++) {
-		dados->mapa[y][x].caracter = aux[i];
-		if (aux[i] == '\n') {
+	for (int i = 0; i < TAM * TAM; i++) {
+		aux = dados->sharedMapa[i];
+		_tprintf(TEXT("%c"), aux);
+		dados->mapa[y][x].caracter = aux;
+		if (aux == '\n') {
 			x = 0;
 			y++;
 		}
@@ -332,14 +330,7 @@ void recebeMapa(DADOS* dados) {
 			x++;
 		}
 	}
-	_tprintf(TEXT("\n[MAPA] Mapa lido com sucesso!\n"));
-	for (int x = 0; x < TAM - 1; x++) {
-		for (int y = 0; y < TAM; y++)
-			_tprintf(TEXT("%c"), dados->mapa[x][y].caracter);
-		_tprintf(TEXT("\n"));
-	}
 
-	ReleaseMutex(dados->hMutexDados);
 	Sleep(1000);
 
 	return;
@@ -350,7 +341,7 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 	DADOS* dados = ((DADOS*)param);
 
 	do {
-		_tprintf(_T("\n>>"));
+		_tprintf(_T("\n\n>>"));
 		_fgetts(op, TAM, stdin);
 		op[_tcslen(op) - 1] = '\0';
 		WaitForSingleObject(dados->hMutexDados, INFINITE);

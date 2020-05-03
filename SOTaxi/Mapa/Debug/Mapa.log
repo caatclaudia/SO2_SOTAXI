@@ -1,6 +1,6 @@
 ﻿  Source.cpp
-C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Mapa\Source.cpp(173,14): warning C4473: 'wscanf_s' : not enough arguments passed for format string
-C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Mapa\Source.cpp(173,14): message : placeholders and their parameters expect 2 variadic arguments, but 1 were provided
-C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Mapa\Source.cpp(173,14): message : the missing variadic argument 2 is required by format string '%c'
-C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Mapa\Source.cpp(173,14): message : this argument is used as a buffer size
+C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Mapa\Source.cpp(147,14): warning C4473: 'wscanf_s' : not enough arguments passed for format string
+C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Mapa\Source.cpp(147,14): message : placeholders and their parameters expect 2 variadic arguments, but 1 were provided
+C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Mapa\Source.cpp(147,14): message : the missing variadic argument 2 is required by format string '%c'
+C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Mapa\Source.cpp(147,14): message : this argument is used as a buffer size
   Mapa.vcxproj -> C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Debug\Mapa.exe
