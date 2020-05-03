@@ -303,39 +303,42 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {	//MANDA TAXI AO ADMIN
 		if (taxi->terminar)
 			return 0;
 		//MOVIMENTA
-		do {
-			val = rand() % 4;
-			switch (val) {
-			case 1:	//DIREITA
-				_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), taxi->X, taxi->Y, taxi->X++, taxi->Y);
-				valido = 1;
-				break;
-			case 2: //ESQUERDA
-				if (taxi->X > 0) {
-					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), taxi->X, taxi->Y, taxi->X--, taxi->Y);
+		if (taxi->velocidade != 0) {
+			do {
+				val = rand() % 4;
+				switch (val) {
+				case 1:	//DIREITA
+					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), taxi->X, taxi->Y, taxi->X++, taxi->Y);
 					valido = 1;
-				}
-				break;
-			case 3: //CIMA
-				if (taxi->Y > 0) {
-					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), taxi->X, taxi->Y, taxi->X, taxi->Y--);
+					break;
+				case 2: //ESQUERDA
+					if (taxi->X > 0) {
+						_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), taxi->X, taxi->Y, taxi->X--, taxi->Y);
+						valido = 1;
+					}
+					break;
+				case 3: //CIMA
+					if (taxi->Y > 0) {
+						_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), taxi->X, taxi->Y, taxi->X, taxi->Y--);
+						valido = 1;
+					}
+					break;
+				case 4: //BAIXO
+					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), taxi->X, taxi->Y, taxi->X, taxi->Y++);
 					valido = 1;
+					break;
 				}
-				break;
-			case 4: //BAIXO
-				_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), taxi->X, taxi->Y, taxi->X, taxi->Y++);
-				valido = 1;
-				break;
-			}
-		} while (!valido);
+			} while (!valido);
 
-		CopyMemory(shared, taxi, sizeof(TAXI));
+			CopyMemory(shared, taxi, sizeof(TAXI));
 
+
+			SetEvent(movimentoTaxi);
+			Sleep(500);
+			ResetEvent(movimentoTaxi);
+		}
+		
 		ReleaseMutex(hMutex);
-
-		SetEvent(movimentoTaxi);
-		Sleep(500);
-		ResetEvent(movimentoTaxi);
 
 		Sleep(1000);
 		//MANDA PARA ADMIN
@@ -344,7 +347,7 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {	//MANDA TAXI AO ADMIN
 	ExitThread(0);
 }
 
-DWORD WINAPI ThreadSaiuAdmin(LPVOID param) {
+DWORD WINAPI ThreadSaiuAdmin(LPVOID param) { //NAMED PIPES
 	TAXI* taxi = ((TAXI*)param);
 
 	WaitForSingleObject(saiuAdmin, INFINITE);

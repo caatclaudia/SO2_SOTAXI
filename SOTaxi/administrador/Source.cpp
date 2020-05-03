@@ -222,6 +222,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 
 	WaitForSingleObject(dados.hMutexDados, INFINITE);
 
+	//NAMED PIPES
 	for (int i = 0; i < dados.nTaxis; i++)
 		dados.taxis[i].terminar = 1;
 	for (int i = 0; i < dados.nPassageiros; i++)
