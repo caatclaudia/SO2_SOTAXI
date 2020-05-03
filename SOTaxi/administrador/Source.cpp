@@ -65,7 +65,7 @@ typedef struct {
 	HANDLE saiuTaxi;
 	HANDLE movimentoTaxi;
 	HANDLE respostaAdmin;
-	int respostaAuto;
+	int aceitacaoT;
 	int esperaManifestacoes;
 
 	int nPassageiros;
@@ -105,7 +105,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 	dados.nTaxis = 0;
 	dados.nPassageiros = 0;
 	dados.terminar = 0;
-	dados.respostaAuto = 1;
+	dados.aceitacaoT = 1;
 	dados.esperaManifestacoes = TempoManifestacoes;
 
 #ifdef UNICODE
@@ -352,13 +352,13 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 			listarTaxis(dados);
 		}
 		else if (_tcscmp(op, TEXT("aceitacaoT"))) {		//PAUSAR/RECOMECAR ACEITAÇÃO DE TAXIS
-			if (dados->respostaAuto) {
-				dados->respostaAuto = 0;
-				_tprintf(_T("\n[COMANDO] Pausar aceitação automática de passageiros"));
+			if (dados->aceitacaoT) {
+				dados->aceitacaoT = 0;
+				_tprintf(_T("\n[COMANDO] Pausar aceitação de Taxis"));
 			}
 			else {
-				dados->respostaAuto = 1;
-				_tprintf(_T("\n[COMANDO] Recomeçar aceitação automática de passageiros"));
+				dados->aceitacaoT = 1;
+				_tprintf(_T("\n[COMANDO] Recomeçar aceitação de Taxis"));
 			}
 			//ENVIAR INFORMAÇÃO AOS TAXIS
 		}
@@ -497,6 +497,8 @@ DWORD WINAPI ThreadNovoPassageiro(LPVOID param) {		//VERIFICA SE HA NOVOS PASSAG
 }
 
 boolean adicionaTaxi(DADOS* dados, TAXI novo) {
+	if (!dados->aceitacaoT)
+		return FALSE;
 	if (dados->nTaxis >= MAXTAXIS)
 		return FALSE;
 	for (int i = 0; i < dados->nTaxis; i++)
