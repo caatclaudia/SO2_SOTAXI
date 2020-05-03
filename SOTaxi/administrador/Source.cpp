@@ -54,6 +54,9 @@ typedef struct {
 	int terminar;
 } TAXI;
 
+int MaxPass = MAXPASS;
+int MaxTaxi = MAXTAXIS;
+
 
 typedef struct {
 	int nTaxis;
@@ -107,6 +110,12 @@ int _tmain(int argc, LPTSTR argv[]) {
 	dados.terminar = 0;
 	dados.aceitacaoT = 1;
 	dados.esperaManifestacoes = TempoManifestacoes;
+
+	if (argc == 3) {
+		MaxPass = _wtoi(argv[1]);
+		MaxTaxi = _wtoi(argv[2]);
+	}
+	_tprintf(TEXT("\nMaxPass : %d\nMaxTaxis : %d\n"), MaxPass, MaxTaxi);
 
 #ifdef UNICODE
 	_setmode(_fileno(stdin), _O_WTEXT);
@@ -499,7 +508,7 @@ DWORD WINAPI ThreadNovoPassageiro(LPVOID param) {		//VERIFICA SE HA NOVOS PASSAG
 boolean adicionaTaxi(DADOS* dados, TAXI novo) {
 	if (!dados->aceitacaoT)
 		return FALSE;
-	if (dados->nTaxis >= MAXTAXIS)
+	if (dados->nTaxis >= MaxTaxi)
 		return FALSE;
 	for (int i = 0; i < dados->nTaxis; i++)
 		if (_tcscmp(novo.matricula, dados->taxis[i].matricula))
@@ -526,7 +535,7 @@ boolean removeTaxi(DADOS* dados, TAXI novo) {
 }
 
 boolean adicionaPassageiro(DADOS* dados, PASSAGEIRO novo) {
-	if (dados->nPassageiros >= MAXPASS)
+	if (dados->nPassageiros >= MaxPass)
 		return FALSE;
 
 	dados->passageiros[dados->nPassageiros] = novo;
