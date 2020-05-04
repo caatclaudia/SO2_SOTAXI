@@ -16,6 +16,7 @@ typedef struct {
 	unsigned int X, Y, Xfinal, Yfinal;
 	int movimento;
 	int terminar;
+	char id_mapa;
 } PASSAGEIRO;
 
 typedef struct {
@@ -98,6 +99,7 @@ void novoPassageiro(DADOS* dados) {
 	_tscanf_s(_T("%d"), &dados->passageiros[dados->nPassageiros].Yfinal);
 	dados->passageiros[dados->nPassageiros].movimento = 0;
 	dados->passageiros[dados->nPassageiros].terminar = 0;
+	dados->passageiros[dados->nPassageiros].id_mapa = TEXT('.');
 
 	//VAI AO ADMIN VER SE PODE CRIAR
 

@@ -27,6 +27,7 @@ typedef struct {
 	int autoResposta;
 	int interessado;
 	int terminar;
+	int id_mapa;
 } TAXI;
 HANDLE hMutex;
 
@@ -146,6 +147,7 @@ void inicializaTaxi(TAXI* taxi) {
 	taxi->terminar = 0;
 	taxi->Xfinal = 0;
 	taxi->Yfinal = 0;
+	taxi->id_mapa = 0;
 
 	novoTaxi = CreateEvent(NULL, TRUE, FALSE, EVENT_NOVOT);
 	if (novoTaxi == NULL) {
@@ -317,6 +319,7 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {	//MANDA TAXI AO ADMIN
 		if (taxi->terminar)
 			return 0;
 		//MOVIMENTA
+		//SEM PASSAGEIRO -> DESLOCA-SE PARA A FRENTE ATE CHEGAR A CRUZAMENTO -------------- FAZER
 		if (taxi->velocidade != 0) {
 			do {
 				val = rand() % 4;

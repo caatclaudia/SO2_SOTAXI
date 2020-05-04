@@ -31,12 +31,11 @@ HANDLE hMutex;
 void inicializaVariaveis();
 void recebeMapa(DADOS* dados);
 void mostraMapa(DADOS* dados);
-DWORD WINAPI ThreadPrincipal(LPVOID param);
 DWORD WINAPI ThreadAtualizaMapa(LPVOID param);
 DWORD WINAPI ThreadSair(LPVOID param);
 
 int _tmain(int argc, TCHAR argv[]) {
-	HANDLE hThreadSair, hThreadPrincipal, hThreadAtualizaMapa;
+	HANDLE hThreadSair, hThreadAtualizaMapa;
 	DADOS dados;
 	TCHAR nome[100] = PATH;
 	int x = 0, y = 0;
@@ -57,14 +56,14 @@ int _tmain(int argc, TCHAR argv[]) {
 	WaitForSingleObject(hMutex, INFINITE);
 	ReleaseMutex(hMutex);
 
-	EspMapa = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(char) * TAM * TAM, SHM_NAME);
+	EspMapa = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(char) * TAM * 51, SHM_NAME);
 	if (EspMapa == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro ao criar FileMapping!\n"));
 		return -1;
 	}
 
-	shared = (char*)MapViewOfFile(EspMapa, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(char) * TAM * TAM);
+	shared = (char*)MapViewOfFile(EspMapa, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(char) * TAM * 51);
 	if (shared == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro em MapViewOfFile!\n"));
@@ -73,12 +72,6 @@ int _tmain(int argc, TCHAR argv[]) {
 	}
 
 	recebeMapa(&dados);
-
-	hThreadPrincipal = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadPrincipal, (LPVOID)&dados, 0, NULL);
-	if (hThreadPrincipal == NULL) {
-		_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
-		return 0;
-	}
 
 	hThreadAtualizaMapa = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadAtualizaMapa, (LPVOID)&dados, 0, NULL);
 	if (hThreadAtualizaMapa == NULL) {
@@ -92,11 +85,11 @@ int _tmain(int argc, TCHAR argv[]) {
 		return 0;
 	}
 
-	HANDLE ghEvents[3];
-	ghEvents[0] = hThreadPrincipal;
-	ghEvents[1] = hThreadAtualizaMapa;
-	ghEvents[2] = hThreadSair;
-	WaitForMultipleObjects(3, ghEvents, TRUE, INFINITE);
+	HANDLE ghEvents[2];
+	ghEvents[0] = hThreadAtualizaMapa;
+	ghEvents[1] = hThreadSair;
+	WaitForMultipleObjects(2, ghEvents, TRUE, INFINITE);
+
 	TerminateThread(hThreadAtualizaMapa, 0);
 
 
@@ -181,9 +174,9 @@ void inicializaVariaveis() {
 }
 
 void recebeMapa(DADOS* dados) {
-	char* aux = (char*)malloc(sizeof(char) * 50 * 52);
+	char* aux = (char*)malloc(sizeof(char) * 50 * 51);
 
-	CopyMemory(aux, shared, sizeof(char) * 50 * 52);
+	CopyMemory(aux, shared, sizeof(char) * 50 * 51);
 	int x = 0, y = 0;
 	for (int i = 0; i < TAM * TAM; i++) {
 		dados->mapa[y][x].caracter = aux[i];
@@ -196,7 +189,7 @@ void recebeMapa(DADOS* dados) {
 		}
 	}
 	_tprintf(TEXT("\n[MAPA] Mapa lido com sucesso!\n"));
-	for (int x = 0; x < TAM - 1; x++) {
+	for (int x = 0; x < TAM - 2; x++) {
 		for (int y = 0; y < TAM; y++)
 			_tprintf(TEXT("%c"), dados->mapa[x][y].caracter);
 		_tprintf(TEXT("\n"));
@@ -213,24 +206,9 @@ void mostraMapa(DADOS* dados) {
 	return;
 }
 
-DWORD WINAPI ThreadPrincipal(LPVOID param) {
-	DADOS* dados = ((DADOS*)param);
-
-	while (!dados->terminar) {
-		system("cls");
-		mostraMapa(dados);
-
-		Sleep(3000);
-	}
-
-	Sleep(500);
-
-	ExitThread(0);
-}
-
 DWORD WINAPI ThreadAtualizaMapa(LPVOID param) {
 	DADOS* dados = ((DADOS*)param);
-	char* aux = (char*)malloc(sizeof(char) * 50 * 52);
+	char* aux = (char*)malloc(sizeof(char) * 50 * 51);
 
 	atualizaMap = CreateEvent(NULL, TRUE, FALSE, EVENT_ATUALIZAMAP);
 	if (atualizaMap == NULL) {
@@ -246,11 +224,14 @@ DWORD WINAPI ThreadAtualizaMapa(LPVOID param) {
 
 		if (dados->terminar)
 			return 0;
+
+		system("cls");
 		_tprintf(TEXT("\n[ATUALIZAÇÃO] Atualizei o Mapa!\n"));
 
 		CopyMemory(aux, shared, sizeof(char) * TAM * TAM);
-		int x = -1, y = -1;
+		int x = 0, y = 0;
 		for (int i = 0; i < TAM * TAM; i++) {
+			dados->mapa[y][x].caracter = aux[i];
 			if (aux[i] == '\n') {
 				x = 0;
 				y++;
@@ -258,10 +239,8 @@ DWORD WINAPI ThreadAtualizaMapa(LPVOID param) {
 			else {
 				x++;
 			}
-			if (aux[i] != '\n') {
-				dados->mapa[y][x].caracter = aux[i];
-			}
 		}
+		mostraMapa(dados);
 		Sleep(3000);
 	}
 	Sleep(500);
