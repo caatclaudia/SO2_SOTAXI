@@ -74,19 +74,19 @@ int _tmain(int argc, TCHAR argv[]) {
 
 	recebeMapa(&dados);
 
-	hThreadPrincipal = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadPrincipal, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
+	hThreadPrincipal = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadPrincipal, (LPVOID)&dados, 0, NULL);
 	if (hThreadPrincipal == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
 		return 0;
 	}
 
-	hThreadAtualizaMapa = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadAtualizaMapa, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
+	hThreadAtualizaMapa = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadAtualizaMapa, (LPVOID)&dados, 0, NULL);
 	if (hThreadAtualizaMapa == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
 		return 0;
 	}
 
-	hThreadSair = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadSair, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
+	hThreadSair = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadSair, (LPVOID)&dados, 0, NULL);
 	if (hThreadSair == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
 		return 0;
@@ -103,6 +103,8 @@ int _tmain(int argc, TCHAR argv[]) {
 	_tprintf(TEXT("\nPrima uma tecla...\n"));
 	_gettch();
 
+	CloseHandle(EspMapa);
+	CloseHandle(atualizaMap);
 	return 0;
 }
 

@@ -18,11 +18,6 @@
 #define EVENT_RESPOSTA TEXT("RespostaDoAdmin")
 #define EVENT_SAIUA TEXT("SaiuAdmin")
 
-//ConTaxi
-//1 instancia por taxi
-//Movimenta taxi aleatoriamente
-//MOSTRA: NOVO PASSAGEIRO, INTERESSE EM TRANSPORTAR ENVIADO, CONFIRMACAO RECEBIDA, RECOLHA DE PASSAGEIRO INICIADA, PASSAGEIRO RECOLHIDO, PASSAGEIRO ENTREGUE
-
 typedef struct {
 	TCHAR matricula[7];
 	unsigned int X, Y, Xfinal, Yfinal;
@@ -67,22 +62,22 @@ int _tmain() {
 
 		//WaitForSingleObject(taxi.hMutex, INFINITE);
 
-		hThreadComandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadComandos, (LPVOID)&taxi, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
+		hThreadComandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadComandos, (LPVOID)&taxi, 0, NULL);
 		if (hThreadComandos == NULL) {
 			_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
 			return 0;
 		}
-		hThreadMovimentaTaxi = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadMovimentaTaxi, (LPVOID)&taxi, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
+		hThreadMovimentaTaxi = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadMovimentaTaxi, (LPVOID)&taxi, 0, NULL);
 		if (hThreadMovimentaTaxi == NULL) {
 			_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
 			return 0;
 		}
-		hThreadSaiuAdmin = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadSaiuAdmin, (LPVOID)&taxi, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
+		hThreadSaiuAdmin = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadSaiuAdmin, (LPVOID)&taxi, 0, NULL);
 		if (hThreadSaiuAdmin == NULL) {
 			_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
 			return 0;
 		}
-		//hThreadRespostaTransporte = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadRespostaTransporte, (LPVOID)&taxi, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
+		//hThreadRespostaTransporte = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadRespostaTransporte, (LPVOID)&taxi, 0, NULL);
 		//if (hThreadRespostaTransporte == NULL) {
 		//	_tprintf(TEXT("\nErro ao lançar Thread!\n"));
 		//	return 0;
@@ -161,18 +156,24 @@ void inicializaTaxi(TAXI* taxi) {
 	saiuTaxi = CreateEvent(NULL, TRUE, FALSE, EVENT_SAIUT);
 	if (saiuTaxi == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
+		CloseHandle(novoTaxi);
 		return;
 	}
 
 	movimentoTaxi = CreateEvent(NULL, TRUE, FALSE, EVENT_MOVIMENTO);
 	if (movimentoTaxi == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
+		CloseHandle(novoTaxi);
+		CloseHandle(saiuTaxi);
 		return;
 	}
 
 	respostaAdmin = CreateEvent(NULL, TRUE, FALSE, EVENT_RESPOSTA);
 	if (respostaAdmin == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
+		CloseHandle(novoTaxi);
+		CloseHandle(saiuTaxi);
+		CloseHandle(movimentoTaxi);
 		return;
 	}
 	SetEvent(respostaAdmin);
@@ -182,6 +183,10 @@ void inicializaTaxi(TAXI* taxi) {
 	saiuAdmin = CreateEvent(NULL, TRUE, FALSE, EVENT_SAIUA);
 	if (saiuAdmin == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
+		CloseHandle(novoTaxi);
+		CloseHandle(saiuTaxi);
+		CloseHandle(movimentoTaxi);
+		CloseHandle(respostaAdmin);
 		return;
 	}
 	SetEvent(saiuAdmin);
@@ -192,6 +197,11 @@ void inicializaTaxi(TAXI* taxi) {
 	if (EspTaxis == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro ao criar FileMapping!\n"));
+		CloseHandle(novoTaxi);
+		CloseHandle(saiuTaxi);
+		CloseHandle(movimentoTaxi);
+		CloseHandle(respostaAdmin);
+		CloseHandle(saiuAdmin);
 		return;
 	}
 
@@ -200,13 +210,17 @@ void inicializaTaxi(TAXI* taxi) {
 	{
 		_tprintf(TEXT("\n[ERRO] Erro em MapViewOfFile!\n"));
 		CloseHandle(EspTaxis);
+		CloseHandle(novoTaxi);
+		CloseHandle(saiuTaxi);
+		CloseHandle(movimentoTaxi);
+		CloseHandle(respostaAdmin);
+		CloseHandle(saiuAdmin);
 		return;
 	}
 
 	//VAI AO ADMIN VER SE PODE CRIAR	
 	CopyMemory(shared, taxi, sizeof(TAXI));
 	FlushViewOfFile(novoTaxi, 0);
-	//VERIFICAR QUE É UNICA
 
 	SetEvent(novoTaxi);
 	Sleep(500);
@@ -329,19 +343,17 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {	//MANDA TAXI AO ADMIN
 					break;
 				}
 			} while (!valido);
-
+			//MANDA PARA ADMIN
 			CopyMemory(shared, taxi, sizeof(TAXI));
-
 
 			SetEvent(movimentoTaxi);
 			Sleep(500);
 			ResetEvent(movimentoTaxi);
 		}
-		
+
 		ReleaseMutex(hMutex);
 
 		Sleep(1000);
-		//MANDA PARA ADMIN
 	} while (!taxi->terminar);
 
 	ExitThread(0);

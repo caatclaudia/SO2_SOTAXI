@@ -25,13 +25,9 @@
 #define EVENT_ATUALIZAMAP TEXT("AtualizaMapa")
 #define NOME_MUTEX_MAPA TEXT("MutexMapa")
 
-#define SEMAPHORE_NAME TEXT("SEMAPHORE")
+#define SEMAPHORE_NAME TEXT("SEMAPHORE_ADMIN")
 HANDLE Semaphore;
 
-//CenTaxi
-//1 instancia
-//le o mapa e gere-o
-//sabe dos taxis, posicoes e estado
 
 typedef struct {
 	char caracter;
@@ -57,7 +53,6 @@ typedef struct {
 
 int MaxPass = MAXPASS;
 int MaxTaxi = MAXTAXIS;
-
 
 typedef struct {
 	int nTaxis;
@@ -126,7 +121,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 	Semaphore = CreateSemaphore(NULL, 1, 1, SEMAPHORE_NAME);
 	if (Semaphore == NULL) {
 		_tprintf(TEXT("CreateSemaphore failed.\n"));
-		return FALSE;
+		return 0;
 	}
 	_tprintf(TEXT("\nAinda não tenho autorização para entrar! Esperar...\n"));
 	WaitForSingleObject(Semaphore, INFINITE);
@@ -135,6 +130,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 	dados.hMutexDados = CreateMutex(NULL, FALSE, TEXT("MutexDados"));
 	if (dados.hMutexDados == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao criar Mutex!\n"));
+		CloseHandle(Semaphore);
 		return 0;
 	}
 	WaitForSingleObject(dados.hMutexDados, INFINITE);
@@ -143,6 +139,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 	dados.novoTaxi = CreateEvent(NULL, TRUE, FALSE, EVENT_NOVOT);
 	if (dados.novoTaxi == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
+		CloseHandle(Semaphore);
 		return 0;
 	}
 	SetEvent(dados.novoTaxi);
@@ -151,6 +148,8 @@ int _tmain(int argc, LPTSTR argv[]) {
 	dados.saiuTaxi = CreateEvent(NULL, TRUE, FALSE, EVENT_SAIUT);
 	if (dados.saiuTaxi == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
+		CloseHandle(Semaphore);
+		CloseHandle(dados.novoTaxi);
 		return 0;
 	}
 	SetEvent(dados.saiuTaxi);
@@ -159,6 +158,9 @@ int _tmain(int argc, LPTSTR argv[]) {
 	dados.movimentoTaxi = CreateEvent(NULL, TRUE, FALSE, EVENT_MOVIMENTO);
 	if (dados.movimentoTaxi == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
+		CloseHandle(Semaphore);
+		CloseHandle(dados.novoTaxi);
+		CloseHandle(dados.saiuTaxi);
 		return 0;
 	}
 	SetEvent(dados.movimentoTaxi);
@@ -167,12 +169,21 @@ int _tmain(int argc, LPTSTR argv[]) {
 	dados.respostaAdmin = CreateEvent(NULL, TRUE, FALSE, EVENT_RESPOSTA);
 	if (dados.respostaAdmin == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
+		CloseHandle(Semaphore);
+		CloseHandle(dados.novoTaxi);
+		CloseHandle(dados.saiuTaxi);
+		CloseHandle(dados.movimentoTaxi);
 		return 0;
 	}
 
 	dados.saiuAdmin = CreateEvent(NULL, TRUE, FALSE, EVENT_SAIUA);
 	if (dados.saiuAdmin == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
+		CloseHandle(Semaphore);
+		CloseHandle(dados.novoTaxi);
+		CloseHandle(dados.saiuTaxi);
+		CloseHandle(dados.movimentoTaxi);
+		CloseHandle(dados.respostaAdmin);
 		return 0;
 	}
 
@@ -180,6 +191,12 @@ int _tmain(int argc, LPTSTR argv[]) {
 	if (dados.EspTaxis == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro ao criar FileMapping!\n"));
+		CloseHandle(Semaphore);
+		CloseHandle(dados.novoTaxi);
+		CloseHandle(dados.saiuTaxi);
+		CloseHandle(dados.movimentoTaxi);
+		CloseHandle(dados.respostaAdmin);
+		CloseHandle(dados.saiuAdmin);
 		return 0;
 	}
 
@@ -187,33 +204,39 @@ int _tmain(int argc, LPTSTR argv[]) {
 	if (dados.sharedTaxi == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro em MapViewOfFile!\n"));
+		CloseHandle(Semaphore);
 		CloseHandle(dados.EspTaxis);
+		CloseHandle(dados.novoTaxi);
+		CloseHandle(dados.saiuTaxi);
+		CloseHandle(dados.movimentoTaxi);
+		CloseHandle(dados.respostaAdmin);
+		CloseHandle(dados.saiuAdmin);
 		return 0;
 	}
 
 	leMapa(&dados);
 
-	hThreadComandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadComandos, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
+	hThreadComandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadComandos, (LPVOID)&dados, 0, NULL);
 	if (hThreadComandos == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
 		return 0;
 	}
-	hThreadNovoTaxi = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadNovoTaxi, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
+	hThreadNovoTaxi = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadNovoTaxi, (LPVOID)&dados, 0, NULL);
 	if (hThreadNovoTaxi == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
 		return 0;
 	}
-	hThreadSaiuTaxi = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadSaiuTaxi, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
+	hThreadSaiuTaxi = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadSaiuTaxi, (LPVOID)&dados, 0, NULL);
 	if (hThreadSaiuTaxi == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
 		return 0;
 	}
-	hThreadMovimento = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadMovimento, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
+	hThreadMovimento = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadMovimento, (LPVOID)&dados, 0, NULL);
 	if (hThreadMovimento == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
 		return 0;
 	}
-	//hThreadNovoPassageiro = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadNovoPassageiro, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
+	//hThreadNovoPassageiro = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadNovoPassageiro, (LPVOID)&dados, 0, NULL);
 	//if (hThreadNovoPassageiro == NULL) {
 	//	_tprintf(TEXT("\nErro ao lançar Thread!\n"));
 	//	return 0;
@@ -249,17 +272,19 @@ int _tmain(int argc, LPTSTR argv[]) {
 	_tprintf(TEXT("Prima uma tecla...\n"));
 	_gettch();
 
+	ReleaseSemaphore(Semaphore, 1, NULL);
+
 	UnmapViewOfFile(dados.sharedTaxi);
+	CloseHandle(Semaphore);
 	CloseHandle(dados.EspTaxis);
 	CloseHandle(dados.novoTaxi);
 	CloseHandle(dados.saiuTaxi);
 	CloseHandle(dados.movimentoTaxi);
 	CloseHandle(dados.respostaAdmin);
+	CloseHandle(dados.hFile);
+	CloseHandle(dados.atualizaMap);
 	CloseHandle(dados.saiuAdmin);
-
-	ReleaseSemaphore(Semaphore, 1, NULL);
-
-	CloseHandle(Semaphore);
+	CloseHandle(dados.EspMapa);
 
 	return 0;
 }
@@ -298,6 +323,13 @@ void leMapa(DADOS* dados) {
 	if (dados->hFile == INVALID_HANDLE_VALUE)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro ao Abrir Ficheiro!\n"));
+		CloseHandle(Semaphore);
+		CloseHandle(dados->EspTaxis);
+		CloseHandle(dados->novoTaxi);
+		CloseHandle(dados->saiuTaxi);
+		CloseHandle(dados->movimentoTaxi);
+		CloseHandle(dados->respostaAdmin);
+		CloseHandle(dados->saiuAdmin);
 		return;
 	}
 
@@ -305,6 +337,14 @@ void leMapa(DADOS* dados) {
 	if (dados->EspMapa == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro ao criar FileMapping!\n"));
+		CloseHandle(Semaphore);
+		CloseHandle(dados->EspTaxis);
+		CloseHandle(dados->novoTaxi);
+		CloseHandle(dados->saiuTaxi);
+		CloseHandle(dados->movimentoTaxi);
+		CloseHandle(dados->respostaAdmin);
+		CloseHandle(dados->saiuAdmin);
+		CloseHandle(dados->hFile);
 		return;
 	}
 
@@ -312,6 +352,14 @@ void leMapa(DADOS* dados) {
 	if (dados->sharedMapa == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro em MapViewOfFile!\n"));
+		CloseHandle(Semaphore);
+		CloseHandle(dados->EspTaxis);
+		CloseHandle(dados->novoTaxi);
+		CloseHandle(dados->saiuTaxi);
+		CloseHandle(dados->movimentoTaxi);
+		CloseHandle(dados->respostaAdmin);
+		CloseHandle(dados->saiuAdmin);
+		CloseHandle(dados->hFile);
 		CloseHandle(dados->EspMapa);
 		return;
 	}

@@ -1,1 +1,5 @@
-﻿
+﻿  Source.cpp
+C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\passageiro\Source.cpp(33,54): warning C4101: 'hThreadRespostaTransporte': unreferenced local variable
+C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\passageiro\Source.cpp(34,8): warning C4101: 'op': unreferenced local variable
+C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\passageiro\Source.cpp(33,26): warning C4101: 'hThreadMovimentaPassageiro': unreferenced local variable
+  passageiro.vcxproj -> C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Debug\passageiro.exe

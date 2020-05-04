@@ -8,14 +8,8 @@
 #define TAM 200
 #define MAX_PASS 20
 
-#define SEMAPHORE_NAME TEXT("SEMAPHORE")
+#define SEMAPHORE_NAME TEXT("SEMAPHORE_PASS")
 HANDLE Semaphore;
-
-//ConPass
-//1 instancia
-//Passageiros tem um id(assumir que já é unico)
-//Indica à central a existência de novo passageiro que está em X, Y e pertende ir para X, Y
-//Recebe da central : Táxi atribuido ao passageiro X; Táxi recolheu passageiro X; Táxi entregou o passageiro X
 
 typedef struct {
 	TCHAR id[TAM];
@@ -56,17 +50,17 @@ int _tmain() {
 	WaitForSingleObject(Semaphore, INFINITE);
 	_tprintf(TEXT("\nEntrei!\n"));
 
-	hThreadComandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadComandos, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
+	hThreadComandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadComandos, (LPVOID)&dados, 0, NULL);
 	if (hThreadComandos == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
 		return 0;
 	}
-	//hThreadMovimentaPassageiro = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadMovimentaPassageiro, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
+	//hThreadMovimentaPassageiro = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadMovimentaPassageiro, (LPVOID)&dados, 0, NULL);
 	//if (hThreadMovimentaPassageiro == NULL) {
 	//	_tprintf(TEXT("\nErro ao lançar Thread!\n"));
 	//	return 0;
 	//}
-	//hThreadRespostaTransporte = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadRespostaTransporte, (LPVOID)&dados, 0, NULL); //CREATE_SUSPENDED para nao comecar logo
+	//hThreadRespostaTransporte = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadRespostaTransporte, (LPVOID)&dados, 0, NULL);
 	//if (hThreadRespostaTransporte == NULL) {
 	//	_tprintf(TEXT("\nErro ao lançar Thread!\n"));
 	//	return 0;
