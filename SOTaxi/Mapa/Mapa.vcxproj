@@ -23,6 +23,7 @@
     <ProjectGuid>{D342FAA7-A8A4-4D57-B4DB-47DB9C34BF3F}</ProjectGuid>
     <RootNamespace>Mapa</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>MapInfo</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -138,10 +139,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Source.cpp" />
+    <ClCompile Include="MapInfo.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\letras.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="MapInfo.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

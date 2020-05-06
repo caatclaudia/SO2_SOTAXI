@@ -23,6 +23,7 @@
     <ProjectGuid>{FF6E31B1-D447-4AA8-9AF0-CC44A0B14825}</ProjectGuid>
     <RootNamespace>administrador</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>CenTaxi</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -123,7 +124,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Source.cpp" />
+    <ClCompile Include="CenTaxi.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CenTaxi.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

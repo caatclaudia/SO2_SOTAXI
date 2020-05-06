@@ -1,3 +1,4 @@
-﻿  Source.cpp
-C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\administrador\Source.cpp(108,78): warning C4101: 'hThreadNovoPassageiro': unreferenced local variable
-  administrador.vcxproj -> C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Debug\administrador.exe
+﻿C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Microsoft\VC\v160\Microsoft.CppBuild.targets(467,5): warning MSB8028: The intermediate directory (Debug\) contains files shared from another project (administrador.vcxproj).  This can lead to incorrect clean and rebuild behavior.
+  CenTaxi.cpp
+C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\administrador\CenTaxi.cpp(5,78): warning C4101: 'hThreadNovoPassageiro': unreferenced local variable
+  administrador.vcxproj -> C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Debug\CenTaxi.exe
