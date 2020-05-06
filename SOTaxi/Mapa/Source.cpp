@@ -17,7 +17,7 @@ typedef struct {
 } MAPA;
 
 typedef struct {
-	MAPA mapa[TAM][TAM];
+	MAPA *mapa;
 	int terminar;
 } DADOS;
 
@@ -40,6 +40,7 @@ int _tmain(int argc, TCHAR argv[]) {
 	TCHAR nome[100] = PATH;
 	int x = 0, y = 0;
 	dados.terminar = 0;
+	dados.mapa = (MAPA*)malloc(sizeof(MAPA) * TAM * TAM);
 
 #ifdef UNICODE
 	_setmode(_fileno(stdin), _O_WTEXT);
@@ -56,14 +57,14 @@ int _tmain(int argc, TCHAR argv[]) {
 	WaitForSingleObject(hMutex, INFINITE);
 	ReleaseMutex(hMutex);
 
-	EspMapa = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(MAPA) * TAM * TAM, SHM_NAME);
+	EspMapa = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(dados.mapa), SHM_NAME);
 	if (EspMapa == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro ao criar FileMapping!\n"));
 		return -1;
 	}
 
-	shared = (MAPA*)MapViewOfFile(EspMapa, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(MAPA) * TAM * TAM);
+	shared = (MAPA*)MapViewOfFile(EspMapa, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(dados.mapa));
 	if (shared == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro em MapViewOfFile!\n"));
@@ -174,33 +175,15 @@ void inicializaVariaveis() {
 }
 
 void recebeMapa(DADOS* dados) {
-	MAPA* aux = (MAPA*)malloc(sizeof(MAPA) * TAM * TAM);
-
-	CopyMemory(aux, shared, sizeof(char) * TAM * TAM);
-	int x = 0, y = 0;
-	for (int i = 0; i < TAM * TAM; i++) {
-		dados->mapa[y][x] = aux[i];
-		if (aux[i].caracter == '\n') {
-			x = 0;
-			y++;
-		}
-		else {
-			x++;
-		}
-	}
+	CopyMemory(dados->mapa, shared, sizeof(dados->mapa));
+	mostraMapa(dados);
 	_tprintf(TEXT("\n[MAPA] Mapa lido com sucesso!\n"));
-	for (int x = 0; x < TAM - 2; x++) {
-		for (int y = 0; y < TAM; y++)
-			_tprintf(TEXT("%c"), dados->mapa[x][y].caracter);
-		_tprintf(TEXT("\n"));
-	}
 }
 
 void mostraMapa(DADOS* dados) {
-	for (int x = 0; x < TAM - 2; x++) {
-		for (int y = 0; y < TAM; y++)
-			_tprintf(TEXT("%c"), dados->mapa[x][y].caracter);
-		_tprintf(TEXT("\n"));
+	for (int i = 0; i < TAM * TAM; i++) {
+		dados->mapa[i].caracter = shared[i].caracter;
+		_tprintf(TEXT("%c"), dados->mapa[i].caracter);
 	}
 
 	return;
@@ -208,7 +191,6 @@ void mostraMapa(DADOS* dados) {
 
 DWORD WINAPI ThreadAtualizaMapa(LPVOID param) {
 	DADOS* dados = ((DADOS*)param);
-	MAPA* aux = (MAPA*)malloc(sizeof(MAPA) * TAM * TAM);
 
 	atualizaMap = CreateEvent(NULL, TRUE, FALSE, EVENT_ATUALIZAMAP);
 	if (atualizaMap == NULL) {
@@ -228,18 +210,7 @@ DWORD WINAPI ThreadAtualizaMapa(LPVOID param) {
 		system("cls");
 		_tprintf(TEXT("\n[ATUALIZAÇÃO] Atualizei o Mapa!\n"));
 
-		CopyMemory(aux, shared, sizeof(char) * TAM * TAM);
-		int x = 0, y = 0;
-		for (int i = 0; i < TAM * TAM; i++) {
-			dados->mapa[y][x] = aux[i];
-			if (aux[i].caracter == '\n') {
-				x = 0;
-				y++;
-			}
-			else {
-				x++;
-			}
-		}
+		CopyMemory(dados->mapa, shared, sizeof(dados->mapa));
 		mostraMapa(dados);
 		Sleep(3000);
 	}
