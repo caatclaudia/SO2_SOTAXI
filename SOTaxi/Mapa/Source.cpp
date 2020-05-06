@@ -16,6 +16,8 @@ typedef struct {
 	char caracter;
 } MAPA;
 
+int tamanhoMapa = -1;
+
 typedef struct {
 	MAPA *mapa;
 	int terminar;
@@ -40,7 +42,6 @@ int _tmain(int argc, TCHAR argv[]) {
 	TCHAR nome[100] = PATH;
 	int x = 0, y = 0;
 	dados.terminar = 0;
-	dados.mapa = (MAPA*)malloc(sizeof(MAPA) * TAM * TAM);
 
 #ifdef UNICODE
 	_setmode(_fileno(stdin), _O_WTEXT);
@@ -175,13 +176,19 @@ void inicializaVariaveis() {
 }
 
 void recebeMapa(DADOS* dados) {
-	CopyMemory(dados->mapa, shared, sizeof(dados->mapa));
+	MAPA* aux=NULL;
+	CopyMemory(&aux, shared, sizeof(shared));
+	for (int i = 0; tamanhoMapa == -1; i++)
+		if (shared[i].caracter == '\n')
+			tamanhoMapa = i;
+	dados->mapa = (MAPA*)malloc(sizeof(MAPA) * tamanhoMapa * tamanhoMapa);
+	CopyMemory(dados->mapa, &aux, sizeof(dados->mapa));
 	mostraMapa(dados);
 	_tprintf(TEXT("\n[MAPA] Mapa lido com sucesso!\n"));
 }
 
 void mostraMapa(DADOS* dados) {
-	for (int i = 0; i < TAM * TAM; i++) {
+	for (int i = 0; i < tamanhoMapa * tamanhoMapa; i++) {
 		dados->mapa[i].caracter = shared[i].caracter;
 		_tprintf(TEXT("%c"), dados->mapa[i].caracter);
 	}

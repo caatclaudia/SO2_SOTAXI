@@ -85,6 +85,8 @@ typedef struct {
 int id_mapa_taxi = 1;
 char id_mapa_pass = 'A';
 
+int tamanhoMapa=-1;
+
 
 void ajuda();
 void listarTaxis(DADOS* dados);
@@ -110,7 +112,6 @@ int _tmain(int argc, LPTSTR argv[]) {
 	dados.terminar = 0;
 	dados.aceitacaoT = 1;
 	dados.esperaManifestacoes = TempoManifestacoes;
-	dados.mapa = (MAPA*)malloc(sizeof(MAPA) * TAM * TAM);
 
 	if (argc == 3) {
 		MaxPass = _wtoi(argv[1]);
@@ -368,8 +369,13 @@ void leMapa(DADOS* dados) {
 		CloseHandle(dados->EspMapa);
 		return;
 	}
+	for (int i = 0; tamanhoMapa ==-1; i++)
+		if (dados->sharedMapa[i].caracter == '\n')
+			tamanhoMapa = i;
 
-	for (int i = 0; i < TAM * TAM; i++) {
+	dados->mapa = (MAPA*)malloc(sizeof(MAPA) * tamanhoMapa * tamanhoMapa);
+
+	for (int i = 0; i < tamanhoMapa * tamanhoMapa; i++) {
 		dados->mapa[i].caracter = dados->sharedMapa[i].caracter;
 		_tprintf(TEXT("%c"), dados->mapa[i].caracter);
 	}
@@ -503,7 +509,7 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 				char buf;
 				buf = dados->taxis[i].id_mapa + '0';
 				eliminaIdMapa(dados, buf);
-				dados->mapa[TAM * novo.X + novo.Y].caracter = buf;
+				dados->mapa[tamanhoMapa * novo.X + novo.Y].caracter = buf;
 			}
 
 		CopyMemory(dados->sharedMapa, dados->mapa, sizeof(dados->mapa));
@@ -586,10 +592,10 @@ boolean removePassageiro(DADOS* dados, PASSAGEIRO novo) {
 
 void eliminaIdMapa(DADOS* dados, char id) {
 	int x = 0, y = 0;
-	for (int i = 0; i < TAM * TAM; i++) {
-		if (dados->mapa[TAM * y + x].caracter == id)
-			dados->mapa[TAM * y + x].caracter = '.';
-		if (dados->mapa[TAM * y + x].caracter == '\n') {
+	for (int i = 0; i < tamanhoMapa * tamanhoMapa; i++) {
+		if (dados->mapa[tamanhoMapa * y + x].caracter == id)
+			dados->mapa[tamanhoMapa * y + x].caracter = '.';
+		if (dados->mapa[tamanhoMapa * y + x].caracter == '\n') {
 			x = 0;
 			y++;
 		}
