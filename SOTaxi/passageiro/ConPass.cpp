@@ -17,7 +17,7 @@ int _tmain() {
 		_tprintf(TEXT("CreateSemaphore failed.\n"));
 		return FALSE;
 	}
-	_tprintf(TEXT("\nAinda não tenho autorização para entrar! Esperar...\n"));
+	_tprintf(TEXT("\nAguardando autorização para entrar...\n"));
 	WaitForSingleObject(Semaphore, INFINITE);
 	_tprintf(TEXT("\nEntrei!\n"));
 
