@@ -24,7 +24,7 @@ typedef struct {
 #define PATH TEXT("..\\mapa.txt")
 
 HANDLE EspMapa;	//FileMapping
-char* shared;
+MAPA* shared;
 HANDLE atualizaMap;
 HANDLE hMutex;
 
@@ -56,14 +56,14 @@ int _tmain(int argc, TCHAR argv[]) {
 	WaitForSingleObject(hMutex, INFINITE);
 	ReleaseMutex(hMutex);
 
-	EspMapa = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(char) * TAM * TAM, SHM_NAME);
+	EspMapa = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(MAPA) * TAM * TAM, SHM_NAME);
 	if (EspMapa == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro ao criar FileMapping!\n"));
 		return -1;
 	}
 
-	shared = (char*)MapViewOfFile(EspMapa, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(char) * TAM * TAM);
+	shared = (MAPA*)MapViewOfFile(EspMapa, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(MAPA) * TAM * TAM);
 	if (shared == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro em MapViewOfFile!\n"));
@@ -174,13 +174,13 @@ void inicializaVariaveis() {
 }
 
 void recebeMapa(DADOS* dados) {
-	char* aux = (char*)malloc(sizeof(char) * TAM * TAM);
+	MAPA* aux = (MAPA*)malloc(sizeof(MAPA) * TAM * TAM);
 
 	CopyMemory(aux, shared, sizeof(char) * TAM * TAM);
 	int x = 0, y = 0;
 	for (int i = 0; i < TAM * TAM; i++) {
-		dados->mapa[y][x].caracter = aux[i];
-		if (aux[i] == '\n') {
+		dados->mapa[y][x] = aux[i];
+		if (aux[i].caracter == '\n') {
 			x = 0;
 			y++;
 		}
@@ -208,7 +208,7 @@ void mostraMapa(DADOS* dados) {
 
 DWORD WINAPI ThreadAtualizaMapa(LPVOID param) {
 	DADOS* dados = ((DADOS*)param);
-	char* aux = (char*)malloc(sizeof(char) * TAM * TAM);
+	MAPA* aux = (MAPA*)malloc(sizeof(MAPA) * TAM * TAM);
 
 	atualizaMap = CreateEvent(NULL, TRUE, FALSE, EVENT_ATUALIZAMAP);
 	if (atualizaMap == NULL) {
@@ -231,8 +231,8 @@ DWORD WINAPI ThreadAtualizaMapa(LPVOID param) {
 		CopyMemory(aux, shared, sizeof(char) * TAM * TAM);
 		int x = 0, y = 0;
 		for (int i = 0; i < TAM * TAM; i++) {
-			dados->mapa[y][x].caracter = aux[i];
-			if (aux[i] == '\n') {
+			dados->mapa[y][x] = aux[i];
+			if (aux[i].caracter == '\n') {
 				x = 0;
 				y++;
 			}

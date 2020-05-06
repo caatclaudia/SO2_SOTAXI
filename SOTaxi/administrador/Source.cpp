@@ -75,7 +75,7 @@ typedef struct {
 	MAPA mapa[TAM][TAM];
 	HANDLE hFile;
 	HANDLE EspMapa;	//FileMapping
-	char* sharedMapa = NULL;
+	MAPA* sharedMapa = NULL;
 	HANDLE atualizaMap;
 
 	int terminar;
@@ -101,7 +101,7 @@ DWORD WINAPI ThreadSaiuTaxi(LPVOID param);
 DWORD WINAPI ThreadMovimento(LPVOID param);
 DWORD WINAPI ThreadNovoPassageiro(LPVOID param);
 
-char* aux = (char*)malloc(sizeof(char) * TAM * TAM);
+MAPA* aux = (MAPA*)malloc(sizeof(MAPA) * TAM * TAM);
 
 
 int _tmain(int argc, LPTSTR argv[]) {
@@ -339,7 +339,7 @@ void leMapa(DADOS* dados) {
 		return;
 	}
 
-	dados->EspMapa = CreateFileMapping(dados->hFile, NULL, PAGE_READWRITE, 0, sizeof(char) * TAM * TAM, SHM_MAPA);
+	dados->EspMapa = CreateFileMapping(dados->hFile, NULL, PAGE_READWRITE, 0, sizeof(MAPA) * TAM * TAM, SHM_MAPA);
 	if (dados->EspMapa == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro ao criar FileMapping!\n"));
@@ -354,7 +354,7 @@ void leMapa(DADOS* dados) {
 		return;
 	}
 
-	dados->sharedMapa = (char*)MapViewOfFile(dados->EspMapa, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(char) * TAM * TAM);
+	dados->sharedMapa = (MAPA*)MapViewOfFile(dados->EspMapa, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(MAPA) * TAM * TAM);
 	if (dados->sharedMapa == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro em MapViewOfFile!\n"));
@@ -373,7 +373,7 @@ void leMapa(DADOS* dados) {
 	char aux;
 	int x = 0, y = 0;
 	for (int i = 0; i < TAM * TAM; i++) {
-		aux = dados->sharedMapa[i];
+		aux = dados->sharedMapa[i].caracter;
 		_tprintf(TEXT("%c"), aux);
 		dados->mapa[y][x].caracter = aux;
 		if (aux == '\n') {
@@ -520,9 +520,9 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 		int x = 0, y = 0;
 		for (int i = 0; i < TAM * TAM; i++) {
 			if (y == (TAM - 1)) {
-				aux[i] = '\r';
+				aux[i].caracter = '\r';
 				i++;
-				aux[i] = '\n';
+				aux[i].caracter = '\n';
 				i++;
 				y = 0;
 				x++;
@@ -530,7 +530,7 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 			else {
 				y++;
 			}
-			aux[i] = dados->mapa[x][y].caracter;
+			aux[i] = dados->mapa[x][y];
 		}
 		CopyMemory(dados->sharedMapa, aux, sizeof(char) * TAM * TAM);
 		_tprintf(TEXT("\n[MAPA] Mapa atualizado com sucesso!\n"));

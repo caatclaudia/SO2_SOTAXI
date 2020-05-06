@@ -1,3 +1,4 @@
 ﻿  Source.cpp
 C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\taxista\Source.cpp(52,48): warning C4101: 'hThreadRespostaTransporte': unreferenced local variable
+  LINK : C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Debug\taxista.exe not found or not built by the last incremental link; performing full link
   taxista.vcxproj -> C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Debug\taxista.exe
