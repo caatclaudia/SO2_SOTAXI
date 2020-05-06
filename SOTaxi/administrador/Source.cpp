@@ -101,7 +101,7 @@ DWORD WINAPI ThreadSaiuTaxi(LPVOID param);
 DWORD WINAPI ThreadMovimento(LPVOID param);
 DWORD WINAPI ThreadNovoPassageiro(LPVOID param);
 
-char* aux = (char*)malloc(sizeof(char) * 50 * 51);
+char* aux = (char*)malloc(sizeof(char) * TAM * TAM);
 
 
 int _tmain(int argc, LPTSTR argv[]) {
@@ -339,7 +339,7 @@ void leMapa(DADOS* dados) {
 		return;
 	}
 
-	dados->EspMapa = CreateFileMapping(dados->hFile, NULL, PAGE_READWRITE, 0, sizeof(char) * TAM * 51, SHM_MAPA);
+	dados->EspMapa = CreateFileMapping(dados->hFile, NULL, PAGE_READWRITE, 0, sizeof(char) * TAM * TAM, SHM_MAPA);
 	if (dados->EspMapa == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro ao criar FileMapping!\n"));
@@ -354,7 +354,7 @@ void leMapa(DADOS* dados) {
 		return;
 	}
 
-	dados->sharedMapa = (char*)MapViewOfFile(dados->EspMapa, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(char) * TAM * 51);
+	dados->sharedMapa = (char*)MapViewOfFile(dados->EspMapa, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(char) * TAM * TAM);
 	if (dados->sharedMapa == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro em MapViewOfFile!\n"));
@@ -532,7 +532,7 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 			}
 			aux[i] = dados->mapa[x][y].caracter;
 		}
-		CopyMemory(dados->sharedMapa, aux, sizeof(char) * TAM * 51);
+		CopyMemory(dados->sharedMapa, aux, sizeof(char) * TAM * TAM);
 		_tprintf(TEXT("\n[MAPA] Mapa atualizado com sucesso!\n"));
 
 		ReleaseMutex(dados->hMutexDados);

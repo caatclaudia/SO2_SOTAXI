@@ -1,3 +1,4 @@
 ﻿  Source.cpp
 C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\administrador\Source.cpp(108,78): warning C4101: 'hThreadNovoPassageiro': unreferenced local variable
+  LINK : C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Debug\administrador.exe not found or not built by the last incremental link; performing full link
   administrador.vcxproj -> C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Debug\administrador.exe

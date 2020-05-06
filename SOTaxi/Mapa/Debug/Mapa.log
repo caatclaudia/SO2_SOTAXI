@@ -3,4 +3,5 @@ C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Mapa\Source.cpp(142,14): wa
 C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Mapa\Source.cpp(142,14): message : placeholders and their parameters expect 2 variadic arguments, but 1 were provided
 C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Mapa\Source.cpp(142,14): message : the missing variadic argument 2 is required by format string '%c'
 C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Mapa\Source.cpp(142,14): message : this argument is used as a buffer size
+  LINK : C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Debug\Mapa.exe not found or not built by the last incremental link; performing full link
   Mapa.vcxproj -> C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Debug\Mapa.exe

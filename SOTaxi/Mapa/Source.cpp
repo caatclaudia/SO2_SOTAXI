@@ -56,14 +56,14 @@ int _tmain(int argc, TCHAR argv[]) {
 	WaitForSingleObject(hMutex, INFINITE);
 	ReleaseMutex(hMutex);
 
-	EspMapa = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(char) * TAM * 51, SHM_NAME);
+	EspMapa = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(char) * TAM * TAM, SHM_NAME);
 	if (EspMapa == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro ao criar FileMapping!\n"));
 		return -1;
 	}
 
-	shared = (char*)MapViewOfFile(EspMapa, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(char) * TAM * 51);
+	shared = (char*)MapViewOfFile(EspMapa, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(char) * TAM * TAM);
 	if (shared == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro em MapViewOfFile!\n"));
@@ -174,9 +174,9 @@ void inicializaVariaveis() {
 }
 
 void recebeMapa(DADOS* dados) {
-	char* aux = (char*)malloc(sizeof(char) * 50 * 51);
+	char* aux = (char*)malloc(sizeof(char) * TAM * TAM);
 
-	CopyMemory(aux, shared, sizeof(char) * 50 * 51);
+	CopyMemory(aux, shared, sizeof(char) * TAM * TAM);
 	int x = 0, y = 0;
 	for (int i = 0; i < TAM * TAM; i++) {
 		dados->mapa[y][x].caracter = aux[i];
@@ -208,7 +208,7 @@ void mostraMapa(DADOS* dados) {
 
 DWORD WINAPI ThreadAtualizaMapa(LPVOID param) {
 	DADOS* dados = ((DADOS*)param);
-	char* aux = (char*)malloc(sizeof(char) * 50 * 51);
+	char* aux = (char*)malloc(sizeof(char) * TAM * TAM);
 
 	atualizaMap = CreateEvent(NULL, TRUE, FALSE, EVENT_ATUALIZAMAP);
 	if (atualizaMap == NULL) {
