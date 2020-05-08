@@ -67,6 +67,43 @@ void ajuda() {
 	return;
 }
 
+int calculaDistancia(int inicioX, int inicioY, int fimX, int fimY) {
+	int distancia = 0;
+	if (inicioX >= fimX)
+		distancia = inicioX - fimX;
+	else
+		distancia = fimX - inicioX;
+	if (inicioY >= fimY)
+		distancia += inicioY - fimY;
+	else
+		distancia += fimY - inicioY;
+	return distancia;
+}
+
+void comunicacaoParaCentral(TAXI* taxi) {
+	CopyMemory(shared, taxi, sizeof(TAXI));
+	return;
+}
+
+void avisaNovoTaxi(TAXI* taxi) {
+	comunicacaoParaCentral(taxi);
+
+	SetEvent(novoTaxi);
+	Sleep(500);
+	ResetEvent(novoTaxi);
+
+	_tprintf(TEXT("\nAguardando resposta da Central...\n"));
+	WaitForSingleObject(respostaAdmin, INFINITE);
+
+	CopyMemory(taxi, shared, sizeof(TAXI));
+	if (!taxi->terminar)
+		_tprintf(TEXT("\nBem Vindo!\n"));
+
+	ReleaseMutex(hMutex);
+
+	return;
+}
+
 void inicializaTaxi(TAXI* taxi) {
 	int num;
 
@@ -171,38 +208,27 @@ void inicializaTaxi(TAXI* taxi) {
 	}
 
 	//VAI AO ADMIN VER SE PODE CRIAR	
-	CopyMemory(shared, taxi, sizeof(TAXI));
-	FlushViewOfFile(novoTaxi, 0);
-
-	SetEvent(novoTaxi);
-	Sleep(500);
-	ResetEvent(novoTaxi);
-
-	_tprintf(TEXT("\nAguardando resposta da Central...\n"));
-	WaitForSingleObject(respostaAdmin, INFINITE);
-
-	CopyMemory(taxi, shared, sizeof(TAXI));
-	if (!taxi->terminar)
-		_tprintf(TEXT("\nBem Vindo!\n"));
-
-	ReleaseMutex(hMutex);
+	avisaNovoTaxi(taxi);
+	
 
 	Sleep(1000);
 
 	return;
 }
 
-int calculaDistancia(int inicioX, int inicioY, int fimX, int fimY) {
-	int distancia = 0;
-	if (inicioX >= fimX)
-		distancia = inicioX - fimX;
-	else
-		distancia = fimX - inicioX;
-	if (inicioY >= fimY)
-		distancia += inicioY - fimY;
-	else
-		distancia += fimY - inicioY;
-	return distancia;
+void avisaTaxiSaiu(TAXI* taxi) {
+	SetEvent(saiuTaxi);
+	ResetEvent(saiuTaxi);
+
+	comunicacaoParaCentral(taxi);
+
+	ReleaseMutex(hMutex);
+
+	SetEvent(saiuTaxi);
+	Sleep(500);
+	ResetEvent(saiuTaxi);
+
+	return;
 }
 
 DWORD WINAPI ThreadComandos(LPVOID param) {
@@ -254,20 +280,21 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 
 	taxi->terminar = 1;
 
-	SetEvent(saiuTaxi);
-	ResetEvent(saiuTaxi);
-
-	CopyMemory(shared, taxi, sizeof(TAXI));
-
-	ReleaseMutex(hMutex);
-
-	SetEvent(saiuTaxi);
-	Sleep(500);
-	ResetEvent(saiuTaxi);
+	avisaTaxiSaiu(taxi);
 
 	Sleep(1000);
 
 	ExitThread(0);
+}
+
+void avisaMovimentoTaxi(TAXI* taxi) {
+	//MANDA PARA ADMIN
+	comunicacaoParaCentral(taxi);
+
+	SetEvent(movimentoTaxi);
+	Sleep(500);
+	ResetEvent(movimentoTaxi);
+	return;
 }
 
 //ASSEGURAR TAMANHO DO MAPA
@@ -314,12 +341,7 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {	//MANDA TAXI AO ADMIN
 					break;
 				}
 			} while (!valido);
-			//MANDA PARA ADMIN
-			CopyMemory(shared, taxi, sizeof(TAXI));
-
-			SetEvent(movimentoTaxi);
-			Sleep(500);
-			ResetEvent(movimentoTaxi);
+			avisaMovimentoTaxi(taxi);
 		}
 
 		ReleaseMutex(hMutex);

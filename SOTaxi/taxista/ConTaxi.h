@@ -43,9 +43,13 @@ HANDLE saiuAdmin;
 unsigned int NQ = NQ_INICIAL;
 
 void ajuda();
-void inicializaTaxi(TAXI* taxi);
 int calculaDistancia(int inicioX, int inicioY, int fimX, int fimY);
+void comunicacaoParaCentral(TAXI* taxi);		//DLL
+void avisaNovoTaxi(TAXI* taxi);					//DLL
+void inicializaTaxi(TAXI* taxi);
+void avisaTaxiSaiu(TAXI* taxi);					//DLL
 DWORD WINAPI ThreadComandos(LPVOID param);
+void avisaMovimentoTaxi(TAXI* taxi);			//DLL
 DWORD WINAPI ThreadMovimentaTaxi(LPVOID param);
 DWORD WINAPI ThreadSaiuAdmin(LPVOID param);
 DWORD WINAPI ThreadRespostaTransporte(LPVOID param);
