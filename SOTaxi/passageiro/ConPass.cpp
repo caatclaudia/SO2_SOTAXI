@@ -2,7 +2,6 @@
 
 int _tmain() {
 	HANDLE hThreadComandos, hThreadMovimentaPassageiro, hThreadRespostaTransporte;
-	TCHAR op[TAM];
 	DADOS dados;
 	dados.nPassageiros = 0;
 	dados.terminar = 0;

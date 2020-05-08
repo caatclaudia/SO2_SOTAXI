@@ -3,8 +3,6 @@
 int _tmain(int argc, TCHAR argv[]) {
 	HANDLE hThreadSair, hThreadAtualizaMapa;
 	DADOS dados;
-	TCHAR nome[100] = PATH;
-	int x = 0, y = 0;
 	dados.terminar = 0;
 
 #ifdef UNICODE

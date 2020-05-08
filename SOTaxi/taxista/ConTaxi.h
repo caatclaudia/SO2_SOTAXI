@@ -10,15 +10,9 @@
 #define NQ_INICIAL 10
 #define TAM 200
 #define WAITTIMEOUT 1000
+unsigned int NQ = NQ_INICIAL;
 
-#define SHM_NAME TEXT("EspacoTaxis")
 #define NOME_MUTEX TEXT("MutexTaxi")
-#define EVENT_NOVOT TEXT("NovoTaxi")
-#define EVENT_SAIUT TEXT("SaiuTaxi")
-#define EVENT_MOVIMENTO TEXT("MovimentoTaxi")
-#define EVENT_RESPOSTA TEXT("RespostaDoAdmin")
-#define EVENT_SAIUA TEXT("SaiuAdmin")
-
 typedef struct {
 	TCHAR matricula[7];
 	unsigned int X, Y, Xfinal, Yfinal;
@@ -32,15 +26,21 @@ typedef struct {
 } TAXI;
 HANDLE hMutex;
 
+#define SHM_NAME TEXT("EspacoTaxis")
 HANDLE EspTaxis;	//FileMapping
 TAXI* shared;
+
+//SEMAFOROS
+#define EVENT_NOVOT TEXT("NovoTaxi")
+#define EVENT_SAIUT TEXT("SaiuTaxi")
+#define EVENT_MOVIMENTO TEXT("MovimentoTaxi")
+#define EVENT_RESPOSTA TEXT("RespostaDoAdmin")
+#define EVENT_SAIUA TEXT("SaiuAdmin")
 HANDLE novoTaxi;
 HANDLE saiuTaxi;
 HANDLE movimentoTaxi;
 HANDLE respostaAdmin;
 HANDLE saiuAdmin;
-
-unsigned int NQ = NQ_INICIAL;
 
 void ajuda();
 int calculaDistancia(int inicioX, int inicioY, int fimX, int fimY);

@@ -9,27 +9,26 @@
 
 #define TAM 50
 #define WAITTIMEOUT 1000
-#define SHM_NAME TEXT("EspacoMapa")
-#define EVENT_ATUALIZAMAP TEXT("AtualizaMapa")
-#define NOME_MUTEXMAPA TEXT("MutexMapa")
+int tamanhoMapa = -1;
 
+#define NOME_MUTEXMAPA TEXT("MutexMapa")
 typedef struct {
 	char caracter;
 } MAPA;
-
-int tamanhoMapa = -1;
+HANDLE hMutex;
 
 typedef struct {
 	MAPA* mapa;
 	int terminar;
 } DADOS;
 
-#define PATH TEXT("..\\mapa.txt")
-
+#define SHM_NAME TEXT("EspacoMapa")
 HANDLE EspMapa;	//FileMapping
 MAPA* shared;
+
+//SEMAFOROS
+#define EVENT_ATUALIZAMAP TEXT("AtualizaMapa")
 HANDLE atualizaMap;
-HANDLE hMutex;
 
 void inicializaVariaveis();
 void recebeMapa(DADOS* dados);

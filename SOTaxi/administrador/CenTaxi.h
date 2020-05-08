@@ -11,25 +11,21 @@
 #define MAXPASS 10
 #define TempoManifestacoes 5
 #define WAITTIMEOUT 1000
-
 #define PATH TEXT("..\\mapa.txt")
 
-#define SHM_TAXI TEXT("EspacoTaxis")
-#define NOME_MUTEX_TAXI TEXT("MutexTaxi")
-#define EVENT_NOVOT TEXT("NovoTaxi")
-#define EVENT_SAIUT TEXT("SaiuTaxi")
-#define EVENT_MOVIMENTO TEXT("MovimentoTaxi")
-#define EVENT_RESPOSTA TEXT("RespostaDoAdmin")
-#define EVENT_SAIUA TEXT("SaiuAdmin")
+int MaxPass = MAXPASS;
+int MaxTaxi = MAXTAXIS;
 
-#define SHM_MAPA TEXT("EspacoMapa")
-#define EVENT_ATUALIZAMAP TEXT("AtualizaMapa")
-#define NOME_MUTEX_MAPA TEXT("MutexMapa")
+int id_mapa_taxi = 1;
+char id_mapa_pass = 'A';
 
+int tamanhoMapa = -1;
+
+//1 INSTANCIA APENAS
 #define SEMAPHORE_NAME TEXT("SEMAPHORE_ADMIN")
 HANDLE Semaphore;
 
-
+#define NOME_MUTEX_MAPA TEXT("MutexMapa")
 typedef struct {
 	char caracter;
 } MAPA;
@@ -42,6 +38,7 @@ typedef struct {
 	char id_mapa;
 } PASSAGEIRO;
 
+#define NOME_MUTEX_TAXI TEXT("MutexTaxi")
 typedef struct {
 	TCHAR matricula[7];
 	unsigned int X, Y, Xfinal, Yfinal;
@@ -54,8 +51,17 @@ typedef struct {
 	int id_mapa;
 } TAXI;
 
-int MaxPass = MAXPASS;
-int MaxTaxi = MAXTAXIS;
+//SEMAFOROS
+#define EVENT_NOVOT TEXT("NovoTaxi")
+#define EVENT_SAIUT TEXT("SaiuTaxi")
+#define EVENT_MOVIMENTO TEXT("MovimentoTaxi")
+#define EVENT_RESPOSTA TEXT("RespostaDoAdmin")
+#define EVENT_SAIUA TEXT("SaiuAdmin")
+
+#define EVENT_ATUALIZAMAP TEXT("AtualizaMapa")
+
+#define SHM_TAXI TEXT("EspacoTaxis")
+#define SHM_MAPA TEXT("EspacoMapa")
 
 typedef struct {
 	int nTaxis;
@@ -82,12 +88,6 @@ typedef struct {
 	int terminar;
 	HANDLE saiuAdmin;
 } DADOS;
-
-int id_mapa_taxi = 1;
-char id_mapa_pass = 'A';
-
-int tamanhoMapa = -1;
-
 
 void ajuda();
 void listarTaxis(DADOS* dados);

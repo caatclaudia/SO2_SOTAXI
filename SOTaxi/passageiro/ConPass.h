@@ -9,9 +9,6 @@
 #define TAM 200
 #define MAX_PASS 20
 
-#define SEMAPHORE_NAME TEXT("SEMAPHORE_PASS")
-HANDLE Semaphore;
-
 typedef struct {
 	TCHAR id[TAM];
 	unsigned int X, Y, Xfinal, Yfinal;
@@ -25,6 +22,10 @@ typedef struct {
 	PASSAGEIRO passageiros[MAX_PASS];
 	int terminar;
 } DADOS;
+
+//SEMAFOROS
+#define SEMAPHORE_NAME TEXT("SEMAPHORE_PASS")
+HANDLE Semaphore;
 
 void novoPassageiro(DADOS* dados);
 DWORD WINAPI ThreadComandos(LPVOID param);
