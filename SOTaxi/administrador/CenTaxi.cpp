@@ -406,7 +406,8 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 				char buf;
 				buf = dados->taxis[i].id_mapa + '0';
 				eliminaIdMapa(dados, buf);
-				dados->mapa[tamanhoMapa * novo.X + novo.Y].caracter = buf;
+				int ind = tamanhoMapa * novo.Y + novo.Y + novo.X;
+				dados->mapa[ind].caracter = buf;
 			}
 
 		CopyMemory(dados->sharedMapa, dados->mapa, sizeof(dados->mapa));
@@ -490,14 +491,7 @@ boolean removePassageiro(DADOS* dados, PASSAGEIRO novo) {
 void eliminaIdMapa(DADOS* dados, char id) {
 	int x = 0, y = 0;
 	for (int i = 0; i < tamanhoMapa * tamanhoMapa; i++) {
-		if (dados->mapa[tamanhoMapa * y + x].caracter == id)
-			dados->mapa[tamanhoMapa * y + x].caracter = '.';
-		if (dados->mapa[tamanhoMapa * y + x].caracter == '\n') {
-			x = 0;
-			y++;
-		}
-		else {
-			x++;
-		}
+		if (dados->mapa[i].caracter == id)
+			dados->mapa[i].caracter = '.';
 	}
 }

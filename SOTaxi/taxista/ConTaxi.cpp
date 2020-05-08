@@ -192,6 +192,19 @@ void inicializaTaxi(TAXI* taxi) {
 	return;
 }
 
+int calculaDistancia(int inicioX, int inicioY, int fimX, int fimY) {
+	int distancia = 0;
+	if (inicioX >= fimX)
+		distancia = inicioX - fimX;
+	else
+		distancia = fimX - inicioX;
+	if (inicioY >= fimY)
+		distancia += inicioY - fimY;
+	else
+		distancia += fimY - inicioY;
+	return distancia;
+}
+
 DWORD WINAPI ThreadComandos(LPVOID param) {
 	TCHAR op[TAM];
 	TAXI* taxi = ((TAXI*)param);
@@ -276,23 +289,27 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {	//MANDA TAXI AO ADMIN
 				val = rand() % 4;
 				switch (val) {
 				case 1:	//DIREITA
-					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), taxi->X, taxi->Y, taxi->X++, taxi->Y);
+					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), taxi->X, taxi->Y, taxi->X+1, taxi->Y);
+					taxi->X++;
 					valido = 1;
 					break;
 				case 2: //ESQUERDA
 					if (taxi->X > 0) {
-						_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), taxi->X, taxi->Y, taxi->X--, taxi->Y);
+						_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), taxi->X, taxi->Y, taxi->X-1, taxi->Y);
+						taxi->X--;
 						valido = 1;
 					}
 					break;
 				case 3: //CIMA
 					if (taxi->Y > 0) {
-						_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), taxi->X, taxi->Y, taxi->X, taxi->Y--);
+						_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), taxi->X, taxi->Y, taxi->X, taxi->Y-1);
+						taxi->Y--;
 						valido = 1;
 					}
 					break;
 				case 4: //BAIXO
-					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), taxi->X, taxi->Y, taxi->X, taxi->Y++);
+					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), taxi->X, taxi->Y, taxi->X, taxi->Y+1);
+					taxi->Y++;
 					valido = 1;
 					break;
 				}

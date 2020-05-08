@@ -44,6 +44,7 @@ unsigned int NQ = NQ_INICIAL;
 
 void ajuda();
 void inicializaTaxi(TAXI* taxi);
+int calculaDistancia(int inicioX, int inicioY, int fimX, int fimY);
 DWORD WINAPI ThreadComandos(LPVOID param);
 DWORD WINAPI ThreadMovimentaTaxi(LPVOID param);
 DWORD WINAPI ThreadSaiuAdmin(LPVOID param);
