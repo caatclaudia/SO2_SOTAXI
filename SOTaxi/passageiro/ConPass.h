@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define PATH_DLL TEXT("..\\SO2_TP_DLL_32.dll")
+
 #define TAM 200
 #define MAX_PASS 20
 

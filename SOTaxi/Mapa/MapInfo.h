@@ -7,6 +7,8 @@
 #include <conio.h>
 #include <io.h>
 
+#define PATH_DLL TEXT("..\\SO2_TP_DLL_32.dll")
+
 #define TAM 50
 #define WAITTIMEOUT 1000
 int tamanhoMapa = -1;

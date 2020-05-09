@@ -1,14 +1,24 @@
 #include "MapInfo.h"
 
+void(*ptr_register)(TCHAR*, int);
+
 int _tmain(int argc, TCHAR argv[]) {
 	HANDLE hThreadSair, hThreadAtualizaMapa;
 	DADOS dados;
 	dados.terminar = 0;
 
+	HINSTANCE hLib;
+
+	hLib = LoadLibrary(PATH_DLL);
+	if (hLib == NULL)
+		return 0;
+
 #ifdef UNICODE
 	_setmode(_fileno(stdin), _O_WTEXT);
 	_setmode(_fileno(stdout), _O_WTEXT);
 #endif
+
+	ptr_register = (void(*)(TCHAR*, int))GetProcAddress(hLib, "dll_register");
 
 	inicializaVariaveis();
 
@@ -17,6 +27,7 @@ int _tmain(int argc, TCHAR argv[]) {
 		_tprintf(TEXT("\n[ERRO] Erro ao criar Mutex!\n"));
 		return -1;
 	}
+	ptr_register((TCHAR*)NOME_MUTEXMAPA, 1);
 	WaitForSingleObject(hMutex, INFINITE);
 	ReleaseMutex(hMutex);
 
@@ -26,6 +37,7 @@ int _tmain(int argc, TCHAR argv[]) {
 		_tprintf(TEXT("\n[ERRO] Erro ao criar FileMapping!\n"));
 		return -1;
 	}
+	ptr_register((TCHAR*)SHM_NAME, 6);
 
 	shared = (MAPA*)MapViewOfFile(EspMapa, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(dados.mapa));
 	if (shared == NULL)
@@ -34,6 +46,7 @@ int _tmain(int argc, TCHAR argv[]) {
 		CloseHandle(EspMapa);
 		return -1;
 	}
+	ptr_register((TCHAR*)SHM_NAME, 7);
 
 	recebeMapa(&dados);
 
@@ -62,6 +75,8 @@ int _tmain(int argc, TCHAR argv[]) {
 
 	CloseHandle(EspMapa);
 	CloseHandle(atualizaMap);
+	FreeLibrary(hLib);
+
 	return 0;
 }
 
@@ -103,7 +118,7 @@ void inicializaVariaveis() {
 		}
 		do {
 			_tprintf(TEXT("\n[DETALHES] Deseja alterar algum destes valores (s/n)? "));
-			_tscanf_s(_T("%c"), &op);
+			_tscanf_s(_T("%c"), &op, sizeof(op));
 		} while (op != 's' && op != 'n');
 		if (op == 's') {
 			do {

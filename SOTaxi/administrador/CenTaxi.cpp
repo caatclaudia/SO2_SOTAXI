@@ -1,5 +1,6 @@
 #include "CenTaxi.h"
 
+void(*ptr_register)(TCHAR*, int);
 
 int _tmain(int argc, LPTSTR argv[]) {
 	HANDLE hThreadComandos, hThreadNovoTaxi, hThreadSaiuTaxi, hThreadMovimento, hThreadNovoPassageiro;
@@ -9,6 +10,12 @@ int _tmain(int argc, LPTSTR argv[]) {
 	dados.terminar = 0;
 	dados.aceitacaoT = 1;
 	dados.esperaManifestacoes = TempoManifestacoes;
+
+	HINSTANCE hLib;
+
+	hLib = LoadLibrary(PATH_DLL);
+	if (hLib == NULL)
+		return 0;
 
 	if (argc == 3) {
 		MaxPass = _wtoi(argv[1]);
@@ -21,21 +28,27 @@ int _tmain(int argc, LPTSTR argv[]) {
 	_setmode(_fileno(stdout), _O_WTEXT);
 #endif
 
+	ptr_register=(void(*)(TCHAR*, int))GetProcAddress(hLib, "dll_register");
+	
+
 	Semaphore = CreateSemaphore(NULL, 1, 1, SEMAPHORE_NAME);
 	if (Semaphore == NULL) {
 		_tprintf(TEXT("CreateSemaphore failed.\n"));
 		return 0;
 	}
+	ptr_register((TCHAR*)SEMAPHORE_NAME, 3);
+
 	_tprintf(TEXT("\nAguardando autorização para entrar...\n"));
 	WaitForSingleObject(Semaphore, INFINITE);
 	_tprintf(TEXT("\nEntrei!\n\n"));
 
-	dados.hMutexDados = CreateMutex(NULL, FALSE, TEXT("MutexDados"));
+	dados.hMutexDados = CreateMutex(NULL, FALSE, NOME_MUTEX_DADOS);
 	if (dados.hMutexDados == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao criar Mutex!\n"));
 		CloseHandle(Semaphore);
 		return 0;
 	}
+	ptr_register((TCHAR*)NOME_MUTEX_DADOS, 1);
 	WaitForSingleObject(dados.hMutexDados, INFINITE);
 	ReleaseMutex(dados.hMutexDados);
 
@@ -45,6 +58,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 		CloseHandle(Semaphore);
 		return 0;
 	}
+	ptr_register((TCHAR*)EVENT_NOVOT, 4);
 	SetEvent(dados.novoTaxi);
 	ResetEvent(dados.novoTaxi);
 
@@ -55,6 +69,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 		CloseHandle(dados.novoTaxi);
 		return 0;
 	}
+	ptr_register((TCHAR*)EVENT_SAIUT, 4);
 	SetEvent(dados.saiuTaxi);
 	ResetEvent(dados.saiuTaxi);
 
@@ -66,6 +81,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 		CloseHandle(dados.saiuTaxi);
 		return 0;
 	}
+	ptr_register((TCHAR*)EVENT_MOVIMENTO, 4);
 	SetEvent(dados.movimentoTaxi);
 	ResetEvent(dados.movimentoTaxi);
 
@@ -78,6 +94,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 		CloseHandle(dados.movimentoTaxi);
 		return 0;
 	}
+	ptr_register((TCHAR*)EVENT_RESPOSTA, 4);
 
 	dados.saiuAdmin = CreateEvent(NULL, TRUE, FALSE, EVENT_SAIUA);
 	if (dados.saiuAdmin == NULL) {
@@ -89,6 +106,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 		CloseHandle(dados.respostaAdmin);
 		return 0;
 	}
+	ptr_register((TCHAR*)EVENT_SAIUA, 4);
 
 	dados.EspTaxis = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(TAXI), SHM_TAXI);
 	if (dados.EspTaxis == NULL)
@@ -102,6 +120,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 		CloseHandle(dados.saiuAdmin);
 		return 0;
 	}
+	ptr_register((TCHAR*)SHM_TAXI, 6);
 
 	dados.sharedTaxi = (TAXI*)MapViewOfFile(dados.EspTaxis, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(TAXI));
 	if (dados.sharedTaxi == NULL)
@@ -116,6 +135,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 		CloseHandle(dados.saiuAdmin);
 		return 0;
 	}
+	ptr_register((TCHAR*)SHM_TAXI, 7);
 
 	leMapa(&dados);
 
@@ -188,6 +208,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 	CloseHandle(dados.atualizaMap);
 	CloseHandle(dados.saiuAdmin);
 	CloseHandle(dados.EspMapa);
+	FreeLibrary(hLib);
 
 	return 0;
 }
@@ -250,6 +271,7 @@ void leMapa(DADOS* dados) {
 		CloseHandle(dados->hFile);
 		return;
 	}
+	ptr_register((TCHAR*)SHM_MAPA, 6);
 
 	dados->sharedMapa = (MAPA*)MapViewOfFile(dados->EspMapa, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(dados->mapa));
 	if (dados->sharedMapa == NULL)
@@ -266,6 +288,8 @@ void leMapa(DADOS* dados) {
 		CloseHandle(dados->EspMapa);
 		return;
 	}
+	ptr_register((TCHAR*)SHM_MAPA, 7);
+
 	for (int i = 0; tamanhoMapa ==-1; i++)
 		if (dados->sharedMapa[i].caracter == '\n')
 			tamanhoMapa = i;

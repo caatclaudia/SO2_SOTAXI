@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <time.h>
 
+#define PATH_DLL TEXT("..\\SO2_TP_DLL_32.dll")
+
 #define NQ_INICIAL 10
 #define TAM 200
 #define WAITTIMEOUT 1000

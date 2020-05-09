@@ -1,13 +1,23 @@
 #include "ConTaxi.h"
 
+void(*ptr_register)(TCHAR*, int);
+
 int _tmain() {
 	HANDLE hThreadComandos, hThreadMovimentaTaxi, hThreadRespostaTransporte, hThreadSaiuAdmin;
 	TAXI taxi;
+
+	HINSTANCE hLib;
+
+	hLib = LoadLibrary(PATH_DLL);
+	if (hLib == NULL)
+		return 0;
 
 #ifdef UNICODE
 	_setmode(_fileno(stdin), _O_WTEXT);
 	_setmode(_fileno(stdout), _O_WTEXT);
 #endif
+
+	ptr_register = (void(*)(TCHAR*, int))GetProcAddress(hLib, "dll_register");
 
 	inicializaTaxi(&taxi);
 	if (!taxi.terminar) {
@@ -54,6 +64,8 @@ int _tmain() {
 	CloseHandle(movimentoTaxi);
 	CloseHandle(respostaAdmin);
 	CloseHandle(saiuAdmin);
+	FreeLibrary(hLib);
+
 	return 0;
 }
 
@@ -125,6 +137,7 @@ void inicializaTaxi(TAXI* taxi) {
 		_tprintf(TEXT("\n[ERRO] Erro ao criar Mutex!\n"));
 		return;
 	}
+	ptr_register((TCHAR*)NOME_MUTEX, 1);
 	WaitForSingleObject(hMutex, INFINITE);
 
 	taxi->disponivel = 1;
@@ -141,6 +154,7 @@ void inicializaTaxi(TAXI* taxi) {
 		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
 		return;
 	}
+	ptr_register((TCHAR*)EVENT_NOVOT, 4);
 
 	saiuTaxi = CreateEvent(NULL, TRUE, FALSE, EVENT_SAIUT);
 	if (saiuTaxi == NULL) {
@@ -148,6 +162,7 @@ void inicializaTaxi(TAXI* taxi) {
 		CloseHandle(novoTaxi);
 		return;
 	}
+	ptr_register((TCHAR*)EVENT_SAIUT, 4);
 
 	movimentoTaxi = CreateEvent(NULL, TRUE, FALSE, EVENT_MOVIMENTO);
 	if (movimentoTaxi == NULL) {
@@ -156,6 +171,7 @@ void inicializaTaxi(TAXI* taxi) {
 		CloseHandle(saiuTaxi);
 		return;
 	}
+	ptr_register((TCHAR*)EVENT_MOVIMENTO, 4);
 
 	respostaAdmin = CreateEvent(NULL, TRUE, FALSE, EVENT_RESPOSTA);
 	if (respostaAdmin == NULL) {
@@ -165,6 +181,7 @@ void inicializaTaxi(TAXI* taxi) {
 		CloseHandle(movimentoTaxi);
 		return;
 	}
+	ptr_register((TCHAR*)EVENT_RESPOSTA, 4);
 	SetEvent(respostaAdmin);
 	Sleep(500);
 	ResetEvent(respostaAdmin);
@@ -178,6 +195,7 @@ void inicializaTaxi(TAXI* taxi) {
 		CloseHandle(respostaAdmin);
 		return;
 	}
+	ptr_register((TCHAR*)EVENT_SAIUA, 4);
 	SetEvent(saiuAdmin);
 	Sleep(500);
 	ResetEvent(saiuAdmin);
@@ -193,6 +211,7 @@ void inicializaTaxi(TAXI* taxi) {
 		CloseHandle(saiuAdmin);
 		return;
 	}
+	ptr_register((TCHAR*)SHM_NAME, 6);
 
 	shared = (TAXI*)MapViewOfFile(EspTaxis, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(TAXI));
 	if (shared == NULL)
@@ -206,6 +225,7 @@ void inicializaTaxi(TAXI* taxi) {
 		CloseHandle(saiuAdmin);
 		return;
 	}
+	ptr_register((TCHAR*)SHM_NAME, 7);
 
 	//VAI AO ADMIN VER SE PODE CRIAR	
 	avisaNovoTaxi(taxi);

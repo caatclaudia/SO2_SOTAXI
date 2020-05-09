@@ -12,6 +12,7 @@
 #define TempoManifestacoes 5
 #define WAITTIMEOUT 1000
 #define PATH TEXT("..\\mapa.txt")
+#define PATH_DLL TEXT("..\\SO2_TP_DLL_32.dll")
 
 int MaxPass = MAXPASS;
 int MaxTaxi = MAXTAXIS;
@@ -63,6 +64,7 @@ typedef struct {
 #define SHM_TAXI TEXT("EspacoTaxis")
 #define SHM_MAPA TEXT("EspacoMapa")
 
+#define NOME_MUTEX_DADOS TEXT("MutexDados")
 typedef struct {
 	int nTaxis;
 	TAXI taxis[MAXTAXIS];

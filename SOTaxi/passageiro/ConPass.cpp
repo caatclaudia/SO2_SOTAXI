@@ -1,21 +1,33 @@
 #include "ConPass.h"
 
+void(*ptr_register)(TCHAR*, int);
+
 int _tmain() {
 	HANDLE hThreadComandos, hThreadMovimentaPassageiro, hThreadRespostaTransporte;
 	DADOS dados;
 	dados.nPassageiros = 0;
 	dados.terminar = 0;
 
+	HINSTANCE hLib;
+
+	hLib = LoadLibrary(PATH_DLL);
+	if (hLib == NULL)
+		return 0;
+
 #ifdef UNICODE
 	_setmode(_fileno(stdin), _O_WTEXT);
 	_setmode(_fileno(stdout), _O_WTEXT);
 #endif
+
+	ptr_register = (void(*)(TCHAR*, int))GetProcAddress(hLib, "dll_register");
 
 	Semaphore = CreateSemaphore(NULL, 1, 1, SEMAPHORE_NAME);
 	if (Semaphore == NULL) {
 		_tprintf(TEXT("CreateSemaphore failed.\n"));
 		return FALSE;
 	}
+	ptr_register((TCHAR*)SEMAPHORE_NAME, 3);
+
 	_tprintf(TEXT("\nAguardando autorização para entrar...\n"));
 	WaitForSingleObject(Semaphore, INFINITE);
 	_tprintf(TEXT("\nEntrei!\n"));
@@ -49,6 +61,7 @@ int _tmain() {
 	ReleaseSemaphore(Semaphore, 1, NULL);
 
 	CloseHandle(Semaphore);
+	FreeLibrary(hLib);
 
 	return 0;
 }
