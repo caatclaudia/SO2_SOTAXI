@@ -33,6 +33,7 @@ int _tmain() {
 
 	inicializaTaxi(&dados);
 	if (!dados.taxi->terminar) {
+		leMapa(&dados);
 		//WaitForSingleObject(taxi.hMutex, INFINITE);
 
 		hThreadComandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadComandos, (LPVOID)&dados, 0, NULL);
@@ -70,6 +71,8 @@ int _tmain() {
 	_gettch();
 
 	UnmapViewOfFile(dados.shared);
+	UnmapViewOfFile(dados.sharedMap);
+	CloseHandle(dados.EspMapa);
 	CloseHandle(dados.EspTaxis);
 	CloseHandle(dados.novoTaxi);
 	CloseHandle(dados.saiuTaxi);
@@ -221,6 +224,38 @@ void inicializaTaxi(DADOS* dados) {
 	ReleaseMutex(hMutex);
 
 	Sleep(1000);
+
+	return;
+}
+
+void leMapa(DADOS* dados) {
+	dados->EspMapa = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(dados->mapa), SHM_NAME_MAP);
+	if (dados->EspMapa == NULL)
+	{
+		_tprintf(TEXT("\n[ERRO] Erro ao criar FileMapping!\n"));
+		return ;
+	}
+	ptr_register((TCHAR*)SHM_NAME, 6);
+
+	dados->sharedMap = (MAPA*)MapViewOfFile(dados->EspMapa, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(dados->mapa));
+	if (dados->sharedMap == NULL)
+	{
+		_tprintf(TEXT("\n[ERRO] Erro em MapViewOfFile!\n"));
+		CloseHandle(dados->EspMapa);
+		return;
+	}
+	ptr_register((TCHAR*)SHM_NAME, 7);
+
+	int tamanhoMapa = -1;
+	MAPA* aux = NULL;
+	CopyMemory(&aux, dados->sharedMap, sizeof(dados->sharedMap));
+	for (int i = 0; tamanhoMapa == -1; i++)
+		if (dados->sharedMap[i].caracter == '\n')
+			tamanhoMapa = i;
+	dados->mapa = (MAPA*)malloc(sizeof(MAPA) * tamanhoMapa * tamanhoMapa);
+	CopyMemory(dados->mapa, &aux, sizeof(dados->mapa));
+
+	_tprintf(TEXT("\n[MAPA] Mapa lido com sucesso!\n\n"));
 
 	return;
 }

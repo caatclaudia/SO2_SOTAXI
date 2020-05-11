@@ -7,6 +7,10 @@
 #include <stdlib.h>
 #include <time.h>
 
+typedef struct {
+	char caracter;
+} MAPA;
+
 #define TAM 200
 
 #define NOME_MUTEX TEXT("MutexTaxi")
@@ -24,6 +28,7 @@ typedef struct {
 HANDLE hMutex;
 
 #define SHM_NAME TEXT("EspacoTaxis")
+#define SHM_NAME_MAP TEXT("EspacoMapa")
 
 //SEMAFOROS
 #define EVENT_NOVOT TEXT("NovoTaxi")
@@ -43,6 +48,10 @@ typedef struct {
 
 	HANDLE EspTaxis;	//FileMapping
 	TAXI* shared;
+
+	MAPA* mapa;
+	HANDLE EspMapa;	//FileMapping
+	MAPA* sharedMap;
 } DADOS;
 
 #define PATH_DLL TEXT("..\\SO2_TP_DLL_32.dll")
@@ -55,6 +64,7 @@ unsigned int NQ = NQ_INICIAL;
 void ajuda();
 int calculaDistancia(int inicioX, int inicioY, int fimX, int fimY);
 void inicializaTaxi(DADOS* dados);
+void leMapa(DADOS* dados);
 DWORD WINAPI ThreadComandos(LPVOID param);
 DWORD WINAPI ThreadMovimentaTaxi(LPVOID param);
 DWORD WINAPI ThreadSaiuAdmin(LPVOID param);
