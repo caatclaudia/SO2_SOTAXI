@@ -1,6 +1,8 @@
 #include "CenTaxi.h"
 
 void(*ptr_register)(TCHAR*, int);
+void(*ptr_log)(TCHAR*);
+//ptr_log -> Quando Taxi começa a transportar
 
 int _tmain(int argc, LPTSTR argv[]) {
 	HANDLE hThreadComandos, hThreadNovoTaxi, hThreadSaiuTaxi, hThreadMovimento, hThreadNovoPassageiro;
@@ -29,7 +31,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 #endif
 
 	ptr_register=(void(*)(TCHAR*, int))GetProcAddress(hLib, "dll_register");
-	
+	ptr_log = (void(*)(TCHAR*))GetProcAddress(hLib, "dll_log");
 
 	Semaphore = CreateSemaphore(NULL, 1, 1, SEMAPHORE_NAME);
 	if (Semaphore == NULL) {
@@ -363,14 +365,18 @@ DWORD WINAPI ThreadNovoTaxi(LPVOID param) {		//VERIFICA SE HA NOVOS TAXIS
 		WaitForSingleObject(dados->hMutexDados, INFINITE);
 
 		CopyMemory(&novo, dados->sharedTaxi, sizeof(TAXI));
+		ptr_log((TCHAR*)TEXT("CenTaxi recebe Taxi do ConTaxi por memória partilhada!"));
 		if (adicionaTaxi(dados, novo)) {
 			_tprintf(TEXT("Novo Taxi: %s\n"), dados->taxis[dados->nTaxis - 1].matricula);
 			CopyMemory(dados->sharedTaxi, &dados->taxis[dados->nTaxis - 1], sizeof(TAXI));
+			ptr_log((TCHAR*)(TEXT("Taxi %s entrou!"), novo.matricula));
+			ptr_log((TCHAR*)(TEXT("Taxi %s em (%d,%d) vazio!"), novo.matricula, novo.X, novo.Y));
 		}
 		else {
 			novo.terminar = 1;
 			CopyMemory(dados->sharedTaxi, &novo, sizeof(TAXI));
 		}
+		ptr_log((TCHAR*)TEXT("CenTaxi envia Taxi para ConTaxi por memória partilhada!"));
 		SetEvent(dados->respostaAdmin);
 		Sleep(500);
 		ResetEvent(dados->respostaAdmin);
@@ -395,6 +401,8 @@ DWORD WINAPI ThreadSaiuTaxi(LPVOID param) {		//VERIFICA SE SAIRAM TAXIS
 		WaitForSingleObject(dados->hMutexDados, INFINITE);
 
 		CopyMemory(&novo, dados->sharedTaxi, sizeof(TAXI));
+		ptr_log((TCHAR*)(TEXT("Taxi %s saiu!"), novo.matricula));
+		ptr_log((TCHAR*)TEXT("CenTaxi recebe Taxi do ConTaxi por memória partilhada!"));
 		removeTaxi(dados, novo);
 
 		ReleaseMutex(dados->hMutexDados);
@@ -423,6 +431,7 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 		WaitForSingleObject(dados->hMutexDados, INFINITE);
 
 		CopyMemory(&novo, dados->sharedTaxi, sizeof(TAXI));
+		ptr_log((TCHAR*)TEXT("CenTaxi recebe Taxi do ConTaxi por memória partilhada!"));
 		for (int i = 0; i < dados->nTaxis; i++)
 			if (!_tcscmp(novo.matricula, dados->taxis[i].matricula)) {
 				dados->taxis[i] = novo;
@@ -435,6 +444,7 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 			}
 
 		CopyMemory(dados->sharedMapa, dados->mapa, sizeof(dados->mapa));
+		ptr_log((TCHAR*)TEXT("CenTaxi envia Mapa para MapInfo por memória partilhada!"));
 		_tprintf(TEXT("\n[MAPA] Mapa atualizado com sucesso!\n"));
 
 		ReleaseMutex(dados->hMutexDados);
@@ -451,6 +461,9 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 
 DWORD WINAPI ThreadNovoPassageiro(LPVOID param) {		//VERIFICA SE HA NOVOS PASSAGEIROS
 	DADOS* dados = ((DADOS*)param);
+
+	//ptr_log((TCHAR*)(TEXT("Passageiro %s entrou!"), novo.id));
+	//ptr_log((TCHAR*)(TEXT("Passageiro %s em (%d,%d)!"), novo.id, novo.X, novo.Y));
 
 	ExitThread(0);
 }
@@ -506,6 +519,7 @@ boolean removePassageiro(DADOS* dados, PASSAGEIRO novo) {
 			}
 			dados->nPassageiros--;
 			_tprintf(TEXT("[SAIU PASSAGEIRO] Saiu Passageiro: %s\n"), novo.id);
+			//ptr_log((TCHAR*)(TEXT("Passageiro %s saiu!"), novo.id));
 			return TRUE;
 		}
 	}
