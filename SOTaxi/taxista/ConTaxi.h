@@ -61,6 +61,8 @@ typedef struct {
 #define WAITTIMEOUT 1000
 unsigned int NQ = NQ_INICIAL;
 
+int tamanhoMapa = -1;
+
 void ajuda();
 int calculaDistancia(int inicioX, int inicioY, int fimX, int fimY);
 void inicializaTaxi(DADOS* dados);

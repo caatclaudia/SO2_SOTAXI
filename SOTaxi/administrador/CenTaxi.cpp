@@ -516,6 +516,6 @@ void eliminaIdMapa(DADOS* dados, char id) {
 	int x = 0, y = 0;
 	for (int i = 0; i < tamanhoMapa * tamanhoMapa; i++) {
 		if (dados->mapa[i].caracter == id)
-			dados->mapa[i].caracter = '.';
+			dados->mapa[i].caracter = '_';
 	}
 }

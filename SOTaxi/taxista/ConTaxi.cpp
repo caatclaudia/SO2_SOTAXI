@@ -20,6 +20,8 @@ int _tmain() {
 	if (hMyLib == NULL)
 		return 0;
 
+	srand((unsigned)time(NULL));
+
 #ifdef UNICODE
 	_setmode(_fileno(stdin), _O_WTEXT);
 	_setmode(_fileno(stdout), _O_WTEXT);
@@ -27,7 +29,7 @@ int _tmain() {
 #endif
 
 	ptr_register = (void(*)(TCHAR*, int))GetProcAddress(hLib, "dll_register");
-	ptr_avisaNovoTaxi = (void(*)(DADOS* info))GetProcAddress(hMyLib, "avisaNovoTaxi");
+	ptr_avisaNovoTaxi = (void(*)(DADOS * info))GetProcAddress(hMyLib, "avisaNovoTaxi");
 	ptr_avisaTaxiSaiu = (void(*)(DADOS * info))GetProcAddress(hMyLib, "avisaTaxiSaiu");
 	ptr_avisaMovimentoTaxi = (void(*)(DADOS * info))GetProcAddress(hMyLib, "avisaMovimentoTaxi");
 
@@ -233,7 +235,7 @@ void leMapa(DADOS* dados) {
 	if (dados->EspMapa == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro ao criar FileMapping!\n"));
-		return ;
+		return;
 	}
 	ptr_register((TCHAR*)SHM_NAME, 6);
 
@@ -246,7 +248,6 @@ void leMapa(DADOS* dados) {
 	}
 	ptr_register((TCHAR*)SHM_NAME, 7);
 
-	int tamanhoMapa = -1;
 	MAPA* aux = NULL;
 	CopyMemory(&aux, dados->sharedMap, sizeof(dados->sharedMap));
 	for (int i = 0; tamanhoMapa == -1; i++)
@@ -254,6 +255,11 @@ void leMapa(DADOS* dados) {
 			tamanhoMapa = i;
 	dados->mapa = (MAPA*)malloc(sizeof(MAPA) * tamanhoMapa * tamanhoMapa);
 	CopyMemory(dados->mapa, &aux, sizeof(dados->mapa));
+
+	for (int i = 0; i < tamanhoMapa * tamanhoMapa; i++) {
+		dados->mapa[i].caracter = dados->sharedMap[i].caracter;
+		_tprintf(TEXT("%c"), dados->mapa[i].caracter);
+	}
 
 	_tprintf(TEXT("\n[MAPA] Mapa lido com sucesso!\n\n"));
 
@@ -317,12 +323,9 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 	ExitThread(0);
 }
 
-//ASSEGURAR TAMANHO DO MAPA
 DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {	//MANDA TAXI AO ADMIN
 	DADOS* dados = ((DADOS*)param);
 	int val, valido;
-
-	srand((unsigned)time(NULL));
 
 	do {
 		valido = 0;
@@ -330,37 +333,40 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {	//MANDA TAXI AO ADMIN
 		if (dados->taxi->terminar)
 			return 0;
 		//MOVIMENTA
-		//SEM PASSAGEIRO -> DESLOCA-SE PARA A FRENTE ATE CHEGAR A CRUZAMENTO -------------- FAZER
-		if (dados->taxi->velocidade != 0) {
-			do {
-				val = rand() % 4;
-				switch (val) {
-				case 1:	//DIREITA
-					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X+1, dados->taxi->Y);
-					dados->taxi->X++;
-					valido = 1;
-					break;
-				case 2: //ESQUERDA
-					if (dados->taxi->X > 0) {
-						_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X-1, dados->taxi->Y);
-						dados->taxi->X--;
-						valido = 1;
+		//SEM PASSAGEIRO -> TENDÊNCIA PARA SEDESLOCAR PARA A FRENTE
+		if (dados->taxi->velocidade != 0 && dados->taxi->disponivel == 1) {
+			if (dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X + 1].caracter == '_') {
+				_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X + 1, dados->taxi->Y);
+				dados->taxi->X++;
+			}
+			else {
+				do {
+					val = rand() % 3;
+					switch (val) {
+					case 0: //CIMA
+						if (dados->mapa[tamanhoMapa * (dados->taxi->Y - 1) + (dados->taxi->Y - 1) + dados->taxi->X].caracter == '_') {
+							_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X, dados->taxi->Y - 1);
+							dados->taxi->Y--;
+							valido = 1;
+						}
+						break;
+					case 1: //BAIXO
+						if (dados->mapa[tamanhoMapa * (dados->taxi->Y + 1) + (dados->taxi->Y + 1) + dados->taxi->X].caracter == '_') {
+							_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X, dados->taxi->Y + 1);
+							dados->taxi->Y++;
+							valido = 1;
+						}
+						break;
+					case 2: //ESQUERDA
+						if (dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X - 1].caracter == '_') {
+							_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X - 1, dados->taxi->Y);
+							dados->taxi->X--;
+							valido = 1;
+						}
+						break;
 					}
-					break;
-				case 3: //CIMA
-					if (dados->taxi->Y > 0) {
-						_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X, dados->taxi->Y-1);
-						dados->taxi->Y--;
-						valido = 1;
-					}
-					break;
-				case 4: //BAIXO
-					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X, dados->taxi->Y+1);
-					dados->taxi->Y++;
-					valido = 1;
-					break;
-				}
-			} while (!valido);
+				} while (!valido);
+			}
 			ptr_avisaMovimentoTaxi(dados);
 		}
 
