@@ -1,4 +1,4 @@
 ﻿C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Microsoft\VC\v160\Microsoft.CppBuild.targets(467,5): warning MSB8028: The intermediate directory (Debug\) contains files shared from another project (taxista.vcxproj).  This can lead to incorrect clean and rebuild behavior.
   ConTaxi.cpp
-C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\taxista\ConTaxi.cpp(6,48): warning C4101: 'hThreadRespostaTransporte': unreferenced local variable
+C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\taxista\ConTaxi.cpp(11,48): warning C4101: 'hThreadRespostaTransporte': unreferenced local variable
   taxista.vcxproj -> C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Debug\ConTaxi.exe
