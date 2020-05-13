@@ -369,8 +369,8 @@ DWORD WINAPI ThreadNovoTaxi(LPVOID param) {		//VERIFICA SE HA NOVOS TAXIS
 		if (adicionaTaxi(dados, novo)) {
 			_tprintf(TEXT("Novo Taxi: %s\n"), dados->taxis[dados->nTaxis - 1].matricula);
 			CopyMemory(dados->sharedTaxi, &dados->taxis[dados->nTaxis - 1], sizeof(TAXI));
-			ptr_log((TCHAR*)(TEXT("Taxi %s entrou!"), novo.matricula));
-			ptr_log((TCHAR*)(TEXT("Taxi %s em (%d,%d) vazio!"), novo.matricula, novo.X, novo.Y));
+		//	ptr_log((TCHAR*)(TEXT("Taxi %s entrou!"), novo.matricula));
+		//	ptr_log((TCHAR*)(TEXT("Taxi %s em (%d,%d) vazio!"), novo.matricula, novo.X, novo.Y));
 		}
 		else {
 			novo.terminar = 1;
@@ -401,7 +401,7 @@ DWORD WINAPI ThreadSaiuTaxi(LPVOID param) {		//VERIFICA SE SAIRAM TAXIS
 		WaitForSingleObject(dados->hMutexDados, INFINITE);
 
 		CopyMemory(&novo, dados->sharedTaxi, sizeof(TAXI));
-		ptr_log((TCHAR*)(TEXT("Taxi %s saiu!"), novo.matricula));
+	//	ptr_log((TCHAR*)(TEXT("Taxi %s saiu!"), novo.matricula));
 		ptr_log((TCHAR*)TEXT("CenTaxi recebe Taxi do ConTaxi por memória partilhada!"));
 		removeTaxi(dados, novo);
 

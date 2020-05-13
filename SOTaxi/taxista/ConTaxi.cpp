@@ -1,9 +1,10 @@
 #include "ConTaxi.h"
 
 void(*ptr_register)(TCHAR*, int);
-void(*ptr_avisaNovoTaxi)(DADOS*);					//DLL
-void(*ptr_avisaTaxiSaiu)(DADOS*);					//DLL
-void(*ptr_avisaMovimentoTaxi)(DADOS*);			//DLL
+
+void avisaNovoTaxi(DADOS*);						//DLL
+void avisaTaxiSaiu(DADOS* dados);				//DLL
+void avisaMovimentoTaxi(DADOS* dados);			//DLL
 
 HINSTANCE hLib, hMyLib;
 
@@ -16,9 +17,6 @@ int _tmain() {
 	hLib = LoadLibrary(PATH_DLL);
 	if (hLib == NULL)
 		return 0;
-	hMyLib = LoadLibrary(PATH_MY_DLL);
-	if (hMyLib == NULL)
-		return 0;
 
 	srand((unsigned)time(NULL));
 
@@ -29,9 +27,6 @@ int _tmain() {
 #endif
 
 	ptr_register = (void(*)(TCHAR*, int))GetProcAddress(hLib, "dll_register");
-	ptr_avisaNovoTaxi = (void(*)(DADOS * info))GetProcAddress(hMyLib, "avisaNovoTaxi");
-	ptr_avisaTaxiSaiu = (void(*)(DADOS * info))GetProcAddress(hMyLib, "avisaTaxiSaiu");
-	ptr_avisaMovimentoTaxi = (void(*)(DADOS * info))GetProcAddress(hMyLib, "avisaMovimentoTaxi");
 
 	inicializaTaxi(&dados);
 	if (!dados.taxi->terminar) {
@@ -221,8 +216,12 @@ void inicializaTaxi(DADOS* dados) {
 	}
 	ptr_register((TCHAR*)SHM_NAME, 7);
 
-	//VAI AO ADMIN VER SE PODE CRIAR	
-	ptr_avisaNovoTaxi(dados);
+	//VAI AO ADMIN VER SE PODE CRIAR
+	_tprintf(TEXT("\nAguardando resposta da Central...\n"));
+	avisaNovoTaxi(dados);
+	if (!dados->taxi->terminar)
+		_tprintf(TEXT("\nBem Vindo!\n"));
+
 	ReleaseMutex(hMutex);
 
 	Sleep(1000);
@@ -315,7 +314,7 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 
 	dados->taxi->terminar = 1;
 
-	ptr_avisaTaxiSaiu(dados);
+	avisaTaxiSaiu(dados);
 	ReleaseMutex(hMutex);
 
 	Sleep(1000);
@@ -367,7 +366,7 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {	//MANDA TAXI AO ADMIN
 					}
 				} while (!valido);
 			}
-			ptr_avisaMovimentoTaxi(dados);
+			avisaMovimentoTaxi(dados);
 		}
 
 		ReleaseMutex(hMutex);

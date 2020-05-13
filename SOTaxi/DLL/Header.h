@@ -20,7 +20,10 @@ typedef struct {
 	int terminar;
 	int id_mapa;
 } TAXI;
-HANDLE hMutex;
+
+typedef struct {
+	char caracter;
+} MAPA;
 
 typedef struct {
 	TAXI* taxi;
@@ -33,22 +36,20 @@ typedef struct {
 
 	HANDLE EspTaxis;	//FileMapping
 	TAXI* shared;
+
+	MAPA* mapa;
+	HANDLE EspMapa;	//FileMapping
+	MAPA* sharedMap;
 } DADOS;
 
-//Esta macro é definida pelo sistema caso estejamos na DLL (<DLL_IMP>_EXPORTS definida)
-//ou na app (<DLL_IMP>_EXPORTS não definida) onde DLL_IMP é o nome deste projeto
-#ifdef _WINDLL
-#define DLL_IMP_API __declspec(dllexport)//export
+#ifdef DLL_EXPORTS
+#define DLL_API __declspec(dllexport)//export
 #else
-#define DLL_IMP_API __declspec(dllimport)//import
+#define DLL_API __declspec(dllimport)//import
 #endif
-#ifdef __cplusplus
-extern "C"
-{
-	//Funções a serem exportadas/
-	extern DLL_IMP_API void comunicacaoParaCentral(DADOS *dados);
-	extern DLL_IMP_API void avisaNovoTaxi(DADOS *dados);
-	extern DLL_IMP_API void avisaTaxiSaiu(DADOS *dados);
-	extern DLL_IMP_API void avisaMovimentoTaxi(DADOS *dados);
-}
-#endif
+
+//Funções a serem exportadas/
+extern DLL_API void comunicacaoParaCentral(DADOS* dados);
+extern DLL_API void avisaNovoTaxi(DADOS* dados);
+extern DLL_API void avisaTaxiSaiu(DADOS* dados);
+extern DLL_API void avisaMovimentoTaxi(DADOS* dados);

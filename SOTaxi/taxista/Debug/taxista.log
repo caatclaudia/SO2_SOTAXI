@@ -1,4 +1,10 @@
 ﻿C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\MSBuild\Microsoft\VC\v160\Microsoft.CppBuild.targets(467,5): warning MSB8028: The intermediate directory (Debug\) contains files shared from another project (taxista.vcxproj).  This can lead to incorrect clean and rebuild behavior.
   ConTaxi.cpp
-C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\taxista\ConTaxi.cpp(11,48): warning C4101: 'hThreadRespostaTransporte': unreferenced local variable
+C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\taxista\ConTaxi.cpp(5,27): warning C4273: 'avisaNovoTaxi': inconsistent dll linkage
+C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\DLL\Header.h(53,21): message : see previous definition of 'avisaNovoTaxi'
+C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\taxista\ConTaxi.cpp(6,33): warning C4273: 'avisaTaxiSaiu': inconsistent dll linkage
+C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\DLL\Header.h(54,21): message : see previous definition of 'avisaTaxiSaiu'
+C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\taxista\ConTaxi.cpp(7,38): warning C4273: 'avisaMovimentoTaxi': inconsistent dll linkage
+C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\DLL\Header.h(55,21): message : see previous definition of 'avisaMovimentoTaxi'
+C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\taxista\ConTaxi.cpp(12,48): warning C4101: 'hThreadRespostaTransporte': unreferenced local variable
   taxista.vcxproj -> C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Debug\ConTaxi.exe
