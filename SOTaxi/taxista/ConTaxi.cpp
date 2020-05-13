@@ -1,17 +1,10 @@
 #include "ConTaxi.h"
 
-void(*ptr_register)(TCHAR*, int);
-
-void avisaNovoTaxi(DADOS*);						//DLL
-void avisaTaxiSaiu(DADOS* dados);				//DLL
-void avisaMovimentoTaxi(DADOS* dados);			//DLL
-
-HINSTANCE hLib, hMyLib;
-
 int _tmain() {
 	HANDLE hThreadComandos, hThreadMovimentaTaxi, hThreadRespostaTransporte, hThreadSaiuAdmin;
 	DADOS dados;
 	TAXI taxi;
+	HINSTANCE hLib;
 	dados.taxi = &taxi;
 
 	hLib = LoadLibrary(PATH_DLL);
@@ -27,10 +20,16 @@ int _tmain() {
 #endif
 
 	ptr_register = (void(*)(TCHAR*, int))GetProcAddress(hLib, "dll_register");
+		
+	leMapa(&dados);
+	if (dados.mapa == NULL) {
+		UnmapViewOfFile(dados.sharedMap);
+		CloseHandle(dados.EspMapa);
+		return 0;
+	}
 
 	inicializaTaxi(&dados);
 	if (!dados.taxi->terminar) {
-		leMapa(&dados);
 		//WaitForSingleObject(taxi.hMutex, INFINITE);
 
 		hThreadComandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadComandos, (LPVOID)&dados, 0, NULL);
@@ -77,7 +76,6 @@ int _tmain() {
 	CloseHandle(dados.respostaAdmin);
 	CloseHandle(dados.saiuAdmin);
 	FreeLibrary(hLib);
-	FreeLibrary(hMyLib);
 
 	return 0;
 }
@@ -107,6 +105,8 @@ int calculaDistancia(int inicioX, int inicioY, int fimX, int fimY) {
 
 void inicializaTaxi(DADOS* dados) {
 	int num;
+	int VALIDO;
+	int x, y;
 
 	do {
 		num = 0;
@@ -118,8 +118,17 @@ void inicializaTaxi(DADOS* dados) {
 	} while (num != 2);
 	dados->taxi->matricula[6] = '\0';
 
-	_tprintf(_T("\n Localizacao do Táxi (X Y) : "));
-	_tscanf_s(_T("%d %d"), &dados->taxi->X, &dados->taxi->Y);
+	do {
+		VALIDO = 1;
+		_tprintf(_T("\n Localizacao do Táxi (X Y) : "));
+		_tscanf_s(_T("%d %d"), &x, &y);
+		if (dados->mapa[tamanhoMapa * y + y + x].caracter != '_') {
+			_tprintf(_T("\n[ATENÇÃO] Isso não é estrada!\n\n"));
+			VALIDO = 0;
+		}
+	} while (!VALIDO);
+	dados->taxi->X = x;
+	dados->taxi->Y = y;
 
 	hMutex = CreateMutex(NULL, FALSE, NOME_MUTEX);
 	if (hMutex == NULL) {
@@ -249,6 +258,11 @@ void leMapa(DADOS* dados) {
 
 	MAPA* aux = NULL;
 	CopyMemory(&aux, dados->sharedMap, sizeof(dados->sharedMap));
+	if (aux == NULL) {
+		_tprintf(TEXT("\n[MAPA] CenTaxi não enviou mapa!\n"));
+		dados->mapa = NULL;
+		return;
+	}
 	for (int i = 0; tamanhoMapa == -1; i++)
 		if (dados->sharedMap[i].caracter == '\n')
 			tamanhoMapa = i;
