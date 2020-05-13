@@ -356,6 +356,7 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 DWORD WINAPI ThreadNovoTaxi(LPVOID param) {		//VERIFICA SE HA NOVOS TAXIS
 	DADOS* dados = ((DADOS*)param);
 	TAXI novo;
+	TCHAR aux[TAM] = TEXT("\n"), aux1[TAM]=TEXT("\n");
 
 	while (1) {
 		WaitForSingleObject(dados->novoTaxi, INFINITE);
@@ -369,8 +370,10 @@ DWORD WINAPI ThreadNovoTaxi(LPVOID param) {		//VERIFICA SE HA NOVOS TAXIS
 		if (adicionaTaxi(dados, novo)) {
 			_tprintf(TEXT("Novo Taxi: %s\n"), dados->taxis[dados->nTaxis - 1].matricula);
 			CopyMemory(dados->sharedTaxi, &dados->taxis[dados->nTaxis - 1], sizeof(TAXI));
-		//	ptr_log((TCHAR*)(TEXT("Taxi %s entrou!"), novo.matricula));
-		//	ptr_log((TCHAR*)(TEXT("Taxi %s em (%d,%d) vazio!"), novo.matricula, novo.X, novo.Y));
+			_stprintf_s(aux, TAM, TEXT("Taxi %s entrou!\n"), novo.matricula);
+			ptr_log(aux);
+			_stprintf_s(aux1, TAM, TEXT("Taxi %s em (%d,%d) vazio!"), novo.matricula, novo.X, novo.Y);
+			ptr_log(aux1);
 		}
 		else {
 			novo.terminar = 1;
@@ -392,6 +395,7 @@ DWORD WINAPI ThreadNovoTaxi(LPVOID param) {		//VERIFICA SE HA NOVOS TAXIS
 DWORD WINAPI ThreadSaiuTaxi(LPVOID param) {		//VERIFICA SE SAIRAM TAXIS
 	DADOS* dados = ((DADOS*)param);
 	TAXI novo;
+	TCHAR aux[TAM] = TEXT("\n");
 
 	while (1) {
 		WaitForSingleObject(dados->saiuTaxi, INFINITE);
@@ -401,7 +405,8 @@ DWORD WINAPI ThreadSaiuTaxi(LPVOID param) {		//VERIFICA SE SAIRAM TAXIS
 		WaitForSingleObject(dados->hMutexDados, INFINITE);
 
 		CopyMemory(&novo, dados->sharedTaxi, sizeof(TAXI));
-	//	ptr_log((TCHAR*)(TEXT("Taxi %s saiu!"), novo.matricula));
+		_stprintf_s(aux, TAM, TEXT("Taxi %s saiu!"), novo.matricula);
+		ptr_log(aux);
 		ptr_log((TCHAR*)TEXT("CenTaxi recebe Taxi do ConTaxi por memória partilhada!"));
 		removeTaxi(dados, novo);
 
@@ -461,8 +466,13 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 
 DWORD WINAPI ThreadNovoPassageiro(LPVOID param) {		//VERIFICA SE HA NOVOS PASSAGEIROS
 	DADOS* dados = ((DADOS*)param);
+	TCHAR aux[TAM] = TEXT("\n"), aux1[TAM] = TEXT("\n");
 
+	//_stprintf_s(aux, TAM, TEXT("Passageiro %s entrou!"), novo.id);
+	//ptr_log(aux);
 	//ptr_log((TCHAR*)(TEXT("Passageiro %s entrou!"), novo.id));
+	//_stprintf_s(aux1, TAM, TEXT("Passageiro %s em (%d,%d)!"), novo.id, novo.X, novo.Y);
+	//ptr_log(aux1);
 	//ptr_log((TCHAR*)(TEXT("Passageiro %s em (%d,%d)!"), novo.id, novo.X, novo.Y));
 
 	ExitThread(0);
