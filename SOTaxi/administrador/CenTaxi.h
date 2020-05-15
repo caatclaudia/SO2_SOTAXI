@@ -7,6 +7,9 @@
 #include <stdlib.h>
 #include <time.h>
 
+void(*ptr_register)(TCHAR*, int);
+void(*ptr_log)(TCHAR*);
+
 #define TAM 50
 #define MAXTAXIS 10
 #define MAXPASS 10
@@ -22,6 +25,9 @@ int id_mapa_taxi = 1;
 char id_mapa_pass = 'A';
 
 int tamanhoMapa = -1;
+
+#define EVENT_TRANSPORTE TEXT("Transporte")
+HANDLE transporte;
 
 //1 INSTANCIA APENAS
 #define SEMAPHORE_NAME TEXT("SEMAPHORE_ADMIN")
@@ -51,6 +57,24 @@ typedef struct {
 	int id_mapa;
 	float velocidade;
 } TAXI;
+
+#define MAX_PASS 5
+#define BUFFER_CIRCULAR TEXT("BufferCircular")
+#define SEMAPHORE_MUTEX TEXT("SEM_MUTEX")
+#define SEMAPHORE_ITENS TEXT("SEM_ITENS")
+#define SEMAPHORE_VAZIOS TEXT("SEM_VAZIOS")
+HANDLE sem_mutex, sem_itens, sem_vazios;
+
+HANDLE hTimer;
+int acabouTempo = 0;
+
+typedef struct {
+	PASSAGEIRO Passageiros[MAX_PASS];
+	int NextIn = 0, NextOut = 0;
+} BUFFER;
+
+HANDLE hMemoria;
+BUFFER* BufferMemoria;
 
 //SEMAFOROS
 #define EVENT_NOVOT TEXT("NovoTaxi")
@@ -91,6 +115,8 @@ typedef struct {
 	HANDLE infoAdmin;
 } DADOS;
 
+void inicializaBuffer();
+void inicializaVariaveis();
 void ajuda();
 void listarTaxis(DADOS* dados);
 void listarPassageiros(DADOS* dados);
@@ -100,10 +126,10 @@ boolean removeTaxi(DADOS* dados, TAXI novo);
 boolean adicionaPassageiro(DADOS* dados, PASSAGEIRO novo);
 boolean removePassageiro(DADOS* dados, PASSAGEIRO novo);
 void eliminaIdMapa(DADOS* dados, char id);
+void expulsarTaxi(DADOS* dados, TCHAR* matr);
 void transporteAceite(DADOS* dados);
 void enviaTaxi(DADOS* dados, TAXI* taxi);
 void newPassageiro(DADOS* dados);
-void expulsarTaxi(DADOS* dados, TCHAR* matr);
 DWORD WINAPI ThreadTempoTransporte(LPVOID param);
 DWORD WINAPI ThreadComandos(LPVOID param);
 DWORD WINAPI ThreadNovoTaxi(LPVOID param);

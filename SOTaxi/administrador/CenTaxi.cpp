@@ -1,58 +1,10 @@
 #include "CenTaxi.h"
 
-void(*ptr_register)(TCHAR*, int);
-void(*ptr_log)(TCHAR*);
 //ptr_log -> Quando Taxi começa a transportar
 
-#define MAX_PASS 5
-#define BUFFER_CIRCULAR TEXT("BufferCircular")
-#define SEMAPHORE_MUTEX TEXT("SEM_MUTEX")
-#define SEMAPHORE_ITENS TEXT("SEM_ITENS")
-#define SEMAPHORE_VAZIOS TEXT("SEM_VAZIOS")
-HANDLE sem_mutex, sem_itens, sem_vazios;
-
-typedef struct {
-	PASSAGEIRO Passageiros[MAX_PASS];
-	int NextIn = 0, NextOut = 0;
-} BUFFER;
-
-HANDLE hMemoria;
-BUFFER* BufferMemoria;
-
-HANDLE hTimer;
-
-void newPassageiro(DADOS* dados);
-
-#define EVENT_TRANSPORTE TEXT("Transporte")
-HANDLE transporte;
-
-void inicializaBuffer() {
-	hMemoria = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(BUFFER), BUFFER_CIRCULAR);
-	ptr_register((TCHAR*)BUFFER_CIRCULAR, 6);
-	BufferMemoria = (BUFFER*)MapViewOfFile(hMemoria, FILE_MAP_WRITE, 0, 0, sizeof(BUFFER));
-	ptr_register((TCHAR*)BUFFER_CIRCULAR, 7);
-
-	sem_mutex = CreateSemaphore(NULL, 1, 1, SEMAPHORE_MUTEX);
-	if (sem_mutex == NULL) {
-		_tprintf(TEXT("\n[ERRO] Erro ao criar Semáforo!\n"));
-		return;
-	}
-	ptr_register((TCHAR*)SEMAPHORE_MUTEX, 3);
-	sem_itens = CreateSemaphore(NULL, 0, MAX_PASS, SEMAPHORE_ITENS);
-	if (sem_itens == NULL) {
-		_tprintf(TEXT("\n[ERRO] Erro ao criar Semáforo!\n"));
-		return;
-	}
-	ptr_register((TCHAR*)SEMAPHORE_ITENS, 3);
-	sem_vazios = CreateSemaphore(NULL, MAX_PASS, MAX_PASS, SEMAPHORE_VAZIOS);
-	if (sem_vazios == NULL) {
-		_tprintf(TEXT("\n[ERRO] Erro ao criar Semáforo!\n"));
-		return;
-	}
-	ptr_register((TCHAR*)SEMAPHORE_VAZIOS, 3);
-
-	return;
-}
+HKEY chave;
+DWORD queAconteceu;
+DWORD tamanho;
 
 int _tmain(int argc, LPTSTR argv[]) {
 	HANDLE hThreadComandos, hThreadNovoTaxi, hThreadSaiuTaxi, hThreadMovimento, hThreadNovoPassageiro, hThreadTempoTransporte;
@@ -64,6 +16,8 @@ int _tmain(int argc, LPTSTR argv[]) {
 	dados.esperaManifestacoes = TempoManifestacoes;
 
 	srand((unsigned)time(NULL));
+
+	inicializaVariaveis();
 
 	HINSTANCE hLib;
 
@@ -199,18 +153,16 @@ int _tmain(int argc, LPTSTR argv[]) {
 		_tprintf(TEXT("CreateWaitableTimer failed (%d)\n"), GetLastError());
 		return 0;
 	}
-	//ptr_register((TCHAR*)SHM_TAXI, 7);
+	ptr_register((TCHAR*)TEXT("hTimer"), 5);
 
 	transporte = CreateEvent(NULL, TRUE, FALSE, EVENT_TRANSPORTE);
 	if (transporte == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
 		return 0;
 	}
-	//ptr_register((TCHAR*)EVENT_TRANSPORTE, 4);
+	ptr_register((TCHAR*)EVENT_TRANSPORTE, 4);
 
 	leMapa(&dados);
-
-
 
 	hThreadComandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadComandos, (LPVOID)&dados, 0, NULL);
 	if (hThreadComandos == NULL) {
@@ -290,8 +242,108 @@ int _tmain(int argc, LPTSTR argv[]) {
 	CloseHandle(dados.EspMapa);
 	CloseHandle(transporte);
 	FreeLibrary(hLib);
+	RegCloseKey(chave);
 
 	return 0;
+}
+
+void inicializaBuffer() {
+	hMemoria = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(BUFFER), BUFFER_CIRCULAR);
+	ptr_register((TCHAR*)BUFFER_CIRCULAR, 6);
+
+	BufferMemoria = (BUFFER*)MapViewOfFile(hMemoria, FILE_MAP_WRITE, 0, 0, sizeof(BUFFER));
+	ptr_register((TCHAR*)BUFFER_CIRCULAR, 7);
+
+	sem_mutex = CreateSemaphore(NULL, 1, 1, SEMAPHORE_MUTEX);
+	if (sem_mutex == NULL) {
+		_tprintf(TEXT("\n[ERRO] Erro ao criar Semáforo!\n"));
+		return;
+	}
+	ptr_register((TCHAR*)SEMAPHORE_MUTEX, 3);
+
+	sem_itens = CreateSemaphore(NULL, 0, MAX_PASS, SEMAPHORE_ITENS);
+	if (sem_itens == NULL) {
+		_tprintf(TEXT("\n[ERRO] Erro ao criar Semáforo!\n"));
+		return;
+	}
+	ptr_register((TCHAR*)SEMAPHORE_ITENS, 3);
+
+	sem_vazios = CreateSemaphore(NULL, MAX_PASS, MAX_PASS, SEMAPHORE_VAZIOS);
+	if (sem_vazios == NULL) {
+		_tprintf(TEXT("\n[ERRO] Erro ao criar Semáforo!\n"));
+		return;
+	}
+	ptr_register((TCHAR*)SEMAPHORE_VAZIOS, 3);
+
+	return;
+}
+
+void inicializaVariaveis() {
+	DWORD opcao;
+	TCHAR str[TAM], op;
+
+	//Criar/abrir uma chave em HKEY_CURRENT_USER\Software\MinhaAplicacao
+	if (RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("Software\\Mapa"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &chave, &queAconteceu) != ERROR_SUCCESS) {
+		_tprintf(TEXT("[ERRO] Erro ao criar/abrir chave (%d)\n"), GetLastError());
+		return;
+	}
+	else {
+		//Se a chave foi criada, inicializar os valores
+		if (queAconteceu == REG_CREATED_NEW_KEY) {
+			_tprintf(TEXT("[DETALHES] Chave: HKEY_CURRENT_USER\\Software\\Mapa\n"));
+			//Criar valor "TaxiOcupado"
+			RegSetValueEx(chave, TEXT("TaxiOcupado"), 0, REG_SZ, (LPBYTE)TEXT("Vermelho"), _tcslen(TEXT("Vermelho")) * sizeof(TCHAR));
+			//Criar valor "TaxiLivre"
+			RegSetValueEx(chave, TEXT("TaxiLivre"), 0, REG_SZ, (LPBYTE)TEXT("Verde"), _tcslen(TEXT("Verde")) * sizeof(TCHAR));
+			//Criar valor "TaxiBuscarPassageiro"
+			RegSetValueEx(chave, TEXT("TaxiBuscarPassageiro"), 0, REG_SZ, (LPBYTE)TEXT("Laranja"), _tcslen(TEXT("Laranja")) * sizeof(TCHAR));
+			_tprintf(TEXT("[DETALHES] Valores TaxiOcupado, TaxiLivre e TaxiBuscarPassageiro guardados\n"));
+		}
+		//Se a chave foi aberta, ler os valores lá guardados
+		else if (queAconteceu == REG_OPENED_EXISTING_KEY) {
+			_tprintf(TEXT("Chave: HKEY_CURRENT_USER\\Software\\Mapa\n"));
+			tamanho = TAM;
+			RegQueryValueEx(chave, TEXT("TaxiOcupado"), NULL, NULL, (LPBYTE)str, &tamanho);
+			str[tamanho / sizeof(TCHAR)] = '\0';
+			_tprintf(TEXT("[DETALHES] TaxiOcupado: %s\n"), str);
+			RegQueryValueEx(chave, TEXT("TaxiLivre"), NULL, NULL, (LPBYTE)str, &tamanho);
+			str[tamanho / sizeof(TCHAR)] = '\0';
+			_tprintf(TEXT("[DETALHES] TaxiLivre: %s\n"), str);
+			RegQueryValueEx(chave, TEXT("TaxiBuscarPassageiro"), NULL, NULL, (LPBYTE)str, &tamanho);
+			str[tamanho / sizeof(TCHAR)] = '\0';
+			_tprintf(TEXT("[DETALHES] TaxiBuscarPassageiro: %s\n"), str);
+		}
+		do {
+			_tprintf(TEXT("\n[DETALHES] Deseja alterar algum destes valores (s/n)? "));
+			_tscanf_s(_T("%c"), &op, sizeof(op));
+		} while (op != 's' && op != 'n');
+		if (op == 's') {
+			do {
+				_tprintf(TEXT("\n[DETALHES] 1- Valor TaxiOcupado"));
+				_tprintf(TEXT("\n[DETALHES] 2- Valor TaxiLivre"));
+				_tprintf(TEXT("\n[DETALHES] 3- Valor TaxiBuscarPassageiro"));
+				_tprintf(TEXT("\n[DETALHES] 4- Voltar"));
+				_tprintf(TEXT("\n[DETALHES] Opção: "));
+				_tscanf_s(_T("%d"), &opcao);
+				if (opcao == 1) {
+					_tprintf(TEXT("\n[DETALHES] Valor TaxiOcupado: "));
+					_tscanf_s(_T("%s"), str, sizeof(str));
+					RegSetValueEx(chave, TEXT("TaxiOcupado"), 0, REG_SZ, (LPBYTE)str, _tcslen(str) * sizeof(TCHAR));
+				}
+				else if (opcao == 2) {
+					_tprintf(TEXT("\n[DETALHES] Valor TaxiLivre: "));
+					_tscanf_s(_T("%s"), str, sizeof(str));
+					RegSetValueEx(chave, TEXT("TaxiLivre"), 0, REG_SZ, (LPBYTE)str, _tcslen(str) * sizeof(TCHAR));
+				}
+				else if (opcao == 3) {
+					_tprintf(TEXT("\n[DETALHES] Valor TaxiBuscarPassageiro: "));
+					_tscanf_s(_T("%s"), str, sizeof(str));
+					RegSetValueEx(chave, TEXT("TaxiBuscarPassageiro"), 0, REG_SZ, (LPBYTE)str, _tcslen(str) * sizeof(TCHAR));
+				}
+			} while (opcao != 4);
+		}
+	}
+	return;
 }
 
 void ajuda() {
@@ -395,6 +447,7 @@ void leMapa(DADOS* dados) {
 }
 
 boolean adicionaTaxi(DADOS* dados, TAXI novo) {
+	TCHAR aux[TAM];
 	if (!dados->aceitacaoT)
 		return FALSE;
 	if (dados->nTaxis >= MaxTaxi)
@@ -408,17 +461,24 @@ boolean adicionaTaxi(DADOS* dados, TAXI novo) {
 	dados->nTaxis++;
 	id_mapa_taxi++;
 	_tprintf(TEXT("[NOVO TAXI] Novo Taxi: %s\n"), novo.matricula);
+	_stprintf_s(aux, TAM, TEXT("Taxi %s entrou!"), novo.matricula);
+	ptr_log(aux);
+	ptr_log((TCHAR*)aux);
 	return TRUE;
 }
 
 boolean removeTaxi(DADOS* dados, TAXI novo) {
+	TCHAR aux[TAM];
 	for (int i = 0; i < dados->nTaxis; i++) {
 		if (!_tcscmp(novo.matricula, dados->taxis[i].matricula)) {
 			for (int k = i; k < dados->nTaxis - 1; k++) {
 				dados->taxis[k] = dados->taxis[k + 1];
 			}
 			dados->nTaxis--;
-			_tprintf(TEXT("[SAIU TAXI] Saiu Taxi: %s\n"), novo.matricula);
+			_tprintf(TEXT("[SAIU TAXI] Saiu Taxi: %s\n"), novo.matricula); 
+			_stprintf_s(aux, TAM, TEXT("Taxi %s saiu!"), novo.matricula);
+			ptr_log(aux);
+			ptr_log((TCHAR*)aux);
 			return TRUE;
 		}
 	}
@@ -426,6 +486,7 @@ boolean removeTaxi(DADOS* dados, TAXI novo) {
 }
 
 boolean adicionaPassageiro(DADOS* dados, PASSAGEIRO novo) {
+	TCHAR aux[TAM];
 	if (dados->nPassageiros >= MaxPass)
 		return FALSE;
 
@@ -434,10 +495,14 @@ boolean adicionaPassageiro(DADOS* dados, PASSAGEIRO novo) {
 	id_mapa_pass++;
 	dados->nPassageiros++;
 	_tprintf(TEXT("[NOVO PASSAGEIRO] Novo Passageiro: %s\n"), novo.id);
+	_stprintf_s(aux, TAM, TEXT("Passageiro %s entrou!"), novo.id);
+	ptr_log(aux);
+	ptr_log((TCHAR*)aux);
 	return TRUE;
 }
 
 boolean removePassageiro(DADOS* dados, PASSAGEIRO novo) {
+	TCHAR aux[TAM];
 	for (int i = 0; i < dados->nPassageiros; i++) {
 		if (!_tcscmp(novo.id, dados->passageiros[i].id)) {
 			for (int k = i; k < dados->nPassageiros - 1; k++) {
@@ -445,7 +510,9 @@ boolean removePassageiro(DADOS* dados, PASSAGEIRO novo) {
 			}
 			dados->nPassageiros--;
 			_tprintf(TEXT("[SAIU PASSAGEIRO] Saiu Passageiro: %s\n"), novo.id);
-			//ptr_log((TCHAR*)(TEXT("Passageiro %s saiu!"), novo.id));
+			_stprintf_s(aux, TAM, TEXT("Passageiro %s saiu!"), novo.id);
+			ptr_log(aux);
+			ptr_log((TCHAR*)aux);
 			return TRUE;
 		}
 	}
@@ -460,11 +527,23 @@ void eliminaIdMapa(DADOS* dados, char id) {
 	}
 }
 
+void expulsarTaxi(DADOS* dados, TCHAR* matr) {
+	int i;
+
+	for (i = 0; i < dados->nTaxis && _tcscmp(matr, dados->taxis[i].matricula); i++);
+	if (!_tcscmp(matr, dados->taxis[i].matricula)) {
+		dados->taxis[i].terminar = 1;
+		enviaTaxi(dados, &dados->taxis[i]);
+		Sleep(1000);
+		removeTaxi(dados, dados->taxis[i]);
+	}
+	return;
+}
+
 void transporteAceite(DADOS* dados) {
 	WaitForSingleObject(sem_itens, INFINITE);
-	//item_c = BufferMemoria->Passageiros[BufferMemoria->NextOut];
-	//num = item_c.num;
 	BufferMemoria->NextOut = (BufferMemoria->NextOut + 1) % MAX_PASS;
+	ptr_log((TCHAR*)TEXT("CenTaxi retira passageiro de Buffer Circular!"));
 	ReleaseSemaphore(sem_vazios, 1, NULL);
 
 	return;
@@ -480,11 +559,9 @@ void enviaTaxi(DADOS* dados, TAXI* taxi) {
 	return;
 }
 
-int acabouTempo = 0;
-
 void newPassageiro(DADOS* dados) {
 	PASSAGEIRO novo;
-	TCHAR aux[TAM] = TEXT("\n"), aux1[TAM] = TEXT("\n");
+	TCHAR aux[TAM] = TEXT("\n");
 
 	_tprintf(_T("\n[NOVO] Id do Passageiro: "));
 	_fgetts(novo.id, TAM, stdin);
@@ -502,23 +579,21 @@ void newPassageiro(DADOS* dados) {
 	novo.id_mapa = TEXT('.');
 	adicionaPassageiro(dados, novo);
 
-	_stprintf_s(aux, TAM, TEXT("Passageiro %s entrou!"), novo.id);
+	_stprintf_s(aux, TAM, TEXT("Passageiro %s em (%d,%d)!"), novo.id, novo.X, novo.Y);
 	ptr_log(aux);
 	ptr_log((TCHAR*)aux);
-	_stprintf_s(aux1, TAM, TEXT("Passageiro %s em (%d,%d)!"), novo.id, novo.X, novo.Y);
-	ptr_log(aux1);
-	ptr_log((TCHAR*)aux1);
 
 	WaitForSingleObject(sem_vazios, INFINITE);
 	WaitForSingleObject(sem_mutex, INFINITE);
 	BufferMemoria->Passageiros[BufferMemoria->NextIn] = novo;
-	BufferMemoria->NextIn = (BufferMemoria->NextIn + 1) % MAX_PASS;
+	BufferMemoria->NextIn = (BufferMemoria->NextIn + 1) % MAX_PASS; 
+	ptr_log((TCHAR*)TEXT("CenTaxi coloca passageiro em Buffer Circular!"));
 	ReleaseSemaphore(sem_mutex, 1, NULL);
 	ReleaseSemaphore(sem_itens, 1, NULL);
 
+	TAXI novoT;
 	acabouTempo = 0;
 	int interessados = 0;
-	TAXI novoT;
 	Sleep(500);
 	while (!acabouTempo) {
 		SetEvent(transporte);
@@ -542,8 +617,12 @@ void newPassageiro(DADOS* dados) {
 		do {
 			valor = rand() % dados->nTaxis;
 		} while (!dados->taxis[valor].interessado);
+		_stprintf_s(aux, TAM, TEXT("Taxi %s vai transportar %s!"), dados->taxis[valor].matricula, novo.id);
+		ptr_log(aux);
+		ptr_log((TCHAR*)aux);
 		dados->taxis[valor].Xfinal = novo.X;
 		dados->taxis[valor].Yfinal = novo.Y;
+		dados->taxis[valor].disponivel = 0;
 
 		CopyMemory(dados->sharedTaxi, &dados->taxis[valor], sizeof(TAXI));
 		ptr_log((TCHAR*)TEXT("CenTaxi envia Taxi para ConTaxi por memória partilhada!"));
@@ -554,6 +633,7 @@ void newPassageiro(DADOS* dados) {
 		//DEPOIS DE ACEITAR TRANSPORTE
 		transporteAceite(dados);
 	}
+
 	return;
 }
 
@@ -579,19 +659,6 @@ DWORD WINAPI ThreadTempoTransporte(LPVOID param) {
 
 	}
 	ExitThread(0);
-}
-
-void expulsarTaxi(DADOS* dados, TCHAR* matr) {
-	int i;
-
-	for (i = 0; i < dados->nTaxis && _tcscmp(matr, dados->taxis[i].matricula); i++);
-	if (!_tcscmp(matr, dados->taxis[i].matricula)) {
-		dados->taxis[i].terminar = 1;
-		enviaTaxi(dados, &dados->taxis[i]);
-		Sleep(1000);
-		removeTaxi(dados, dados->taxis[i]);
-	}
-	return;
 }
 
 DWORD WINAPI ThreadComandos(LPVOID param) {

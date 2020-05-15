@@ -44,7 +44,6 @@ void avisaTaxiSaiu(DADOS* dados) {
 }
 
 void avisaMovimentoTaxi(DADOS* dados) {
-	//MANDA PARA ADMIN
 	comunicacaoParaCentral(dados);
 
 	SetEvent(dados->movimentoTaxi);

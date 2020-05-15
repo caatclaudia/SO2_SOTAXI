@@ -32,7 +32,6 @@ MAPA* shared;
 #define EVENT_ATUALIZAMAP TEXT("AtualizaMapa")
 HANDLE atualizaMap;
 
-void inicializaVariaveis();
 void recebeMapa(DADOS* dados);
 void mostraMapa(DADOS* dados);
 DWORD WINAPI ThreadAtualizaMapa(LPVOID param);
