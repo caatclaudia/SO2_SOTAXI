@@ -19,6 +19,17 @@ void avisaNovoTaxi(DADOS* dados) {
 	return;
 }
 
+void recebeInfo(DADOS* dados) {
+	TAXI* novo;
+	novo = (TAXI*)malloc(sizeof(TAXI));
+
+	CopyMemory(novo, dados->shared, sizeof(TAXI));
+	if (!_tcscmp(novo->matricula, dados->taxi->matricula))
+		dados->taxi = novo;
+
+	return;
+}
+
 void avisaTaxiSaiu(DADOS* dados) {
 	SetEvent(dados->saiuTaxi);
 	ResetEvent(dados->saiuTaxi);

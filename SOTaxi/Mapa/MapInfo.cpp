@@ -153,7 +153,7 @@ void inicializaVariaveis() {
 }
 
 void recebeMapa(DADOS* dados) {
-	MAPA* aux=NULL;
+	MAPA* aux = NULL;
 	CopyMemory(&aux, shared, sizeof(shared));
 	for (int i = 0; tamanhoMapa == -1; i++)
 		if (shared[i].caracter == '\n')

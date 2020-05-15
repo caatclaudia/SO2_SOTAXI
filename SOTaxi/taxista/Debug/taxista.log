@@ -1,3 +1,1 @@
-﻿  ConTaxi.cpp
-C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\taxista\ConTaxi.cpp(4,48): warning C4101: 'hThreadRespostaTransporte': unreferenced local variable
-  taxista.vcxproj -> C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Debug\ConTaxi.exe
+﻿  taxista.vcxproj -> C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Debug\ConTaxi.exe

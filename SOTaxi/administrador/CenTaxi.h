@@ -5,6 +5,7 @@
 #include <io.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #define TAM 50
 #define MAXTAXIS 10
@@ -32,11 +33,11 @@ typedef struct {
 } MAPA;
 
 typedef struct {
-	TCHAR id[TAM];
 	unsigned int X, Y, Xfinal, Yfinal;
 	int movimento;
 	int terminar;
 	char id_mapa;
+	TCHAR id[TAM];
 } PASSAGEIRO;
 
 #define NOME_MUTEX_TAXI TEXT("MutexTaxi")
@@ -44,12 +45,11 @@ typedef struct {
 	TCHAR matricula[7];
 	unsigned int X, Y, Xfinal, Yfinal;
 	int disponivel;
-	TCHAR idPassageiro[TAM];
-	float velocidade;
 	int autoResposta;
 	int interessado;
 	int terminar;
 	int id_mapa;
+	float velocidade;
 } TAXI;
 
 //SEMAFOROS
@@ -57,7 +57,7 @@ typedef struct {
 #define EVENT_SAIUT TEXT("SaiuTaxi")
 #define EVENT_MOVIMENTO TEXT("MovimentoTaxi")
 #define EVENT_RESPOSTA TEXT("RespostaDoAdmin")
-#define EVENT_SAIUA TEXT("SaiuAdmin")
+#define EVENT_SAIUA TEXT("InfoAdmin")
 
 #define EVENT_ATUALIZAMAP TEXT("AtualizaMapa")
 
@@ -88,7 +88,7 @@ typedef struct {
 	HANDLE atualizaMap;
 
 	int terminar;
-	HANDLE saiuAdmin;
+	HANDLE infoAdmin;
 } DADOS;
 
 void ajuda();
@@ -100,6 +100,11 @@ boolean removeTaxi(DADOS* dados, TAXI novo);
 boolean adicionaPassageiro(DADOS* dados, PASSAGEIRO novo);
 boolean removePassageiro(DADOS* dados, PASSAGEIRO novo);
 void eliminaIdMapa(DADOS* dados, char id);
+void transporteAceite(DADOS* dados);
+void enviaTaxi(DADOS* dados, TAXI* taxi);
+void newPassageiro(DADOS* dados);
+void expulsarTaxi(DADOS* dados, TCHAR* matr);
+DWORD WINAPI ThreadTempoTransporte(LPVOID param);
 DWORD WINAPI ThreadComandos(LPVOID param);
 DWORD WINAPI ThreadNovoTaxi(LPVOID param);
 DWORD WINAPI ThreadSaiuTaxi(LPVOID param);
