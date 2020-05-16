@@ -120,6 +120,7 @@ void inicializaVariaveis();
 void ajuda();
 void listarTaxis(DADOS* dados);
 void listarPassageiros(DADOS* dados);
+void verMapa(DADOS* dados);
 void leMapa(DADOS* dados);
 boolean adicionaTaxi(DADOS* dados, TAXI novo);
 boolean removeTaxi(DADOS* dados, TAXI novo);

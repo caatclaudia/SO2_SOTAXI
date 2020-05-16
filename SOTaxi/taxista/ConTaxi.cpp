@@ -465,19 +465,23 @@ DWORD WINAPI ThreadRespostaTransporte(LPVOID param) {
 
 		novo = BufferMemoria->Passageiros[BufferMemoria->NextOut];
 		_tprintf(_T("\n[PASS] Ha um passageiro a espera em (%d,%d)!"), novo.X, novo.Y);
-
+		
 		//TEM INTERESSE
-		if (calculaDistancia(novo.X, novo.Y, dadosD->taxi->X, dadosD->taxi->Y) <= (int)NQ) {
-			dadosD->taxi->interessado = 1;
+		if (dadosD->taxi->interessado || dadosD->taxi->autoResposta) {
+			if (calculaDistancia(novo.X, novo.Y, dadosD->taxi->X, dadosD->taxi->Y) <= (int)NQ) {
+				dadosD->taxi->interessado = 1;
 
-			comunicacaoParaCentral(dadosD);
+				comunicacaoParaCentral(dadosD);
 
-			WaitForSingleObject(dadosD->respostaAdmin, INFINITE);
+				WaitForSingleObject(dadosD->respostaAdmin, INFINITE);
 
-			recebeInfo(dadosD);
-			if (dadosD->taxi->Xfinal == novo.X && dadosD->taxi->Yfinal == novo.Y)
-				_tprintf(_T("\n[PASS] Passageiro a espera deste Taxi em (%d,%d)!"), novo.X, novo.Y);
-			dadosD->taxi->interessado = 0;
+				recebeInfo(dadosD);
+				if (dadosD->taxi->Xfinal == novo.X && dadosD->taxi->Yfinal == novo.Y) {
+					_tprintf(_T("\n[PASS] Passageiro a espera deste Taxi em (%d,%d)!"), novo.X, novo.Y);
+					dadosD->taxi->disponivel = 0;
+				}
+				dadosD->taxi->interessado = 0;
+			}
 		}
 		ReleaseMutex(hMutex);
 	}

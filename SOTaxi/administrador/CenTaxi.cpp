@@ -17,19 +17,11 @@ int _tmain(int argc, LPTSTR argv[]) {
 
 	srand((unsigned)time(NULL));
 
-	inicializaVariaveis();
-
 	HINSTANCE hLib;
 
 	hLib = LoadLibrary(PATH_DLL);
 	if (hLib == NULL)
 		return 0;
-
-	if (argc == 3) {
-		MaxPass = _wtoi(argv[1]);
-		MaxTaxi = _wtoi(argv[2]);
-	}
-	_tprintf(TEXT("\nMaxPass : %d\nMaxTaxis : %d\n"), MaxPass, MaxTaxi);
 
 #ifdef UNICODE
 	_setmode(_fileno(stdin), _O_WTEXT);
@@ -38,8 +30,6 @@ int _tmain(int argc, LPTSTR argv[]) {
 
 	ptr_register = (void(*)(TCHAR*, int))GetProcAddress(hLib, "dll_register");
 	ptr_log = (void(*)(TCHAR*))GetProcAddress(hLib, "dll_log");
-
-	inicializaBuffer();
 
 	Semaphore = CreateSemaphore(NULL, 1, 1, SEMAPHORE_NAME);
 	if (Semaphore == NULL) {
@@ -51,6 +41,15 @@ int _tmain(int argc, LPTSTR argv[]) {
 	_tprintf(TEXT("\nAguardando autorização para entrar...\n"));
 	WaitForSingleObject(Semaphore, INFINITE);
 	_tprintf(TEXT("\nEntrei!\n\n"));
+
+	inicializaVariaveis();
+	inicializaBuffer();
+
+	if (argc == 3) {
+		MaxPass = _wtoi(argv[1]);
+		MaxTaxi = _wtoi(argv[2]);
+	}
+	_tprintf(TEXT("\nMaxPass : %d\nMaxTaxis : %d\n"), MaxPass, MaxTaxi);
 
 	dados.hMutexDados = CreateMutex(NULL, FALSE, NOME_MUTEX_DADOS);
 	if (dados.hMutexDados == NULL) {
@@ -383,6 +382,15 @@ void listarPassageiros(DADOS* dados) {
 	return;
 }
 
+void verMapa(DADOS* dados) {
+	for (int i = 0; i < tamanhoMapa * tamanhoMapa; i++) {
+		dados->mapa[i].caracter = dados->sharedMapa[i].caracter;
+		_tprintf(TEXT("%c"), dados->mapa[i].caracter);
+	}
+
+	return;
+}
+
 void leMapa(DADOS* dados) {
 	dados->hFile = CreateFile(PATH, GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (dados->hFile == INVALID_HANDLE_VALUE)
@@ -437,10 +445,7 @@ void leMapa(DADOS* dados) {
 
 	dados->mapa = (MAPA*)malloc(sizeof(MAPA) * tamanhoMapa * tamanhoMapa);
 
-	for (int i = 0; i < tamanhoMapa * tamanhoMapa; i++) {
-		dados->mapa[i].caracter = dados->sharedMapa[i].caracter;
-		_tprintf(TEXT("%c"), dados->mapa[i].caracter);
-	}
+	verMapa(dados);
 
 	Sleep(1000);
 	return;
@@ -666,16 +671,20 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 	DADOS* dados = ((DADOS*)param);
 
 	do {
-		_tprintf(_T("\n\n>>"));
-		_fgetts(op, TAM, stdin);
+		_tprintf(_T("\n\n>> "));
+		_fgetts(op, sizeof(op), stdin);
 		op[_tcslen(op) - 1] = '\0';
 		WaitForSingleObject(dados->hMutexDados, INFINITE);
 		//NOVO PASSAGEIRO
 		if (!_tcscmp(op, TEXT("novoP"))) {
 			newPassageiro(dados);
 		}
+		//VER MAPA
+		else if (!_tcscmp(op, TEXT("mapa"))) {
+			verMapa(dados);
+		}
 		//EXPULSAR TAXI
-		if (!_tcscmp(op, TEXT("expulsar"))) {
+		else if (!_tcscmp(op, TEXT("expulsar"))) {
 			_tprintf(_T("\n Matricula do Táxi: "));
 			_fgetts(matr, sizeof(matr), stdin);
 			matr[_tcslen(matr) - 1] = '\0';
