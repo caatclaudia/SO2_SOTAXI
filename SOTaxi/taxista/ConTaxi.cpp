@@ -351,7 +351,7 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 		else if (!_tcscmp(op, TEXT("pass"))) {
 			if (!dados->taxi->autoResposta)
 				dados->taxi->interessado = 1;
-			_tprintf(_T("\n[COMANDO] Tenho interesse neste passageiro!"));
+			_tprintf(_T("\n[COMANDO] Tenho interesse no passageiro!"));
 		}
 		//AJUDA NOS COMANDOS
 		else if (!_tcscmp(op, TEXT("ajuda"))) {
@@ -376,6 +376,7 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {
 	DADOS* dados = ((DADOS*)param);
 	int val, valido;
+	int quad = 0;
 
 	do {
 		valido = 0;
@@ -385,32 +386,33 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {
 		//MOVIMENTA
 		//SEM PASSAGEIRO -> TENDÊNCIA PARA SE DESLOCAR PARA A FRENTE
 		if (dados->taxi->velocidade != 0 && dados->taxi->disponivel == 1) {
-			if (dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X + 1].caracter == '_') {
-				_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X + 1, dados->taxi->Y);
-				dados->taxi->X++;
+			quad = (int)dados->taxi->velocidade;
+			if (dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X + quad].caracter == '_') {
+				_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X + quad, dados->taxi->Y);
+				dados->taxi->X += quad;
 			}
 			else {
 				do {
 					val = rand() % 3;
 					switch (val) {
 					case 0: //CIMA
-						if (dados->mapa[tamanhoMapa * (dados->taxi->Y - 1) + (dados->taxi->Y - 1) + dados->taxi->X].caracter == '_') {
-							_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X, dados->taxi->Y - 1);
-							dados->taxi->Y--;
+						if (dados->mapa[tamanhoMapa * (dados->taxi->Y - quad) + (dados->taxi->Y - quad) + dados->taxi->X].caracter == '_') {
+							_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X, dados->taxi->Y - quad);
+							dados->taxi->Y -= quad;
 							valido = 1;
 						}
 						break;
 					case 1: //BAIXO
-						if (dados->mapa[tamanhoMapa * (dados->taxi->Y + 1) + (dados->taxi->Y + 1) + dados->taxi->X].caracter == '_') {
-							_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X, dados->taxi->Y + 1);
-							dados->taxi->Y++;
+						if (dados->mapa[tamanhoMapa * (dados->taxi->Y + quad) + (dados->taxi->Y + quad) + dados->taxi->X].caracter == '_') {
+							_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X, dados->taxi->Y + quad);
+							dados->taxi->Y += quad;
 							valido = 1;
 						}
 						break;
 					case 2: //ESQUERDA
-						if (dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X - 1].caracter == '_') {
-							_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X - 1, dados->taxi->Y);
-							dados->taxi->X--;
+						if (dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X - quad].caracter == '_') {
+							_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X - quad, dados->taxi->Y);
+							dados->taxi->X -= quad;
 							valido = 1;
 						}
 						break;
@@ -465,7 +467,7 @@ DWORD WINAPI ThreadRespostaTransporte(LPVOID param) {
 
 		novo = BufferMemoria->Passageiros[BufferMemoria->NextOut];
 		_tprintf(_T("\n[PASS] Ha um passageiro a espera em (%d,%d)!"), novo.X, novo.Y);
-		
+
 		//TEM INTERESSE
 		if (dadosD->taxi->interessado || dadosD->taxi->autoResposta) {
 			if (calculaDistancia(novo.X, novo.Y, dadosD->taxi->X, dadosD->taxi->Y) <= (int)NQ) {

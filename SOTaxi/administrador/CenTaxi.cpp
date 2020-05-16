@@ -360,8 +360,8 @@ void listarTaxis(DADOS* dados) {
 		return;
 	}
 	for (int i = 0; i < dados->nTaxis; i++) {
-		_tprintf(_T("\n[LISTAR TAXIS] Taxi %d : "), i);
-		_tprintf(_T("\n (%d, %d) "), dados->taxis[i].X, dados->taxis[i].Y);
+		_tprintf(_T("\n[LISTAR TAXIS] Taxi %s : "), dados->taxis[i].matricula);
+		_tprintf(_T(" (%d, %d) "), dados->taxis[i].X, dados->taxis[i].Y);
 		if (dados->taxis[i].disponivel)
 			_tprintf(_T("sem passageiro!\n"));
 		else
@@ -383,8 +383,8 @@ void listarPassageiros(DADOS* dados) {
 }
 
 void verMapa(DADOS* dados) {
+	_tprintf(TEXT("\n"));
 	for (int i = 0; i < tamanhoMapa * tamanhoMapa; i++) {
-		dados->mapa[i].caracter = dados->sharedMapa[i].caracter;
 		_tprintf(TEXT("%c"), dados->mapa[i].caracter);
 	}
 
@@ -445,6 +445,9 @@ void leMapa(DADOS* dados) {
 
 	dados->mapa = (MAPA*)malloc(sizeof(MAPA) * tamanhoMapa * tamanhoMapa);
 
+	for (int i = 0; i < tamanhoMapa * tamanhoMapa; i++) {
+		dados->mapa[i].caracter = dados->sharedMapa[i].caracter;
+	}
 	verMapa(dados);
 
 	Sleep(1000);
@@ -820,10 +823,9 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 				char buf;
 				buf = dados->taxis[i].id_mapa + '0';
 				eliminaIdMapa(dados, buf);
-				int ind = tamanhoMapa * novo.Y + novo.Y + novo.X;
-				dados->mapa[ind].caracter = buf;
+				dados->mapa[tamanhoMapa * novo.Y + novo.Y + novo.X].caracter = buf;
 			}
-
+		verMapa(dados);
 		CopyMemory(dados->sharedMapa, dados->mapa, sizeof(dados->mapa));
 		ptr_log((TCHAR*)TEXT("CenTaxi envia Mapa para MapInfo por memória partilhada!"));
 		_tprintf(TEXT("\n[MAPA] Mapa atualizado com sucesso!\n"));
