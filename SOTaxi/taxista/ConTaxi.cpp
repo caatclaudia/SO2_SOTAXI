@@ -421,7 +421,26 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {
 			}
 			avisaMovimentoTaxi(dados);
 		}
-
+		//COM PASSAGEIRO
+		else if (dados->taxi->velocidade != 0) {
+			quad = (int)dados->taxi->velocidade;
+			if (dados->taxi->X > dados->taxi->Xfinal && dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X - quad].caracter == '_') {
+				_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X - quad, dados->taxi->Y);
+				dados->taxi->X -= quad;
+			}
+			else if (dados->taxi->X < dados->taxi->Xfinal && dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X + quad].caracter == '_') {
+				_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X + quad, dados->taxi->Y);
+				dados->taxi->X += quad;
+			}
+			else if (dados->taxi->Y > dados->taxi->Yfinal && dados->mapa[tamanhoMapa * (dados->taxi->Y - quad) + (dados->taxi->Y - quad) + dados->taxi->X].caracter == '_') {
+				_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X, dados->taxi->Y - quad);
+				dados->taxi->Y -= quad;
+			}
+			else if(dados->mapa[tamanhoMapa * (dados->taxi->Y + quad) + (dados->taxi->Y + quad) + dados->taxi->X].caracter == '_') {
+				_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X, dados->taxi->Y + quad);
+			}
+			avisaMovimentoTaxi(dados);
+		}
 		ReleaseMutex(hMutex);
 
 		Sleep(1000);
@@ -444,6 +463,8 @@ DWORD WINAPI ThreadInfoAdmin(LPVOID param) {
 			_tprintf(_T("\n[TAXI] Taxi vai encerrar por conta da Central!"));
 			break;
 		}
+		else if(!dados->taxi->disponivel)
+			_tprintf(_T("\n[PASS] Taxi entregou o Passageiro!"));
 
 		ReleaseMutex(hMutex);
 

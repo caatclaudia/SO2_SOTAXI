@@ -483,7 +483,7 @@ boolean removeTaxi(DADOS* dados, TAXI novo) {
 				dados->taxis[k] = dados->taxis[k + 1];
 			}
 			dados->nTaxis--;
-			_tprintf(TEXT("[SAIU TAXI] Saiu Taxi: %s\n"), novo.matricula); 
+			_tprintf(TEXT("[SAIU TAXI] Saiu Taxi: %s\n"), novo.matricula);
 			_stprintf_s(aux, TAM, TEXT("Taxi %s saiu!"), novo.matricula);
 			ptr_log(aux);
 			ptr_log((TCHAR*)aux);
@@ -549,7 +549,6 @@ void expulsarTaxi(DADOS* dados, TCHAR* matr) {
 }
 
 void transporteAceite(DADOS* dados) {
-	WaitForSingleObject(sem_itens, INFINITE);
 	BufferMemoria->NextOut = (BufferMemoria->NextOut + 1) % MAX_PASS;
 	ptr_log((TCHAR*)TEXT("CenTaxi retira passageiro de Buffer Circular!"));
 	ReleaseSemaphore(sem_vazios, 1, NULL);
@@ -594,7 +593,7 @@ void newPassageiro(DADOS* dados) {
 	WaitForSingleObject(sem_vazios, INFINITE);
 	WaitForSingleObject(sem_mutex, INFINITE);
 	BufferMemoria->Passageiros[BufferMemoria->NextIn] = novo;
-	BufferMemoria->NextIn = (BufferMemoria->NextIn + 1) % MAX_PASS; 
+	BufferMemoria->NextIn = (BufferMemoria->NextIn + 1) % MAX_PASS;
 	ptr_log((TCHAR*)TEXT("CenTaxi coloca passageiro em Buffer Circular!"));
 	ReleaseSemaphore(sem_mutex, 1, NULL);
 	ReleaseSemaphore(sem_itens, 1, NULL);
@@ -800,6 +799,7 @@ DWORD WINAPI ThreadSaiuTaxi(LPVOID param) {
 DWORD WINAPI ThreadMovimento(LPVOID param) {
 	DADOS* dados = ((DADOS*)param);
 	TAXI novo;
+	int VALIDO;
 
 	dados->atualizaMap = CreateEvent(NULL, TRUE, FALSE, EVENT_ATUALIZAMAP);
 	if (dados->atualizaMap == NULL) {
@@ -808,6 +808,7 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 	}
 
 	while (1) {
+		TCHAR aux[TAM] = TEXT("\n");
 		WaitForSingleObject(dados->movimentoTaxi, INFINITE);
 
 		if (dados->terminar)
@@ -824,8 +825,41 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 				buf = dados->taxis[i].id_mapa + '0';
 				eliminaIdMapa(dados, buf);
 				dados->mapa[tamanhoMapa * novo.Y + novo.Y + novo.X].caracter = buf;
+				//SE TIVER PASSAGEIRO VERIFICA SE CHEGOU AO DESTINO
+				if (!dados->taxis[i].disponivel) {
+					VALIDO = 0;
+					for (int j = 0; j < dados->nPassageiros && VALIDO == 0; j++) {
+						//SE TAXI CHEGOU AO SITIO DE RECOLHA DE PASSAGEIRO
+						if (dados->passageiros[j].X == dados->taxis[i].Xfinal && dados->passageiros[j].X == dados->taxis[i].X && dados->passageiros[j].Y == dados->taxis[i].Yfinal && dados->passageiros[j].Y == dados->taxis[i].Y) {
+							_tprintf(_T("\n[MOVIMENTO] Taxi '%s' apanhou o Passageiro '%s'\n"), dados->taxis[i].matricula, dados->passageiros[j].id);
+							_stprintf_s(aux, TAM, TEXT("Passageiro %s a ser transportado!"), dados->passageiros[j].id);
+							ptr_log(aux);
+							ptr_log((TCHAR*)aux);
+							dados->taxis[i].Xfinal = dados->passageiros[j].Xfinal;
+							dados->taxis[i].Yfinal = dados->passageiros[j].Yfinal;
+							//AVISA O TÁXI
+							enviaTaxi(dados, &dados->taxis[i]);
+							Sleep(1000);
+							VALIDO = 1;
+						}
+						//SE TAXI CHEGOU AO SITIO DE DESTINO DO PASSAGEIRO
+						if (dados->passageiros[j].Xfinal == dados->taxis[i].Xfinal && dados->passageiros[j].Xfinal == dados->taxis[i].X && dados->passageiros[j].Yfinal == dados->taxis[i].Yfinal && dados->passageiros[j].Yfinal == dados->taxis[i].Y) {
+							_tprintf(_T("\n[MOVIMENTO] Taxi '%s' deixou Passageiro '%s'\n"), dados->taxis[i].matricula, dados->passageiros[j].id);
+							_stprintf_s(aux, TAM, TEXT("Passageiro %s entregue!"), dados->passageiros[j].id);
+							ptr_log(aux);
+							ptr_log((TCHAR*)aux);
+							removePassageiro(dados, dados->passageiros[j]);
+							dados->taxis[i].disponivel = 1;
+							dados->taxis[i].Xfinal = 0;
+							dados->taxis[i].Yfinal = 0;
+							//AVISA O TÁXI
+							enviaTaxi(dados, &dados->taxis[i]);
+							Sleep(1000);
+							VALIDO = 1;
+						}
+					}
+				}
 			}
-		verMapa(dados);
 		CopyMemory(dados->sharedMapa, dados->mapa, sizeof(dados->mapa));
 		ptr_log((TCHAR*)TEXT("CenTaxi envia Mapa para MapInfo por memória partilhada!"));
 		_tprintf(TEXT("\n[MAPA] Mapa atualizado com sucesso!\n"));
@@ -836,7 +870,7 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 		Sleep(500);
 		ResetEvent(dados->atualizaMap);
 
-		Sleep(2000);
+		Sleep(500);
 	}
 
 	ExitThread(0);
