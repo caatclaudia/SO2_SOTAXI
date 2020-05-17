@@ -702,14 +702,17 @@ DWORD WINAPI ThreadTempoTransporte(LPVOID param) {
 }
 
 DWORD WINAPI ThreadComandos(LPVOID param) {
-	TCHAR op[TAM], matr[7];
+	TCHAR op[TAM], matr[7], i;
 	DADOS* dados = ((DADOS*)param);
 
 	do {
-		_tprintf(_T("\n\n>> "));
-		_fgetts(op, sizeof(op), stdin);
+		_tprintf(_T("\n\n"));
+		i= _gettch();
+		WaitForSingleObject(dados->hMutexDados, INFINITE); 
+		_tprintf(_T("%c"), i);
+		op[0] = i;
+		_fgetts(&op[1], sizeof(op), stdin);
 		op[_tcslen(op) - 1] = '\0';
-		WaitForSingleObject(dados->hMutexDados, INFINITE);
 		//NOVO PASSAGEIRO
 		if (!_tcscmp(op, TEXT("novoP"))) {
 			newPassageiro(dados);
@@ -753,6 +756,7 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 		}
 		if (_tcscmp(op, TEXT("fim")))
 			ReleaseMutex(dados->hMutexDados);
+		_tprintf(_T("\n\n"));
 	} while (_tcscmp(op, TEXT("fim")));
 
 	dados->terminar = 1;

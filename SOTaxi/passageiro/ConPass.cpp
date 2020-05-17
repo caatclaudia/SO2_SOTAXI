@@ -89,17 +89,21 @@ void novoPassageiro(DADOS* dados) {
 }
 
 DWORD WINAPI ThreadComandos(LPVOID param) {
-	TCHAR op[TAM];
+	TCHAR op[TAM], i;
 	DADOS* dados = ((DADOS*)param);
 
 	do {
-		_tprintf(_T("\n>>"));
-		_fgetts(op, TAM, stdin);
+		_tprintf(_T("\n\n"));
+		i = _gettch();
+		_tprintf(_T("%c"), i);
+		op[0] = i;
+		_fgetts(&op[1], sizeof(op), stdin);
 		op[_tcslen(op) - 1] = '\0';
 		if (_tcscmp(op, TEXT("novo"))) {		//NOVO PASSAGEIRO
 			novoPassageiro(dados);
 			dados->nPassageiros++;
 		}
+		_tprintf(_T("\n\n"));
 	} while (_tcscmp(op, TEXT("fim")));
 
 	for (int i = 0; i < MAX_PASS; i++)

@@ -310,14 +310,17 @@ void leMapa(DADOS* dados) {
 }
 
 DWORD WINAPI ThreadComandos(LPVOID param) {
-	TCHAR op[TAM];
+	TCHAR op[TAM], i;
 	DADOS* dados = ((DADOS*)param);
 
 	do {
-		_tprintf(_T("\n>>"));
-		_fgetts(op, TAM, stdin);
-		op[_tcslen(op) - 1] = '\0';
+		_tprintf(_T("\n\n"));
+		i = _gettch();
 		WaitForSingleObject(hMutex, INFINITE);
+		_tprintf(_T("%c"), i);
+		op[0] = i;
+		_fgetts(&op[1], sizeof(op), stdin);
+		op[_tcslen(op) - 1] = '\0';
 		//AUMENTA 0.5 DE VELOCIDADE
 		if (!_tcscmp(op, TEXT("aumentaV"))) {
 			dados->taxi->velocidade += 0.5;
@@ -360,6 +363,7 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 		}
 		if (_tcscmp(op, TEXT("fim")))
 			ReleaseMutex(hMutex);
+		_tprintf(_T("\n\n"));
 	} while (_tcscmp(op, TEXT("fim")));
 
 	dados->taxi->terminar = 1;
