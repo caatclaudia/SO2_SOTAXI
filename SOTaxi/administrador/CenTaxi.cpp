@@ -503,9 +503,10 @@ boolean adicionaPassageiro(DADOS* dados, PASSAGEIRO novo) {
 	id_mapa_pass++;
 	dados->nPassageiros++;
 	_tprintf(TEXT("[NOVO PASSAGEIRO] Novo Passageiro: %s\n"), novo.id);
-	_stprintf_s(aux, TAM, TEXT("Passageiro %s entrou!"), novo.id);
+	_stprintf_s(aux, TAM, TEXT("Passageiro %s entrou no sistema!"), novo.id);
 	ptr_log(aux);
 	ptr_log((TCHAR*)aux);
+	deslocaPassageiroParaPorta(dados);
 	return TRUE;
 }
 
@@ -566,6 +567,37 @@ void enviaTaxi(DADOS* dados, TAXI* taxi) {
 	return;
 }
 
+void deslocaPassageiroParaPorta(DADOS* dados) {
+	TCHAR aux[TAM] = TEXT("\n");
+	int VALIDO = 0;
+
+	if (dados->mapa[tamanhoMapa * dados->passageiros[dados->nPassageiros - 1].Y + dados->passageiros[dados->nPassageiros - 1].Y + dados->passageiros[dados->nPassageiros - 1].X].caracter != '_') {
+		for (int i = 1; VALIDO != 1; i++) {
+			if (dados->mapa[tamanhoMapa * dados->passageiros[dados->nPassageiros - 1].Y + dados->passageiros[dados->nPassageiros - 1].Y + dados->passageiros[dados->nPassageiros - 1].X + i].caracter == '_') {
+				dados->passageiros[dados->nPassageiros - 1].X += i;
+				VALIDO = 1;
+			}
+			else if (dados->mapa[tamanhoMapa * (dados->passageiros[dados->nPassageiros - 1].Y - i) + (dados->passageiros[dados->nPassageiros - 1].Y - i) + dados->passageiros[dados->nPassageiros - 1].X].caracter == '_') {
+				dados->passageiros[dados->nPassageiros - 1].Y -= i;
+				VALIDO = 1;
+			}
+			else if (dados->mapa[tamanhoMapa * (dados->passageiros[dados->nPassageiros - 1].Y + i) + (dados->passageiros[dados->nPassageiros - 1].Y + i) + dados->passageiros[dados->nPassageiros - 1].X].caracter == '_') {
+				dados->passageiros[dados->nPassageiros - 1].Y += i;
+				VALIDO = 1;
+			}
+			else if (dados->mapa[tamanhoMapa * dados->passageiros[dados->nPassageiros - 1].Y + dados->passageiros[dados->nPassageiros - 1].Y + dados->passageiros[dados->nPassageiros - 1].X - i].caracter == '_') {
+				dados->passageiros[dados->nPassageiros - 1].X -= i;
+				VALIDO = 1;
+			}
+		}
+		_stprintf_s(aux, TAM, TEXT("Passageiro %s deslocado para (%d,%d)!"), dados->passageiros[dados->nPassageiros - 1].id, dados->passageiros[dados->nPassageiros - 1].X, dados->passageiros[dados->nPassageiros - 1].Y);
+		ptr_log(aux);
+		ptr_log((TCHAR*)aux);
+		_tprintf(TEXT("Passageiro %s deslocado para (%d,%d)!"), dados->passageiros[dados->nPassageiros - 1].id, dados->passageiros[dados->nPassageiros - 1].X, dados->passageiros[dados->nPassageiros - 1].Y);
+	}
+	return;
+}
+
 void newPassageiro(DADOS* dados) {
 	PASSAGEIRO novo;
 	TCHAR aux[TAM] = TEXT("\n");
@@ -581,14 +613,15 @@ void newPassageiro(DADOS* dados) {
 	_tprintf(_T("\n[NOVO]  Local de destino do Passageiro (X Y) : "));
 	_tscanf_s(_T("%d"), &novo.Xfinal);
 	_tscanf_s(_T("%d"), &novo.Yfinal);
-	novo.movimento = 0;
-	novo.terminar = 0;
-	novo.id_mapa = TEXT('.');
-	adicionaPassageiro(dados, novo);
 
 	_stprintf_s(aux, TAM, TEXT("Passageiro %s em (%d,%d)!"), novo.id, novo.X, novo.Y);
 	ptr_log(aux);
 	ptr_log((TCHAR*)aux);
+	
+	novo.movimento = 0;
+	novo.terminar = 0;
+	novo.id_mapa = TEXT('.');
+	adicionaPassageiro(dados, novo);
 
 	WaitForSingleObject(sem_vazios, INFINITE);
 	WaitForSingleObject(sem_mutex, INFINITE);

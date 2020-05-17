@@ -130,6 +130,7 @@ void eliminaIdMapa(DADOS* dados, char id);
 void expulsarTaxi(DADOS* dados, TCHAR* matr);
 void transporteAceite(DADOS* dados);
 void enviaTaxi(DADOS* dados, TAXI* taxi);
+void deslocaPassageiroParaPorta(DADOS* dados);
 void newPassageiro(DADOS* dados);
 DWORD WINAPI ThreadTempoTransporte(LPVOID param);
 DWORD WINAPI ThreadComandos(LPVOID param);
