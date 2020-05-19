@@ -12,11 +12,15 @@
 #define MAX_PASS 20
 
 typedef struct {
-	TCHAR id[TAM];
 	unsigned int X, Y, Xfinal, Yfinal;
 	int movimento;
 	int terminar;
 	char id_mapa;
+} DETALHES;
+
+typedef struct {
+	DETALHES detalhes;
+	TCHAR id[TAM];
 } PASSAGEIRO;
 
 typedef struct {

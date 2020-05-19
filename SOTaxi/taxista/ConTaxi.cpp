@@ -481,7 +481,7 @@ DWORD WINAPI ThreadInfoAdmin(LPVOID param) {
 //MANDA TAXI AO ADMIN E RECEBE PASSAGEIRO DO ADMIN -- BUFFER CIRCULAR
 DWORD WINAPI ThreadRespostaTransporte(LPVOID param) {
 	DADOS* dados = ((DADOS*)param);
-	PASSAGEIRO novo;
+	PASSAGEIRO_BUFFER novo;
 
 	while (1) {
 		WaitForSingleObject(sem_itens, INFINITE);
@@ -510,6 +510,7 @@ DWORD WINAPI ThreadRespostaTransporte(LPVOID param) {
 				dadosD->taxi->interessado = 0;
 			}
 		}
+		//BufferMemoria->NextOut = (BufferMemoria->NextOut + 1) % MAX_PASS;
 		ReleaseMutex(hMutex);
 	}
 

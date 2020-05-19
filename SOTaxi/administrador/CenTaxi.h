@@ -43,6 +43,10 @@ typedef struct {
 	int movimento;
 	int terminar;
 	char id_mapa;
+} PASSAGEIRO_BUFFER;
+
+typedef struct {
+	PASSAGEIRO_BUFFER detalhes;
 	TCHAR id[TAM];
 } PASSAGEIRO;
 
@@ -69,7 +73,7 @@ HANDLE hTimer;
 int acabouTempo = 0;
 
 typedef struct {
-	PASSAGEIRO Passageiros[MAX_PASS];
+	PASSAGEIRO_BUFFER Passageiros[MAX_PASS];
 	int NextIn = 0, NextOut = 0;
 } BUFFER;
 

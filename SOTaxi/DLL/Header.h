@@ -14,6 +14,10 @@ typedef struct {
 	int movimento;
 	int terminar;
 	char id_mapa;
+} PASSAGEIRO_BUFFER;
+
+typedef struct {
+	PASSAGEIRO_BUFFER detalhes;
 	TCHAR id[TAM];
 } PASSAGEIRO;
 
@@ -57,7 +61,7 @@ typedef struct {
 HANDLE sem_mutex, sem_itens, sem_vazios;
 
 typedef struct {
-	PASSAGEIRO Passageiros[MAX_PASS];
+	PASSAGEIRO_BUFFER Passageiros[MAX_PASS];
 	int NextIn = 0, NextOut = 0;
 } BUFFER;
 
