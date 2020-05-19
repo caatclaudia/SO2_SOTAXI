@@ -346,10 +346,13 @@ void inicializaVariaveis() {
 }
 
 void ajuda() {
-	_tprintf(_T("\n\n expulsar - EXPULSAR TAXI"));
-	_tprintf(_T("\n listar - LISTAR TÁXIS"));
-	_tprintf(_T("\n aceitaçãoT - PAUSAR/RECOMECAR ACEITAÇÃO DE TAXIS"));
-	_tprintf(_T("\n manifestações - DEFINIR INTERVALO DE TEMPO DURANTE O QUAL AGUARDA MANIFESTAÇOES DOS TAXIS"));
+	_tprintf(_T("\n\n novoP - ADICIONA PASSAGEIRO"));
+	_tprintf(_T("\n mapa - VISUALIZA MAPA"));
+	_tprintf(_T("\n expulsar - EXPULSAR TAXI"));
+	_tprintf(_T("\n listarT - LISTAR TÁXIS"));
+	_tprintf(_T("\n listarP - LISTAR PASSAGEIROS"));
+	_tprintf(_T("\n aceitacaoT - PAUSAR/RECOMECAR ACEITAÇÃO DE TAXIS"));
+	_tprintf(_T("\n manifestacoes - DEFINIR INTERVALO DE TEMPO DURANTE O QUAL AGUARDA MANIFESTAÇOES DOS TAXIS"));
 	_tprintf(_T("\n fim - ENCERRAR TODO O SISTEMA"));
 	return;
 }
