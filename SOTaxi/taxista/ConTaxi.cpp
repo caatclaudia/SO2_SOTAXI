@@ -467,7 +467,7 @@ DWORD WINAPI ThreadInfoAdmin(LPVOID param) {
 			_tprintf(_T("\n[TAXI] Taxi vai encerrar por conta da Central!"));
 			break;
 		}
-		else if(!dados->taxi->disponivel)
+		else if(dados->taxi->disponivel)
 			_tprintf(_T("\n[PASS] Taxi entregou o Passageiro!"));
 
 		ReleaseMutex(hMutex);
@@ -510,7 +510,6 @@ DWORD WINAPI ThreadRespostaTransporte(LPVOID param) {
 				dadosD->taxi->interessado = 0;
 			}
 		}
-		//BufferMemoria->NextOut = (BufferMemoria->NextOut + 1) % MAX_PASS;
 		ReleaseMutex(hMutex);
 	}
 

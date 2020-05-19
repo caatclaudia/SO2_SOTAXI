@@ -595,6 +595,26 @@ void deslocaPassageiroParaPorta(DADOS* dados) {
 		ptr_log((TCHAR*)aux);
 		_tprintf(TEXT("Passageiro %s deslocado para (%d,%d)!"), dados->passageiros[dados->nPassageiros - 1].id, dados->passageiros[dados->nPassageiros - 1].detalhes.X, dados->passageiros[dados->nPassageiros - 1].detalhes.Y);
 	}
+	if (dados->mapa[tamanhoMapa * dados->passageiros[dados->nPassageiros - 1].detalhes.Yfinal + dados->passageiros[dados->nPassageiros - 1].detalhes.Yfinal + dados->passageiros[dados->nPassageiros - 1].detalhes.Xfinal].caracter != '_') {
+		for (int i = 1; VALIDO != 1; i++) {
+			if (dados->mapa[tamanhoMapa * dados->passageiros[dados->nPassageiros - 1].detalhes.Yfinal + dados->passageiros[dados->nPassageiros - 1].detalhes.Yfinal + dados->passageiros[dados->nPassageiros - 1].detalhes.Xfinal + i].caracter == '_') {
+				dados->passageiros[dados->nPassageiros - 1].detalhes.Xfinal += i;
+				VALIDO = 1;
+			}
+			else if (dados->mapa[tamanhoMapa * (dados->passageiros[dados->nPassageiros - 1].detalhes.Yfinal - i) + (dados->passageiros[dados->nPassageiros - 1].detalhes.Yfinal - i) + dados->passageiros[dados->nPassageiros - 1].detalhes.Xfinal].caracter == '_') {
+				dados->passageiros[dados->nPassageiros - 1].detalhes.Yfinal -= i;
+				VALIDO = 1;
+			}
+			else if (dados->mapa[tamanhoMapa * (dados->passageiros[dados->nPassageiros - 1].detalhes.Yfinal + i) + (dados->passageiros[dados->nPassageiros - 1].detalhes.Yfinal + i) + dados->passageiros[dados->nPassageiros - 1].detalhes.Xfinal].caracter == '_') {
+				dados->passageiros[dados->nPassageiros - 1].detalhes.Yfinal += i;
+				VALIDO = 1;
+			}
+			else if (dados->mapa[tamanhoMapa * dados->passageiros[dados->nPassageiros - 1].detalhes.Yfinal + dados->passageiros[dados->nPassageiros - 1].detalhes.Yfinal + dados->passageiros[dados->nPassageiros - 1].detalhes.Xfinal - i].caracter == '_') {
+				dados->passageiros[dados->nPassageiros - 1].detalhes.Xfinal -= i;
+				VALIDO = 1;
+			}
+		}
+	}
 	return;
 }
 
@@ -629,7 +649,7 @@ void newPassageiro(DADOS* dados) {
 	BufferMemoria->NextIn = (BufferMemoria->NextIn + 1) % MAX_PASS;
 	ptr_log((TCHAR*)TEXT("CenTaxi coloca passageiro em Buffer Circular!"));
 	ReleaseSemaphore(sem_mutex, 1, NULL);
-	ReleaseSemaphore(sem_itens, 1, NULL);
+	ReleaseSemaphore(sem_itens, dados->nTaxis, NULL);
 
 	TAXI novoT;
 	acabouTempo = 0;
