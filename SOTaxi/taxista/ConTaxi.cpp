@@ -469,6 +469,8 @@ DWORD WINAPI ThreadInfoAdmin(LPVOID param) {
 		}
 		else if(dados->taxi->disponivel)
 			_tprintf(_T("\n[PASS] Taxi entregou o Passageiro!"));
+		else
+			_tprintf(_T("\n[PASS] Taxi recolheu o Passageiro!"));
 
 		ReleaseMutex(hMutex);
 
@@ -497,6 +499,7 @@ DWORD WINAPI ThreadRespostaTransporte(LPVOID param) {
 		if (dadosD->taxi->interessado || dadosD->taxi->autoResposta) {
 			if (calculaDistancia(novo.X, novo.Y, dadosD->taxi->X, dadosD->taxi->Y) <= (int)NQ) {
 				dadosD->taxi->interessado = 1;
+				_tprintf(_T("\n[PASS] Tenho interesse neste transporte!"));
 
 				comunicacaoParaCentral(dadosD);
 
@@ -504,7 +507,9 @@ DWORD WINAPI ThreadRespostaTransporte(LPVOID param) {
 
 				recebeInfo(dadosD);
 				if (dadosD->taxi->Xfinal == novo.X && dadosD->taxi->Yfinal == novo.Y) {
+					_tprintf(_T("\n[PASS] Confirmação recebida!"));
 					_tprintf(_T("\n[PASS] Passageiro a espera deste Taxi em (%d,%d)!"), novo.X, novo.Y);
+					_tprintf(_T("\n[PASS] Recolha de passageiro iniciada!"));
 					dadosD->taxi->disponivel = 0;
 				}
 				dadosD->taxi->interessado = 0;
