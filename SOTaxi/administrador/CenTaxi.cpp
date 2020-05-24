@@ -380,7 +380,11 @@ void listarPassageiros(DADOS* dados) {
 	}
 	for (int i = 0; i < dados->nPassageiros; i++) {
 		_tprintf(_T("\n[LISTAR PASSAGEIRO] Passageiro %s : "), dados->passageiros[i].id);
-		_tprintf(_T("\n (%d, %d) -> (%d, %d)\n"), dados->passageiros[i].detalhes.X, dados->passageiros[i].detalhes.Y, dados->passageiros[i].detalhes.Xfinal, dados->passageiros[i].detalhes.Yfinal);
+		_tprintf(_T("\n (%d, %d) -> (%d, %d)"), dados->passageiros[i].detalhes.X, dados->passageiros[i].detalhes.Y, dados->passageiros[i].detalhes.Xfinal, dados->passageiros[i].detalhes.Yfinal);
+		if (dados->passageiros[i].detalhes.movimento)
+			_tprintf(_T(" - em movimento\n"));
+		else
+			_tprintf(_T(" - à espera\n"));
 	}
 	return;
 }
@@ -686,6 +690,7 @@ void newPassageiro(DADOS* dados) {
 		dados->taxis[valor].Xfinal = novo.detalhes.X;
 		dados->taxis[valor].Yfinal = novo.detalhes.Y;
 		dados->taxis[valor].disponivel = 0;
+		dados->passageiros[dados->nPassageiros - 1].detalhes.movimento = 1;
 
 		CopyMemory(dados->sharedTaxi, &dados->taxis[valor], sizeof(TAXI));
 		ptr_log((TCHAR*)TEXT("CenTaxi envia Taxi para ConTaxi por memória partilhada!"));
