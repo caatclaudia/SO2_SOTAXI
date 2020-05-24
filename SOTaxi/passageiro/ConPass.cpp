@@ -73,15 +73,15 @@ void novoPassageiro(DADOS* dados) {
 	dados->passageiros[dados->nPassageiros].id[_tcslen(dados->passageiros[dados->nPassageiros].id) - 1] = '\0';
 
 	_tprintf(_T("\n[NOVO]  Localizacao do Passageiro (X Y) : "));
-	_tscanf_s(_T("%d"), &dados->passageiros[dados->nPassageiros].X);
-	_tscanf_s(_T("%d"), &dados->passageiros[dados->nPassageiros].Y);
+	_tscanf_s(_T("%d"), &dados->passageiros[dados->nPassageiros].detalhes.X);
+	_tscanf_s(_T("%d"), &dados->passageiros[dados->nPassageiros].detalhes.Y);
 
 	_tprintf(_T("\n[NOVO]  Local de destino do Passageiro (X Y) : "));
-	_tscanf_s(_T("%d"), &dados->passageiros[dados->nPassageiros].Xfinal);
-	_tscanf_s(_T("%d"), &dados->passageiros[dados->nPassageiros].Yfinal);
-	dados->passageiros[dados->nPassageiros].movimento = 0;
-	dados->passageiros[dados->nPassageiros].terminar = 0;
-	dados->passageiros[dados->nPassageiros].id_mapa = TEXT('.');
+	_tscanf_s(_T("%d"), &dados->passageiros[dados->nPassageiros].detalhes.Xfinal);
+	_tscanf_s(_T("%d"), &dados->passageiros[dados->nPassageiros].detalhes.Yfinal);
+	dados->passageiros[dados->nPassageiros].detalhes.movimento = 0;
+	dados->passageiros[dados->nPassageiros].detalhes.terminar = 0;
+	dados->passageiros[dados->nPassageiros].detalhes.id_mapa = TEXT('.');
 
 	//VAI AO ADMIN VER SE PODE CRIAR
 
@@ -107,7 +107,7 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 	} while (_tcscmp(op, TEXT("fim")));
 
 	for (int i = 0; i < MAX_PASS; i++)
-		dados->passageiros[i].terminar = 1;
+		dados->passageiros[i].detalhes.terminar = 1;
 
 	dados->terminar = 1;
 
