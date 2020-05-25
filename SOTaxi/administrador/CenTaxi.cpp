@@ -461,6 +461,105 @@ void leMapa(DADOS* dados) {
 	return;
 }
 
+void novoP(DADOS* dados) {
+	PASSAGEIRO novo;
+	TCHAR aux[TAM] = TEXT("\n");
+
+	_tprintf(_T("\n[NOVO] Id do Passageiro: "));
+	_fgetts(novo.id, TAM_ID, stdin);
+	novo.id[_tcslen(novo.id) - 1] = '\0';
+
+	_tprintf(_T("\n[NOVO]  Localizacao do Passageiro (X Y) : "));
+	_tscanf_s(_T("%d"), &novo.X);
+	_tscanf_s(_T("%d"), &novo.Y);
+
+	_tprintf(_T("\n[NOVO]  Local de destino do Passageiro (X Y) : "));
+	_tscanf_s(_T("%d"), &novo.Xfinal);
+	_tscanf_s(_T("%d"), &novo.Yfinal);
+
+	_stprintf_s(aux, TAM, TEXT("Passageiro %s em (%d,%d)!"), novo.id, novo.X, novo.Y);
+	ptr_log(aux);
+	ptr_log((TCHAR*)aux);
+
+	novo.movimento = 0;
+	novo.terminar = 0;
+	novo.id_mapa = TEXT('.');
+	novo.tempoEspera = -1;
+	for (int i = 0; i < 6; i++)
+		novo.matriculaTaxi[i] = ' ';
+	novo.matriculaTaxi[6] = '\0';
+
+	adicionaPassageiro(dados, novo);
+
+	transportePassageiro(dados);
+	return;
+}
+
+void transportePassageiro(DADOS* dados) {
+	TCHAR aux[TAM] = TEXT("\n");
+
+	WaitForSingleObject(sem_vazios, INFINITE);
+	WaitForSingleObject(sem_mutex, INFINITE);
+	BufferMemoria->Passageiros[BufferMemoria->NextIn] = dados->passageiros[dados->nPassageiros - 1];
+	BufferMemoria->NextIn = (BufferMemoria->NextIn + 1) % MAX_PASS;
+	ptr_log((TCHAR*)TEXT("CenTaxi coloca passageiro em Buffer Circular!"));
+	ReleaseSemaphore(sem_mutex, 1, NULL);
+	ReleaseSemaphore(sem_itens, dados->nTaxis, NULL);
+
+	TAXI novoT;
+	acabouTempo = 0;
+	int interessados = 0;
+	Sleep(500);
+	while (!acabouTempo) {
+		SetEvent(transporte);
+		Sleep(1000);
+		ResetEvent(transporte);
+
+		//RECEBE TODOS OS INTERESSES
+		CopyMemory(&novoT, dados->sharedTaxi, sizeof(TAXI));
+		ptr_log((TCHAR*)TEXT("CenTaxi recebe Taxi do ConTaxi por memória partilhada!"));
+		if (novoT.interessado) {
+			for (int i = 0; i < dados->nTaxis; i++)
+				if (!_tcscmp(novoT.matricula, dados->taxis[i].matricula)) {
+					dados->taxis[i] = novoT;
+					interessados++;
+				}
+		}
+	}
+
+	if (interessados > 0) {
+		int valor;
+		do {
+			valor = rand() % dados->nTaxis;
+		} while (!dados->taxis[valor].interessado);
+		_stprintf_s(aux, TAM, TEXT("Taxi %s vai transportar %s!"), dados->taxis[valor].matricula, dados->passageiros[dados->nPassageiros - 1].id);
+		ptr_log(aux);
+		ptr_log((TCHAR*)aux);
+		dados->taxis[valor].Xfinal = dados->passageiros[dados->nPassageiros - 1].X;
+		dados->taxis[valor].Yfinal = dados->passageiros[dados->nPassageiros - 1].Y;
+		dados->taxis[valor].disponivel = 0;
+		dados->passageiros[dados->nPassageiros - 1].movimento = 1;
+		for (int i = 0; i < 6; i++)
+			dados->passageiros[dados->nPassageiros - 1].matriculaTaxi[i] = dados->taxis[valor].matricula[i];
+
+		//CALCULA TEMPO ESTIMADO DE ESPERA
+		dados->passageiros[dados->nPassageiros - 1].tempoEspera = (int)(calculaDistancia(dados->taxis[valor].X, dados->taxis[valor].Y, dados->passageiros[dados->nPassageiros - 1].X, dados->passageiros[dados->nPassageiros - 1].Y) / dados->taxis[valor].velocidade);
+		_tprintf(_T("\n[PASS]  O tempo estimado de espera para este passageiro é %d s"), dados->passageiros[dados->nPassageiros - 1].tempoEspera);
+
+		CopyMemory(dados->sharedTaxi, &dados->taxis[valor], sizeof(TAXI));
+		ptr_log((TCHAR*)TEXT("CenTaxi envia Taxi para ConTaxi por memória partilhada!"));
+		SetEvent(dados->respostaAdmin);
+		Sleep(500);
+		ResetEvent(dados->respostaAdmin);
+
+	}
+	else
+		_tprintf(_T("\n[PASS]  Não houve interesse de nenhum Taxi em fazer este transporte!"));
+	transporteAceite(dados);
+
+	return;
+}
+
 boolean adicionaTaxi(DADOS* dados, TAXI novo) {
 	TCHAR aux[TAM];
 	if (!dados->aceitacaoT)
@@ -638,95 +737,6 @@ int calculaDistancia(int inicioX, int inicioY, int fimX, int fimY) {
 	return distancia;
 }
 
-void newPassageiro(DADOS* dados) {
-	PASSAGEIRO novo;
-	TCHAR aux[TAM] = TEXT("\n");
-
-	_tprintf(_T("\n[NOVO] Id do Passageiro: "));
-	_fgetts(novo.id, TAM_ID, stdin);
-	novo.id[_tcslen(novo.id) - 1] = '\0';
-
-	_tprintf(_T("\n[NOVO]  Localizacao do Passageiro (X Y) : "));
-	_tscanf_s(_T("%d"), &novo.X);
-	_tscanf_s(_T("%d"), &novo.Y);
-
-	_tprintf(_T("\n[NOVO]  Local de destino do Passageiro (X Y) : "));
-	_tscanf_s(_T("%d"), &novo.Xfinal);
-	_tscanf_s(_T("%d"), &novo.Yfinal);
-
-	_stprintf_s(aux, TAM, TEXT("Passageiro %s em (%d,%d)!"), novo.id, novo.X, novo.Y);
-	ptr_log(aux);
-	ptr_log((TCHAR*)aux);
-
-	novo.movimento = 0;
-	novo.terminar = 0;
-	novo.id_mapa = TEXT('.');
-	novo.tempoEspera = -1;
-	for (int i = 0; i < 6; i++)
-		novo.matriculaTaxi[i] = ' ';
-	novo.matriculaTaxi[6] = '\0';
-	adicionaPassageiro(dados, novo);
-
-	WaitForSingleObject(sem_vazios, INFINITE);
-	WaitForSingleObject(sem_mutex, INFINITE);
-	BufferMemoria->Passageiros[BufferMemoria->NextIn] = novo;
-	BufferMemoria->NextIn = (BufferMemoria->NextIn + 1) % MAX_PASS;
-	ptr_log((TCHAR*)TEXT("CenTaxi coloca passageiro em Buffer Circular!"));
-	ReleaseSemaphore(sem_mutex, 1, NULL);
-	ReleaseSemaphore(sem_itens, dados->nTaxis, NULL);
-
-	TAXI novoT;
-	acabouTempo = 0;
-	int interessados = 0;
-	Sleep(500);
-	while (!acabouTempo) {
-		SetEvent(transporte);
-		Sleep(1000);
-		ResetEvent(transporte);
-
-		//RECEBE TODOS OS INTERESSES
-		CopyMemory(&novoT, dados->sharedTaxi, sizeof(TAXI));
-		ptr_log((TCHAR*)TEXT("CenTaxi recebe Taxi do ConTaxi por memória partilhada!"));
-		if (novoT.interessado) {
-			for (int i = 0; i < dados->nTaxis; i++)
-				if (!_tcscmp(novoT.matricula, dados->taxis[i].matricula)) {
-					dados->taxis[i] = novoT;
-					interessados++;
-				}
-		}
-	}
-
-	if (interessados > 0) {
-		int valor;
-		do {
-			valor = rand() % dados->nTaxis;
-		} while (!dados->taxis[valor].interessado);
-		_stprintf_s(aux, TAM, TEXT("Taxi %s vai transportar %s!"), dados->taxis[valor].matricula, novo.id);
-		ptr_log(aux);
-		ptr_log((TCHAR*)aux);
-		dados->taxis[valor].Xfinal = novo.X;
-		dados->taxis[valor].Yfinal = novo.Y;
-		dados->taxis[valor].disponivel = 0;
-		dados->passageiros[dados->nPassageiros - 1].movimento = 1;
-		for(int i=0; i<6; i++)
-			dados->passageiros[dados->nPassageiros - 1].matriculaTaxi[i] = dados->taxis[valor].matricula[i];
-
-		//CALCULA TEMPO ESTIMADO DE ESPERA
-		dados->passageiros[dados->nPassageiros - 1].tempoEspera = (int)(calculaDistancia(dados->taxis[valor].X, dados->taxis[valor].Y, dados->passageiros[dados->nPassageiros - 1].X, dados->passageiros[dados->nPassageiros - 1].Y)/ dados->taxis[valor].velocidade);
-		_tprintf(_T("\n[PASS]  O tempo estimado de espera para este passageiro é %d s"), dados->passageiros[dados->nPassageiros - 1].tempoEspera);
-
-		CopyMemory(dados->sharedTaxi, &dados->taxis[valor], sizeof(TAXI));
-		ptr_log((TCHAR*)TEXT("CenTaxi envia Taxi para ConTaxi por memória partilhada!"));
-		SetEvent(dados->respostaAdmin);
-		Sleep(500);
-		ResetEvent(dados->respostaAdmin);
-
-	}
-	transporteAceite(dados);
-
-	return;
-}
-
 DWORD WINAPI ThreadTempoTransporte(LPVOID param) {
 	DADOS* dados = ((DADOS*)param);
 	LARGE_INTEGER liDueTime;
@@ -765,7 +775,7 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 		op[_tcslen(op) - 1] = '\0';
 		//NOVO PASSAGEIRO
 		if (!_tcscmp(op, TEXT("novoP"))) {
-			newPassageiro(dados);
+			novoP(dados);
 		}
 		//VER MAPA
 		else if (!_tcscmp(op, TEXT("mapa"))) {
@@ -973,21 +983,9 @@ DWORD WINAPI ThreadNovoPassageiro(LPVOID param) {
 	TCHAR aux[TAM] = TEXT("\n"), aux1[TAM] = TEXT("\n");
 	PASSAGEIRO novo;
 
-	/*_stprintf_s(aux, TAM, TEXT("Passageiro %s entrou!"), novo.id);
-	ptr_log(aux);
-	ptr_log((TCHAR*)aux);
-	_stprintf_s(aux1, TAM, TEXT("Passageiro %s em (%d,%d)!"), novo.id, novo.X, novo.Y);
-	ptr_log(aux1);
-	ptr_log((TCHAR*)aux1);*/
+	//RECEBE PASSAGEIRO...
 
-	WaitForSingleObject(sem_vazios, INFINITE);
-	WaitForSingleObject(sem_mutex, INFINITE);
-	//BufferMemoria->Passageiros[BufferMemoria->NextIn] = novo;
-	BufferMemoria->NextIn = (BufferMemoria->NextIn + 1) % MAX_PASS;
-	ReleaseSemaphore(sem_mutex, 1, NULL);
-	ReleaseSemaphore(sem_itens, 1, NULL);
-
-
+	//adicionaPassageiro(dados, novo);
 	//DEPOIS DE ACEITAR TRANSPORTE
 	transporteAceite(dados);
 
