@@ -251,10 +251,15 @@ int _tmain(int argc, LPTSTR argv[]) {
 	WaitForSingleObject(dados.hMutexDados, INFINITE);
 
 	//NAMED PIPES
+	DWORD n;
 	for (int i = 0; i < dados.nTaxis; i++)
 		dados.taxis[i].terminar = 1;
 	for (int i = 0; i < dados.nPassageiros; i++)
 		dados.passageiros[i].terminar = 1;
+	WriteFile(hPipe, (LPVOID)&dados.passageiros[0], sizeof(PASSAGEIRO), &n, NULL);
+	SetEvent(dados.respostaMov);
+	Sleep(500);
+	ResetEvent(dados.respostaMov);
 
 	SetEvent(dados.infoAdmin);
 	Sleep(500);

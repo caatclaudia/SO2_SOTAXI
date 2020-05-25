@@ -96,9 +96,9 @@ int _tmain() {
 	HANDLE ghEvents[2];
 	ghEvents[0] = hThreadComandos;
 	ghEvents[1] = hThreadMovimentaPassageiro;
-	WaitForMultipleObjects(2, ghEvents, TRUE, INFINITE);
+	WaitForMultipleObjects(2, ghEvents, FALSE, INFINITE);
 
-	_tprintf(TEXT("Passageiros vão sair!\n"));
+	_tprintf(TEXT("\nPassageiros vão sair!\n"));
 	_tprintf(TEXT("Prima uma tecla...\n"));
 	_gettch();
 
@@ -247,6 +247,11 @@ DWORD WINAPI ThreadMovimentoPassageiro(LPVOID param) {	//ADMIN MANDA PASSAGEIRO
 		WaitForSingleObject(dados->hMutex, INFINITE);
 
 		ReadFile(hPipe, (LPVOID)&novo, sizeof(PASSAGEIRO), &n, NULL);
+		if (novo.terminar) {
+			_tprintf(_T("\n[SAIR] CenTaxi encerrou!"));
+			ReleaseMutex(dados->hMutex);
+			return 0;
+		}
 		for (i = 0; i < dados->nPassageiros && num == -1; i++)
 			if (!_tcscmp(novo.id, dados->passageiros[i].id)) {
 				dados->passageiros[i] = novo;
