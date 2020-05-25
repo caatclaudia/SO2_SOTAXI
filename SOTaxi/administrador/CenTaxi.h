@@ -10,6 +10,10 @@
 void(*ptr_register)(TCHAR*, int);
 void(*ptr_log)(TCHAR*);
 
+HKEY chave;
+DWORD queAconteceu;
+DWORD tamanho;
+
 #define TAM 50
 #define MAXTAXIS 10
 #define MAXPASS 10
@@ -39,6 +43,8 @@ typedef struct {
 } MAPA;
 
 #define TAM_ID 10
+#define PIPE_NAME TEXT("\\\\.\\pipe\\comunica")
+HANDLE hPipe;
 
 typedef struct {
 	unsigned int X, Y, Xfinal, Yfinal;
@@ -87,6 +93,8 @@ BUFFER* BufferMemoria;
 #define EVENT_RESPOSTA TEXT("RespostaDoAdmin")
 #define EVENT_SAIUA TEXT("InfoAdmin")
 
+#define EVENT_NOVOP TEXT("NovoPass")
+
 #define EVENT_ATUALIZAMAP TEXT("AtualizaMapa")
 
 #define SHM_TAXI TEXT("EspacoTaxis")
@@ -108,6 +116,7 @@ typedef struct {
 
 	int nPassageiros;
 	PASSAGEIRO passageiros[MAXPASS];
+	HANDLE novoPassageiro;
 
 	MAPA* mapa;
 	HANDLE hFile;

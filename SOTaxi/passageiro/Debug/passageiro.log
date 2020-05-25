@@ -1,4 +1,4 @@
 ﻿  ConPass.cpp
-C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\passageiro\ConPass.cpp(6,54): warning C4101: 'hThreadRespostaTransporte': unreferenced local variable
-C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\passageiro\ConPass.cpp(6,26): warning C4101: 'hThreadMovimentaPassageiro': unreferenced local variable
+C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\passageiro\ConPass.cpp(11,54): warning C4101: 'hThreadRespostaTransporte': unreferenced local variable
+C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\passageiro\ConPass.cpp(11,26): warning C4101: 'hThreadMovimentaPassageiro': unreferenced local variable
   passageiro.vcxproj -> C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Debug\ConPass.exe

@@ -1,3 +1,2 @@
 ﻿  CenTaxi.cpp
-C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\administrador\CenTaxi.cpp(10,78): warning C4101: 'hThreadNovoPassageiro': unreferenced local variable
-C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\administrador\CenTaxi.cpp(988): error C4700: uninitialized local variable 'novo' used
+  administrador.vcxproj -> C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Debug\CenTaxi.exe

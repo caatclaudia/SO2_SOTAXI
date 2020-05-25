@@ -10,6 +10,7 @@
 
 #define TAM 200
 #define MAX_PASS 20
+#define TAM_ID 10
 
 typedef struct {
 	unsigned int X, Y, Xfinal, Yfinal;
@@ -18,7 +19,7 @@ typedef struct {
 	char id_mapa;
 	TCHAR matriculaTaxi[7];
 	int tempoEspera;
-	TCHAR id[TAM];
+	TCHAR id[TAM_ID];
 } PASSAGEIRO;
 
 typedef struct {
@@ -30,6 +31,11 @@ typedef struct {
 //SEMAFOROS
 #define SEMAPHORE_NAME TEXT("SEMAPHORE_PASS")
 HANDLE Semaphore;
+
+#define PIPE_NAME TEXT("\\\\.\\pipe\\comunica")
+HANDLE hPipe;
+#define EVENT_NOVOP TEXT("NovoPass")
+HANDLE novoPass;
 
 void novoPassageiro(DADOS* dados);
 DWORD WINAPI ThreadComandos(LPVOID param);

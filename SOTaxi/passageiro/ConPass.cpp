@@ -32,6 +32,24 @@ int _tmain() {
 	WaitForSingleObject(Semaphore, INFINITE);
 	_tprintf(TEXT("\nEntrei!\n"));
 
+	novoPass = CreateEvent(NULL, TRUE, FALSE, EVENT_NOVOP);
+	if (novoPass == NULL) {
+		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
+		return 0;
+	}
+	ptr_register((TCHAR*)EVENT_NOVOP, 4);
+
+	if (!WaitNamedPipe(PIPE_NAME, NMPWAIT_WAIT_FOREVER)) {
+		_tprintf(TEXT("[ERRO] Ligar ao pipe '%s'! (WaitNamedPipe)\n"), PIPE_NAME);
+		exit(-1);
+	}
+	_tprintf(TEXT("[LEITOR] Ligação ao pipe do escritor... (CreateFile)\n"));
+	hPipe = CreateFile(PIPE_NAME, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (hPipe == NULL) {
+		_tprintf(TEXT("[ERRO] Ligar ao pipe '%s'! (CreateFile)\n"), PIPE_NAME);
+		exit(-1);
+	}
+
 	hThreadComandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadComandos, (LPVOID)&dados, 0, NULL);
 	if (hThreadComandos == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
@@ -60,30 +78,52 @@ int _tmain() {
 
 	ReleaseSemaphore(Semaphore, 1, NULL);
 
+	_tprintf(TEXT("[ConPass] Desligar o pipe (DisconnectNamedPipe)\n"));
+	if (!DisconnectNamedPipe(hPipe)) {
+		_tprintf(TEXT("[ERRO] Desligar o pipe! (DisconnectNamedPipe)"));
+		return 0;
+	}
+
 	CloseHandle(Semaphore);
+	CloseHandle(hPipe);
+	CloseHandle(novoPassageiro);
 	FreeLibrary(hLib);
 
 	return 0;
 }
 
 void novoPassageiro(DADOS* dados) {
+	DWORD n;
+	PASSAGEIRO novo;
+	TCHAR aux[TAM];
 
 	_tprintf(_T("\n[NOVO] Id do Passageiro: "));
-	_fgetts(dados->passageiros[dados->nPassageiros].id, TAM, stdin);
-	dados->passageiros[dados->nPassageiros].id[_tcslen(dados->passageiros[dados->nPassageiros].id) - 1] = '\0';
+	_fgetts(aux, TAM_ID, stdin);
+	aux[_tcslen(aux) - 1] = '\0';
+	_tcscpy_s(novo.id, _countof(novo.id), aux);
 
 	_tprintf(_T("\n[NOVO]  Localizacao do Passageiro (X Y) : "));
-	_tscanf_s(_T("%d"), &dados->passageiros[dados->nPassageiros].detalhes.X);
-	_tscanf_s(_T("%d"), &dados->passageiros[dados->nPassageiros].detalhes.Y);
+	_tscanf_s(_T("%d"), &novo.X);
+	_tscanf_s(_T("%d"), &novo.Y);
 
 	_tprintf(_T("\n[NOVO]  Local de destino do Passageiro (X Y) : "));
-	_tscanf_s(_T("%d"), &dados->passageiros[dados->nPassageiros].detalhes.Xfinal);
-	_tscanf_s(_T("%d"), &dados->passageiros[dados->nPassageiros].detalhes.Yfinal);
-	dados->passageiros[dados->nPassageiros].detalhes.movimento = 0;
-	dados->passageiros[dados->nPassageiros].detalhes.terminar = 0;
-	dados->passageiros[dados->nPassageiros].detalhes.id_mapa = TEXT('.');
+	_tscanf_s(_T("%d"), &novo.Xfinal);
+	_tscanf_s(_T("%d"), &novo.Yfinal);
+	novo.movimento = 0;
+	novo.terminar = 0;
+	novo.id_mapa = TEXT('.'); 
+	novo.tempoEspera = -1;
+	for (int i = 0; i < 6; i++)
+		novo.matriculaTaxi[i] = ' ';
+	novo.matriculaTaxi[6] = '\0';
 
 	//VAI AO ADMIN VER SE PODE CRIAR
+	WriteFile(hPipe, (LPVOID)&novo, sizeof(PASSAGEIRO), &n, NULL);
+
+	SetEvent(novoPass);
+	Sleep(500);
+	ResetEvent(novoPass);
+	dados->passageiros[dados->nPassageiros] = novo;
 
 	return;
 }
@@ -99,7 +139,7 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 		op[0] = i;
 		_fgetts(&op[1], sizeof(op), stdin);
 		op[_tcslen(op) - 1] = '\0';
-		if (_tcscmp(op, TEXT("novo"))) {		//NOVO PASSAGEIRO
+		if (!_tcscmp(op, TEXT("novo"))) {		//NOVO PASSAGEIRO
 			novoPassageiro(dados);
 			dados->nPassageiros++;
 		}
@@ -107,7 +147,7 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 	} while (_tcscmp(op, TEXT("fim")));
 
 	for (int i = 0; i < MAX_PASS; i++)
-		dados->passageiros[i].detalhes.terminar = 1;
+		dados->passageiros[i].terminar = 1;
 
 	dados->terminar = 1;
 

@@ -1,11 +1,5 @@
 #include "CenTaxi.h"
 
-//ptr_log -> Quando Taxi começa a transportar
-
-HKEY chave;
-DWORD queAconteceu;
-DWORD tamanho;
-
 int _tmain(int argc, LPTSTR argv[]) {
 	HANDLE hThreadComandos, hThreadNovoTaxi, hThreadSaiuTaxi, hThreadMovimento, hThreadNovoPassageiro, hThreadTempoTransporte;
 	DADOS dados;
@@ -146,6 +140,22 @@ int _tmain(int argc, LPTSTR argv[]) {
 	}
 	ptr_register((TCHAR*)SHM_TAXI, 7);
 
+	dados.novoPassageiro = CreateEvent(NULL, TRUE, FALSE, EVENT_NOVOP);
+	if (dados.novoPassageiro == NULL) {
+		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
+		CloseHandle(Semaphore);
+		CloseHandle(dados.EspTaxis);
+		CloseHandle(dados.novoTaxi);
+		CloseHandle(dados.saiuTaxi);
+		CloseHandle(dados.movimentoTaxi);
+		CloseHandle(dados.respostaAdmin);
+		UnmapViewOfFile(dados.sharedTaxi);
+		return 0;
+	}
+	ptr_register((TCHAR*)EVENT_NOVOP, 4);
+	SetEvent(dados.novoPassageiro);
+	ResetEvent(dados.novoPassageiro);
+
 	hTimer = CreateWaitableTimer(NULL, TRUE, NULL);
 	if (hTimer == NULL)
 	{
@@ -183,25 +193,25 @@ int _tmain(int argc, LPTSTR argv[]) {
 		_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
 		return 0;
 	}
-	//hThreadNovoPassageiro = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadNovoPassageiro, (LPVOID)&dados, 0, NULL);
-	//if (hThreadNovoPassageiro == NULL) {
-	//	_tprintf(TEXT("\nErro ao lançar Thread!\n"));
-	//	return 0;
-	//}
+	hThreadNovoPassageiro = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadNovoPassageiro, (LPVOID)&dados, 0, NULL);
+	if (hThreadNovoPassageiro == NULL) {
+		_tprintf(TEXT("\nErro ao lançar Thread!\n"));
+		return 0;
+	}
 	hThreadTempoTransporte = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadTempoTransporte, (LPVOID)&dados, 0, NULL);
 	if (hThreadTempoTransporte == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
 		return 0;
 	}
 
-	HANDLE ghEvents[5];
+	HANDLE ghEvents[6];
 	ghEvents[0] = hThreadComandos;
 	ghEvents[1] = hThreadNovoTaxi;
 	ghEvents[2] = hThreadSaiuTaxi;
 	ghEvents[3] = hThreadMovimento;
 	ghEvents[4] = hThreadTempoTransporte;
-	//ghEvents[2] = hThreadNovoPassageiro;
-	WaitForMultipleObjects(5, ghEvents, FALSE, INFINITE);
+	ghEvents[5] = hThreadNovoPassageiro;
+	WaitForMultipleObjects(6, ghEvents, FALSE, INFINITE);
 	TerminateThread(hThreadNovoTaxi, 0);
 	TerminateThread(hThreadSaiuTaxi, 0);
 	TerminateThread(hThreadMovimento, 0);
@@ -240,6 +250,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 	CloseHandle(dados.infoAdmin);
 	CloseHandle(dados.EspMapa);
 	CloseHandle(transporte);
+	CloseHandle(dados.novoPassageiro);
 	FreeLibrary(hLib);
 	RegCloseKey(chave);
 
@@ -982,12 +993,34 @@ DWORD WINAPI ThreadNovoPassageiro(LPVOID param) {
 	DADOS* dados = ((DADOS*)param);
 	TCHAR aux[TAM] = TEXT("\n"), aux1[TAM] = TEXT("\n");
 	PASSAGEIRO novo;
+	DWORD n;
 
-	//RECEBE PASSAGEIRO...
+	hPipe = CreateNamedPipe(PIPE_NAME, PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED, PIPE_WAIT | PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE, 1, sizeof(PASSAGEIRO), sizeof(PASSAGEIRO), 1000, NULL);
+	if (hPipe == INVALID_HANDLE_VALUE) {
+		_tprintf(TEXT("[ERRO] Criar Named Pipe! %d (CreateNamedPipe)"), GetLastError());
+		return 0;
+	}
+	if (!ConnectNamedPipe(hPipe, NULL)) {
+		_tprintf(TEXT("[ERRO] Ligação ao leitor! %d (ConnectNamedPipe\n"), GetLastError());
+		return 0;
+	}
 
-	//adicionaPassageiro(dados, novo);
-	//DEPOIS DE ACEITAR TRANSPORTE
-	transporteAceite(dados);
+	while (1) {
+		WaitForSingleObject(dados->novoPassageiro, INFINITE);
+
+		if (dados->terminar)
+			return 0;
+		WaitForSingleObject(dados->hMutexDados, INFINITE);
+
+		ReadFile(hPipe, (LPVOID)&novo, sizeof(PASSAGEIRO), &n, NULL);
+		adicionaPassageiro(dados, novo);
+
+		transportePassageiro(dados);
+
+		ReleaseMutex(dados->hMutexDados);
+
+		Sleep(1000);
+	}
 
 	ExitThread(0);
 }

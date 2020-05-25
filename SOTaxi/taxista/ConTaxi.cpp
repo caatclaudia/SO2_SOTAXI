@@ -442,6 +442,7 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {
 			}
 			else if(dados->mapa[tamanhoMapa * (dados->taxi->Y + quad) + (dados->taxi->Y + quad) + dados->taxi->X].caracter == '_') {
 				_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X, dados->taxi->Y + quad);
+				dados->taxi->Y += quad;
 			}
 			avisaMovimentoTaxi(dados);
 		}
