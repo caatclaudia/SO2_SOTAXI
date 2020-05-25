@@ -3,7 +3,7 @@
 void(*ptr_register)(TCHAR*, int);
 
 int _tmain() {
-	HANDLE hThreadComandos, hThreadMovimentaPassageiro, hThreadRespostaTransporte;
+	HANDLE hThreadComandos, hThreadMovimentaPassageiro;
 	DADOS dados;
 	dados.nPassageiros = 0;
 	dados.terminar = 0;
@@ -91,17 +91,11 @@ int _tmain() {
 		_tprintf(TEXT("\nErro ao lançar Thread!\n"));
 		return 0;
 	}
-	//hThreadRespostaTransporte = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadRespostaTransporte, (LPVOID)&dados, 0, NULL);
-	//if (hThreadRespostaTransporte == NULL) {
-	//	_tprintf(TEXT("\nErro ao lançar Thread!\n"));
-	//	return 0;
-	//}
 	ReleaseMutex(dados.hMutex);
 
 	HANDLE ghEvents[2];
 	ghEvents[0] = hThreadComandos;
 	ghEvents[1] = hThreadMovimentaPassageiro;
-	/*ghEvents[2] = hThreadRespostaTransporte;*/
 	WaitForMultipleObjects(2, ghEvents, TRUE, INFINITE);
 
 	_tprintf(TEXT("Passageiros vão sair!\n"));
@@ -188,6 +182,22 @@ void novoPassageiro(DADOS* dados) {
 	return;
 }
 
+void listarPassageiros(DADOS* dados) {
+	if (dados->nPassageiros == 0) {
+		_tprintf(_T("\n[LISTAR PASSAGEIRO] Não há Passageiros!"));
+		return;
+	}
+	for (int i = 0; i < dados->nPassageiros; i++) {
+		_tprintf(_T("\n[LISTAR PASSAGEIRO] Passageiro %s : "), dados->passageiros[i].id);
+		_tprintf(_T("\n (%d, %d) -> (%d, %d)"), dados->passageiros[i].X, dados->passageiros[i].Y, dados->passageiros[i].Xfinal, dados->passageiros[i].Yfinal);
+		if (dados->passageiros[i].movimento)
+			_tprintf(_T(" - em movimento\n"));
+		else
+			_tprintf(_T(" - à espera\n"));
+	}
+	return;
+}
+
 DWORD WINAPI ThreadComandos(LPVOID param) {
 	TCHAR op[TAM], i;
 	DADOS* dados = ((DADOS*)param);
@@ -200,9 +210,14 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 		op[0] = i;
 		_fgetts(&op[1], sizeof(op), stdin);
 		op[_tcslen(op) - 1] = '\0';
-		if (!_tcscmp(op, TEXT("novo"))) {		//NOVO PASSAGEIRO
+		//NOVO PASSAGEIRO
+		if (!_tcscmp(op, TEXT("novo"))) {		
 			novoPassageiro(dados);
 			dados->nPassageiros++;
+		}
+		//LISTAR PASSAGEIROS
+		else if (!_tcscmp(op, TEXT("listar"))) {
+			listarPassageiros(dados);
 		}
 		_tprintf(_T("\n\n"));
 		//ReleaseMutex(dados->hMutex);
@@ -248,12 +263,6 @@ DWORD WINAPI ThreadMovimentoPassageiro(LPVOID param) {	//ADMIN MANDA PASSAGEIRO
 		}
 		ReleaseMutex(dados->hMutex);
 	}
-
-	ExitThread(0);
-}
-
-DWORD WINAPI ThreadRespostaTransporte(LPVOID param) {	//ADMIN MANDA PASSAGEIRO
-	DADOS* dados = ((DADOS*)param);
 
 	ExitThread(0);
 }

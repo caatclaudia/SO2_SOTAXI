@@ -44,6 +44,6 @@ HANDLE respostaMov;
 
 boolean removePassageiro(DADOS* dados, PASSAGEIRO novo);
 void novoPassageiro(DADOS* dados);
+void listarPassageiros(DADOS* dados);
 DWORD WINAPI ThreadComandos(LPVOID param);
 DWORD WINAPI ThreadMovimentoPassageiro(LPVOID param);
-DWORD WINAPI ThreadRespostaTransporte(LPVOID param);
