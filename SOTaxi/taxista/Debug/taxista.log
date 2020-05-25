@@ -1,2 +1,2 @@
 ﻿  ConTaxi.cpp
-C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\taxista\ConTaxi.cpp(313,11): error C2065: 'TAM': undeclared identifier
+  taxista.vcxproj -> C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Debug\ConTaxi.exe

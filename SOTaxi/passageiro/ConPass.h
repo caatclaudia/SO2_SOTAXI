@@ -16,10 +16,8 @@ typedef struct {
 	int movimento;
 	int terminar;
 	char id_mapa;
-} DETALHES;
-
-typedef struct {
-	DETALHES detalhes;
+	TCHAR matriculaTaxi[7];
+	int tempoEspera;
 	TCHAR id[TAM];
 } PASSAGEIRO;
 

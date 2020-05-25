@@ -15,6 +15,8 @@ typedef struct {
 	int movimento;
 	int terminar;
 	char id_mapa;
+	TCHAR matriculaTaxi[7];
+	int tempoEspera;
 	TCHAR id[TAM_ID];
 } PASSAGEIRO;
 

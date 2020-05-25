@@ -45,6 +45,8 @@ typedef struct {
 	int movimento;
 	int terminar;
 	char id_mapa;
+	TCHAR matriculaTaxi[7];
+	int tempoEspera;
 	TCHAR id[TAM_ID];
 } PASSAGEIRO;
 
@@ -133,6 +135,7 @@ void expulsarTaxi(DADOS* dados, TCHAR* matr);
 void transporteAceite(DADOS* dados);
 void enviaTaxi(DADOS* dados, TAXI* taxi);
 void deslocaPassageiroParaPorta(DADOS* dados);
+int calculaDistancia(int inicioX, int inicioY, int fimX, int fimY);
 void newPassageiro(DADOS* dados);
 DWORD WINAPI ThreadTempoTransporte(LPVOID param);
 DWORD WINAPI ThreadComandos(LPVOID param);

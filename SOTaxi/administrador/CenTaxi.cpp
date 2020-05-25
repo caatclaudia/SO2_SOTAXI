@@ -625,6 +625,19 @@ void deslocaPassageiroParaPorta(DADOS* dados) {
 	return;
 }
 
+int calculaDistancia(int inicioX, int inicioY, int fimX, int fimY) {
+	int distancia = 0;
+	if (inicioX >= fimX)
+		distancia = inicioX - fimX;
+	else
+		distancia = fimX - inicioX;
+	if (inicioY >= fimY)
+		distancia += inicioY - fimY;
+	else
+		distancia += fimY - inicioY;
+	return distancia;
+}
+
 void newPassageiro(DADOS* dados) {
 	PASSAGEIRO novo;
 	TCHAR aux[TAM] = TEXT("\n");
@@ -648,6 +661,10 @@ void newPassageiro(DADOS* dados) {
 	novo.movimento = 0;
 	novo.terminar = 0;
 	novo.id_mapa = TEXT('.');
+	novo.tempoEspera = -1;
+	for (int i = 0; i < 6; i++)
+		novo.matriculaTaxi[i] = ' ';
+	novo.matriculaTaxi[6] = '\0';
 	adicionaPassageiro(dados, novo);
 
 	WaitForSingleObject(sem_vazios, INFINITE);
@@ -691,6 +708,12 @@ void newPassageiro(DADOS* dados) {
 		dados->taxis[valor].Yfinal = novo.Y;
 		dados->taxis[valor].disponivel = 0;
 		dados->passageiros[dados->nPassageiros - 1].movimento = 1;
+		for(int i=0; i<6; i++)
+			dados->passageiros[dados->nPassageiros - 1].matriculaTaxi[i] = dados->taxis[valor].matricula[i];
+
+		//CALCULA TEMPO ESTIMADO DE ESPERA
+		dados->passageiros[dados->nPassageiros - 1].tempoEspera = (int)(calculaDistancia(dados->taxis[valor].X, dados->taxis[valor].Y, dados->passageiros[dados->nPassageiros - 1].X, dados->passageiros[dados->nPassageiros - 1].Y)/ dados->taxis[valor].velocidade);
+		_tprintf(_T("\n[PASS]  O tempo estimado de espera para este passageiro é %d s"), dados->passageiros[dados->nPassageiros - 1].tempoEspera);
 
 		CopyMemory(dados->sharedTaxi, &dados->taxis[valor], sizeof(TAXI));
 		ptr_log((TCHAR*)TEXT("CenTaxi envia Taxi para ConTaxi por memória partilhada!"));
