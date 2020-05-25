@@ -50,38 +50,59 @@ int _tmain() {
 	SetEvent(respostaPass);
 	ResetEvent(respostaPass);
 
+	respostaMov = CreateEvent(NULL, TRUE, FALSE, EVENT_MOVIMENTOP);
+	if (respostaMov == NULL) {
+		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
+		CloseHandle(Semaphore);
+		CloseHandle(novoPass);
+		CloseHandle(respostaPass);
+		return 0;
+	}
+	ptr_register((TCHAR*)EVENT_MOVIMENTOP, 4);
+	SetEvent(respostaMov);
+	ResetEvent(respostaMov);
+
 	if (!WaitNamedPipe(PIPE_NAME, NMPWAIT_WAIT_FOREVER)) {
 		_tprintf(TEXT("[ERRO] Ligar ao pipe '%s'! (WaitNamedPipe)\n"), PIPE_NAME);
-		exit(-1);
+		return 0;
 	}
 	_tprintf(TEXT("[LEITOR] Ligação ao pipe do escritor... (CreateFile)\n"));
 	hPipe = CreateFile(PIPE_NAME, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hPipe == NULL) {
 		_tprintf(TEXT("[ERRO] Ligar ao pipe '%s'! (CreateFile)\n"), PIPE_NAME);
-		exit(-1);
+		return 0;
 	}
+
+	dados.hMutex = CreateMutex(NULL, FALSE, TEXT("MutexPass"));
+	if (dados.hMutex == NULL) {
+		_tprintf(TEXT("\n[ERRO] Erro ao criar Mutex!\n"));
+		return 0;
+	}
+	ptr_register((TCHAR*)TEXT("MutexPass"), 1);
+	WaitForSingleObject(dados.hMutex, INFINITE);
 
 	hThreadComandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadComandos, (LPVOID)&dados, 0, NULL);
 	if (hThreadComandos == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
 		return 0;
 	}
-	//hThreadMovimentaPassageiro = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadMovimentaPassageiro, (LPVOID)&dados, 0, NULL);
-	//if (hThreadMovimentaPassageiro == NULL) {
-	//	_tprintf(TEXT("\nErro ao lançar Thread!\n"));
-	//	return 0;
-	//}
+	hThreadMovimentaPassageiro = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadMovimentoPassageiro, (LPVOID)&dados, 0, NULL);
+	if (hThreadMovimentaPassageiro == NULL) {
+		_tprintf(TEXT("\nErro ao lançar Thread!\n"));
+		return 0;
+	}
 	//hThreadRespostaTransporte = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadRespostaTransporte, (LPVOID)&dados, 0, NULL);
 	//if (hThreadRespostaTransporte == NULL) {
 	//	_tprintf(TEXT("\nErro ao lançar Thread!\n"));
 	//	return 0;
 	//}
+	ReleaseMutex(dados.hMutex);
 
-	HANDLE ghEvents[1];
+	HANDLE ghEvents[2];
 	ghEvents[0] = hThreadComandos;
-	/*ghEvents[1] = hThreadMovimentaPassageiro;
-	ghEvents[2] = hThreadRespostaTransporte;*/
-	WaitForMultipleObjects(1, ghEvents, TRUE, INFINITE);
+	ghEvents[1] = hThreadMovimentaPassageiro;
+	/*ghEvents[2] = hThreadRespostaTransporte;*/
+	WaitForMultipleObjects(2, ghEvents, TRUE, INFINITE);
 
 	_tprintf(TEXT("Passageiros vão sair!\n"));
 	_tprintf(TEXT("Prima uma tecla...\n"));
@@ -99,9 +120,24 @@ int _tmain() {
 	CloseHandle(hPipe);
 	CloseHandle(novoPassageiro);
 	CloseHandle(respostaPass);
+	CloseHandle(respostaMov);
 	FreeLibrary(hLib);
 
 	return 0;
+}
+
+boolean removePassageiro(DADOS* dados, PASSAGEIRO novo) {
+	for (int i = 0; i < dados->nPassageiros; i++) {
+		if (!_tcscmp(novo.id, dados->passageiros[i].id)) {
+			for (int k = i; k < dados->nPassageiros - 1; k++) {
+				dados->passageiros[k] = dados->passageiros[k + 1];
+			}
+			dados->nPassageiros--;
+			_tprintf(TEXT("\n[SAIU PASSAGEIRO] Saiu Passageiro: %s\n\n"), novo.id);
+			return TRUE;
+		}
+	}
+	return FALSE;
 }
 
 void novoPassageiro(DADOS* dados) {
@@ -155,6 +191,7 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 	do {
 		_tprintf(_T("\n\n"));
 		i = _gettch();
+		//WaitForSingleObject(dados->hMutex, INFINITE);
 		_tprintf(_T("%c"), i);
 		op[0] = i;
 		_fgetts(&op[1], sizeof(op), stdin);
@@ -164,6 +201,7 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 			dados->nPassageiros++;
 		}
 		_tprintf(_T("\n\n"));
+		//ReleaseMutex(dados->hMutex);
 	} while (_tcscmp(op, TEXT("fim")));
 
 	for (int i = 0; i < MAX_PASS; i++)
@@ -176,6 +214,36 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 
 DWORD WINAPI ThreadMovimentoPassageiro(LPVOID param) {	//ADMIN MANDA PASSAGEIRO
 	DADOS* dados = ((DADOS*)param);
+	DWORD n;
+	PASSAGEIRO novo;
+	int i, num;
+
+	while (1) {
+		num = -1;
+		WaitForSingleObject(respostaMov, INFINITE);
+
+		if (dados->terminar)
+			return 0;
+		
+		WaitForSingleObject(dados->hMutex, INFINITE);
+
+		ReadFile(hPipe, (LPVOID)&novo, sizeof(PASSAGEIRO), &n, NULL);
+		for (i = 0; i < dados->nPassageiros && num==-1; i++)
+			if (!_tcscmp(novo.id, dados->passageiros[i].id)) {
+				dados->passageiros[i] = novo;
+				num = i;
+			}
+		
+		if(dados->passageiros[num].movimento)
+			_tprintf(_T("\n[PASS] Passageiro '%s' está ser transportado!"), dados->passageiros[num].id);
+		else {
+			_tprintf(_T("\n[PASS] Passageiro '%s' chegou ao destino!"), dados->passageiros[num].id);
+
+			//REMOVE PASSAGEIRO
+			removePassageiro(dados, dados->passageiros[num]);
+		}
+		ReleaseMutex(dados->hMutex);
+	}
 
 	ExitThread(0);
 }

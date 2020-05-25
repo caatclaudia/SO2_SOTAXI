@@ -171,6 +171,22 @@ int _tmain(int argc, LPTSTR argv[]) {
 	}
 	ptr_register((TCHAR*)EVENT_RESPOSTAP, 4);
 
+	dados.respostaMov = CreateEvent(NULL, TRUE, FALSE, EVENT_MOVIMENTOP);
+	if (dados.respostaMov == NULL) {
+		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
+		CloseHandle(Semaphore);
+		CloseHandle(dados.EspTaxis);
+		CloseHandle(dados.novoTaxi);
+		CloseHandle(dados.saiuTaxi);
+		CloseHandle(dados.movimentoTaxi);
+		CloseHandle(dados.respostaAdmin);
+		UnmapViewOfFile(dados.sharedTaxi);
+		CloseHandle(dados.novoPassageiro);
+		CloseHandle(dados.respostaPass);
+		return 0;
+	}
+	ptr_register((TCHAR*)EVENT_MOVIMENTOP, 4);
+
 	hTimer = CreateWaitableTimer(NULL, TRUE, NULL);
 	if (hTimer == NULL)
 	{
@@ -267,6 +283,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 	CloseHandle(transporte);
 	CloseHandle(dados.novoPassageiro);
 	CloseHandle(dados.respostaPass);
+	CloseHandle(dados.respostaMov);
 	FreeLibrary(hLib);
 	RegCloseKey(chave);
 
@@ -565,7 +582,6 @@ void transportePassageiro(DADOS* dados) {
 		dados->taxis[valor].Xfinal = dados->passageiros[dados->nPassageiros - 1].X;
 		dados->taxis[valor].Yfinal = dados->passageiros[dados->nPassageiros - 1].Y;
 		dados->taxis[valor].disponivel = 0;
-		dados->passageiros[dados->nPassageiros - 1].movimento = 1;
 		for (int i = 0; i < 6; i++)
 			dados->passageiros[dados->nPassageiros - 1].matriculaTaxi[i] = dados->taxis[valor].matricula[i];
 
@@ -928,6 +944,7 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 	DADOS* dados = ((DADOS*)param);
 	TAXI novo;
 	int VALIDO;
+	DWORD n;
 
 	dados->atualizaMap = CreateEvent(NULL, TRUE, FALSE, EVENT_ATUALIZAMAP);
 	if (dados->atualizaMap == NULL) {
@@ -969,6 +986,14 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 							enviaTaxi(dados, &dados->taxis[i]);
 							Sleep(1000);
 							VALIDO = 1;
+
+							dados->passageiros[j].movimento = 1;
+							dados->passageiros[j].tempoEspera = -1;
+							
+							WriteFile(hPipe, (LPVOID)&dados->passageiros[j], sizeof(PASSAGEIRO), &n, NULL);
+							SetEvent(dados->respostaMov);
+							Sleep(500);
+							ResetEvent(dados->respostaMov);
 						}
 						//SE TAXI CHEGOU AO SITIO DE DESTINO DO PASSAGEIRO
 						if (dados->passageiros[j].Xfinal == dados->taxis[i].Xfinal && dados->passageiros[j].Xfinal == dados->taxis[i].X && dados->passageiros[j].Yfinal == dados->taxis[i].Yfinal && dados->passageiros[j].Yfinal == dados->taxis[i].Y) {
@@ -976,7 +1001,6 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 							_stprintf_s(aux, TAM, TEXT("Passageiro %s entregue!"), dados->passageiros[j].id);
 							ptr_log(aux);
 							ptr_log((TCHAR*)aux);
-							removePassageiro(dados, dados->passageiros[j]);
 							dados->taxis[i].disponivel = 1;
 							dados->taxis[i].Xfinal = 0;
 							dados->taxis[i].Yfinal = 0;
@@ -984,6 +1008,19 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 							enviaTaxi(dados, &dados->taxis[i]);
 							Sleep(1000);
 							VALIDO = 1;
+
+							dados->passageiros[j].movimento = 0;
+							dados->passageiros[j].tempoEspera = -1; 
+							for (int i = 0; i < 6; i++)
+								dados->passageiros[j].matriculaTaxi[i] = ' ';
+							dados->passageiros[j].matriculaTaxi[6] = '\0';
+
+							WriteFile(hPipe, (LPVOID)&dados->passageiros[j], sizeof(PASSAGEIRO), &n, NULL);
+							SetEvent(dados->respostaMov);
+							Sleep(500);
+							ResetEvent(dados->respostaMov);
+
+							removePassageiro(dados, dados->passageiros[j]);
 						}
 					}
 				}

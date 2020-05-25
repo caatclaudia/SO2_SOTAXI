@@ -26,6 +26,7 @@ typedef struct {
 	int nPassageiros;
 	PASSAGEIRO passageiros[MAX_PASS];
 	int terminar;
+	HANDLE hMutex;
 } DADOS;
 
 //SEMAFOROS
@@ -38,8 +39,11 @@ HANDLE hPipe;
 HANDLE novoPass;
 #define EVENT_RESPOSTAP TEXT("RespostaPass")
 HANDLE respostaPass;
+#define EVENT_MOVIMENTOP TEXT("MovimentoPass")
+HANDLE respostaMov;
 
+boolean removePassageiro(DADOS* dados, PASSAGEIRO novo);
 void novoPassageiro(DADOS* dados);
 DWORD WINAPI ThreadComandos(LPVOID param);
-DWORD WINAPI ThreadMovimentaPassageiro(LPVOID param);
+DWORD WINAPI ThreadMovimentoPassageiro(LPVOID param);
 DWORD WINAPI ThreadRespostaTransporte(LPVOID param);
