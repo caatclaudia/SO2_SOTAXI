@@ -34,6 +34,20 @@ int _tmain() {
 	inicializaTaxi(&dados);
 	if (!dados.taxi->terminar) {
 		inicializaBuffer();
+		Sleep(2000);
+		
+		TCHAR PIPE_NAME[200];
+		_stprintf_s(PIPE_NAME, sizeof(TEXT("\\\\.\\pipe\\taxi%d")), TEXT("\\\\.\\pipe\\taxi%d"), dados.taxi->id_mapa);
+		if (!WaitNamedPipe(PIPE_NAME, NMPWAIT_WAIT_FOREVER)) {
+			_tprintf(TEXT("[ERRO] Ligar ao pipe '%s'! (WaitNamedPipe)\n"), PIPE_NAME);
+			return 0;
+		}
+		_tprintf(TEXT("[LEITOR] Ligação ao pipe do escritor... (CreateFile)\n"));
+		pipeT = CreateFile(PIPE_NAME, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		if (pipeT == NULL) {
+			_tprintf(TEXT("[ERRO] Ligar ao pipe '%s'! (CreateFile)\n"), PIPE_NAME);
+			return 0;
+		}
 
 		hThreadComandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadComandos, (LPVOID)&dados, 0, NULL);
 		if (hThreadComandos == NULL) {
@@ -68,6 +82,12 @@ int _tmain() {
 	_tprintf(TEXT("\nTaxi a sair!"));
 	_tprintf(TEXT("\nPrima uma tecla...\n"));
 	_gettch();
+
+	_tprintf(TEXT("[ConPass] Desligar o pipe (DisconnectNamedPipe)\n"));
+	if (!DisconnectNamedPipe(pipeT)) {
+		_tprintf(TEXT("[ERRO] Desligar o pipe! (DisconnectNamedPipe)"));
+		return 0;
+	}
 
 	UnmapViewOfFile(dados.shared);
 	UnmapViewOfFile(dados.sharedMap);
@@ -456,19 +476,24 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {
 
 DWORD WINAPI ThreadInfoAdmin(LPVOID param) {
 	DADOS* dados = ((DADOS*)param);
+	TAXI novo;
+	DWORD n;
 
 	while (1) {
 		WaitForSingleObject(dados->infoAdmin, INFINITE);
 
 		WaitForSingleObject(hMutex, INFINITE);
 
+		ReadFile(pipeT, (LPVOID)&novo, sizeof(TAXI), &n, NULL);
+		if (novo.terminar) {
+			dados->taxi->terminar = 1;
+			ReleaseMutex(hMutex);
+			return 0;
+		}
+
 		recebeInfo(dados);
 
-		if (dados->taxi->terminar) {
-			_tprintf(_T("\n[TAXI] Taxi vai encerrar por conta da Central!"));
-			break;
-		}
-		else if(dados->taxi->disponivel)
+		if(dados->taxi->disponivel)
 			_tprintf(_T("\n[PASS] Taxi entregou o Passageiro!"));
 		else
 			_tprintf(_T("\n[PASS] Taxi recolheu o Passageiro!"));

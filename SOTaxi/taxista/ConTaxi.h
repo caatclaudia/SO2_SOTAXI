@@ -5,6 +5,7 @@ void(*ptr_register)(TCHAR*, int);
 
 #define NOME_MUTEX TEXT("MutexTaxi")
 HANDLE hMutex;
+HANDLE pipeT;
 
 #define SHM_NAME TEXT("EspacoTaxis")
 #define SHM_NAME_MAP TEXT("EspacoMapa")

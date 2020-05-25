@@ -252,11 +252,16 @@ int _tmain(int argc, LPTSTR argv[]) {
 
 	//NAMED PIPES
 	DWORD n;
-	for (int i = 0; i < dados.nTaxis; i++)
+	for (int i = 0; i < dados.nTaxis; i++) {
 		dados.taxis[i].terminar = 1;
+		WriteFile(pipeT[dados.taxis[i].id_mapa], (LPVOID)&dados.taxis[i], sizeof(TAXI), &n, NULL);
+		ptr_log((TCHAR*)TEXT("CenTaxi envia Taxi por Named Pipe!"));
+	}
 	for (int i = 0; i < dados.nPassageiros; i++)
 		dados.passageiros[i].terminar = 1;
 	WriteFile(hPipe, (LPVOID)&dados.passageiros[0], sizeof(PASSAGEIRO), &n, NULL);
+	ptr_log((TCHAR*)TEXT("CenTaxi envia Passageiro por Named Pipe!"));
+
 	SetEvent(dados.respostaMov);
 	Sleep(500);
 	ResetEvent(dados.respostaMov);
@@ -619,9 +624,8 @@ boolean adicionaTaxi(DADOS* dados, TAXI novo) {
 			return FALSE;
 
 	dados->taxis[dados->nTaxis] = novo;
-	dados->taxis[dados->nTaxis].id_mapa = id_mapa_taxi;
+	dados->taxis[dados->nTaxis].id_mapa = numPipes;
 	dados->nTaxis++;
-	id_mapa_taxi++;
 	_tprintf(TEXT("[NOVO TAXI] Novo Taxi: %s\n"), novo.matricula);
 	_stprintf_s(aux, TAM, TEXT("Taxi %s entrou!"), novo.matricula);
 	ptr_log(aux);
@@ -912,6 +916,22 @@ DWORD WINAPI ThreadNovoTaxi(LPVOID param) {
 
 		ReleaseMutex(dados->hMutexDados);
 
+		TCHAR PIPE[200];
+		DWORD n;
+		_stprintf_s(PIPE, sizeof(TEXT("\\\\.\\pipe\\taxi%d")), TEXT("\\\\.\\pipe\\taxi%d"), novo.id_mapa);
+		pipeT[numPipes] = CreateNamedPipe(PIPE, PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED, PIPE_WAIT | PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE, 1, sizeof(TAXI), sizeof(TAXI), 1000, NULL);
+		if (pipeT[numPipes] == INVALID_HANDLE_VALUE) {
+			_tprintf(TEXT("[ERRO] Criar Named Pipe! %d (CreateNamedPipe)"), GetLastError());
+			return 0;
+		}
+		ptr_register((TCHAR*)PIPE, 8);
+		if (!ConnectNamedPipe(pipeT[numPipes], NULL)) {
+			_tprintf(TEXT("[ERRO] Ligação ao leitor! %d (ConnectNamedPipe\n"), GetLastError());
+			return 0;
+		}
+		//WriteFile(pipeT[numPipes], (LPVOID)&novo, sizeof(TAXI), &n, NULL);
+		numPipes++;
+
 		Sleep(1000);
 	}
 
@@ -1058,6 +1078,7 @@ DWORD WINAPI ThreadNovoPassageiro(LPVOID param) {
 		_tprintf(TEXT("[ERRO] Criar Named Pipe! %d (CreateNamedPipe)"), GetLastError());
 		return 0;
 	}
+	ptr_register((TCHAR*)PIPE_NAME, 8);
 	if (!ConnectNamedPipe(hPipe, NULL)) {
 		_tprintf(TEXT("[ERRO] Ligação ao leitor! %d (ConnectNamedPipe\n"), GetLastError());
 		return 0;
@@ -1071,9 +1092,11 @@ DWORD WINAPI ThreadNovoPassageiro(LPVOID param) {
 		WaitForSingleObject(dados->hMutexDados, INFINITE);
 
 		ReadFile(hPipe, (LPVOID)&novo, sizeof(PASSAGEIRO), &n, NULL);
+		ptr_log((TCHAR*)TEXT("CenTaxi recebe Passageiro por Named Pipe!"));
 		if (!adicionaPassageiro(dados, novo)) {
 			novo.terminar = 1;
 			WriteFile(hPipe, (LPVOID)&novo, sizeof(PASSAGEIRO), &n, NULL);
+			ptr_log((TCHAR*)TEXT("CenTaxi envia Passageiro por Named Pipe!"));
 			SetEvent(dados->respostaPass);
 			Sleep(500);
 			ResetEvent(dados->respostaPass);
@@ -1082,6 +1105,7 @@ DWORD WINAPI ThreadNovoPassageiro(LPVOID param) {
 			transportePassageiro(dados);
 
 			WriteFile(hPipe, (LPVOID)&dados->passageiros[dados->nPassageiros - 1], sizeof(PASSAGEIRO), &n, NULL);
+			ptr_log((TCHAR*)TEXT("CenTaxi envia Passageiro por Named Pipe!"));
 			SetEvent(dados->respostaPass);
 			Sleep(500);
 			ResetEvent(dados->respostaPass);

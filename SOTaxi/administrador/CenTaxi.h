@@ -25,7 +25,6 @@ DWORD tamanho;
 int MaxPass = MAXPASS;
 int MaxTaxi = MAXTAXIS;
 
-int id_mapa_taxi = 1;
 char id_mapa_pass = 'A';
 
 int tamanhoMapa = -1;
@@ -67,6 +66,9 @@ typedef struct {
 	int id_mapa;
 	float velocidade;
 } TAXI;
+
+HANDLE pipeT[50];
+int numPipes = 0;
 
 #define MAX_PASS 5
 #define BUFFER_CIRCULAR TEXT("BufferCircular")
