@@ -533,9 +533,9 @@ void novoP(DADOS* dados) {
 		novo.matriculaTaxi[i] = ' ';
 	novo.matriculaTaxi[6] = '\0';
 
-	adicionaPassageiro(dados, novo);
-
-	transportePassageiro(dados);
+	if(adicionaPassageiro(dados, novo))
+		transportePassageiro(dados);
+	
 	return;
 }
 
@@ -1066,14 +1066,21 @@ DWORD WINAPI ThreadNovoPassageiro(LPVOID param) {
 		WaitForSingleObject(dados->hMutexDados, INFINITE);
 
 		ReadFile(hPipe, (LPVOID)&novo, sizeof(PASSAGEIRO), &n, NULL);
-		adicionaPassageiro(dados, novo);
+		if (!adicionaPassageiro(dados, novo)) {
+			novo.terminar = 1;
+			WriteFile(hPipe, (LPVOID)&novo, sizeof(PASSAGEIRO), &n, NULL);
+			SetEvent(dados->respostaPass);
+			Sleep(500);
+			ResetEvent(dados->respostaPass);
+		}
+		else {
+			transportePassageiro(dados);
 
-		transportePassageiro(dados);
-
-		WriteFile(hPipe, (LPVOID)&dados->passageiros[dados->nPassageiros - 1], sizeof(PASSAGEIRO), &n, NULL);
-		SetEvent(dados->respostaPass);
-		Sleep(500);
-		ResetEvent(dados->respostaPass);
+			WriteFile(hPipe, (LPVOID)&dados->passageiros[dados->nPassageiros - 1], sizeof(PASSAGEIRO), &n, NULL);
+			SetEvent(dados->respostaPass);
+			Sleep(500);
+			ResetEvent(dados->respostaPass);
+		}
 
 		ReleaseMutex(dados->hMutexDados);
 

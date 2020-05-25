@@ -159,7 +159,7 @@ void novoPassageiro(DADOS* dados) {
 	_tscanf_s(_T("%d"), &novo.Yfinal);
 	novo.movimento = 0;
 	novo.terminar = 0;
-	novo.id_mapa = TEXT('.'); 
+	novo.id_mapa = TEXT('.');
 	novo.tempoEspera = -1;
 	for (int i = 0; i < 6; i++)
 		novo.matriculaTaxi[i] = ' ';
@@ -176,10 +176,14 @@ void novoPassageiro(DADOS* dados) {
 	WaitForSingleObject(respostaPass, INFINITE);
 
 	ReadFile(hPipe, (LPVOID)&dados->passageiros[dados->nPassageiros], sizeof(PASSAGEIRO), &n, NULL);
-	if(dados->passageiros[dados->nPassageiros].tempoEspera!=-1)
-		_tprintf(_T("\n[NOVO]  Tempo estimado de espera pelo Taxi '%s' é %d s"), dados->passageiros[dados->nPassageiros].matriculaTaxi, dados->passageiros[dados->nPassageiros].tempoEspera);
-	else
-		_tprintf(_T("\n[NOVO]  Não houve interesse neste transporte!"));
+	if (dados->passageiros[dados->nPassageiros].terminar)
+		_tprintf(_T("\n[NOVO] Passageiro terá de aguardar!"));
+	else {
+		if (dados->passageiros[dados->nPassageiros].tempoEspera != -1)
+			_tprintf(_T("\n[NOVO]  Tempo estimado de espera pelo Taxi '%s' é %d s"), dados->passageiros[dados->nPassageiros].matriculaTaxi, dados->passageiros[dados->nPassageiros].tempoEspera);
+		else
+			_tprintf(_T("\n[NOVO]  Não houve interesse neste transporte!"));
+	}
 
 	return;
 }
@@ -224,17 +228,17 @@ DWORD WINAPI ThreadMovimentoPassageiro(LPVOID param) {	//ADMIN MANDA PASSAGEIRO
 
 		if (dados->terminar)
 			return 0;
-		
+
 		WaitForSingleObject(dados->hMutex, INFINITE);
 
 		ReadFile(hPipe, (LPVOID)&novo, sizeof(PASSAGEIRO), &n, NULL);
-		for (i = 0; i < dados->nPassageiros && num==-1; i++)
+		for (i = 0; i < dados->nPassageiros && num == -1; i++)
 			if (!_tcscmp(novo.id, dados->passageiros[i].id)) {
 				dados->passageiros[i] = novo;
 				num = i;
 			}
-		
-		if(dados->passageiros[num].movimento)
+
+		if (dados->passageiros[num].movimento)
 			_tprintf(_T("\n[PASS] Passageiro '%s' está ser transportado!"), dados->passageiros[num].id);
 		else {
 			_tprintf(_T("\n[PASS] Passageiro '%s' chegou ao destino!"), dados->passageiros[num].id);
