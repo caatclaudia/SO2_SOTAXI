@@ -213,7 +213,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 	for (int i = 0; i < dados.nTaxis; i++)
 		dados.taxis[i].terminar = 1;
 	for (int i = 0; i < dados.nPassageiros; i++)
-		dados.passageiros[i].detalhes.terminar = 1;
+		dados.passageiros[i].terminar = 1;
 
 	SetEvent(dados.infoAdmin);
 	Sleep(500);
@@ -380,8 +380,8 @@ void listarPassageiros(DADOS* dados) {
 	}
 	for (int i = 0; i < dados->nPassageiros; i++) {
 		_tprintf(_T("\n[LISTAR PASSAGEIRO] Passageiro %s : "), dados->passageiros[i].id);
-		_tprintf(_T("\n (%d, %d) -> (%d, %d)"), dados->passageiros[i].detalhes.X, dados->passageiros[i].detalhes.Y, dados->passageiros[i].detalhes.Xfinal, dados->passageiros[i].detalhes.Yfinal);
-		if (dados->passageiros[i].detalhes.movimento)
+		_tprintf(_T("\n (%d, %d) -> (%d, %d)"), dados->passageiros[i].X, dados->passageiros[i].Y, dados->passageiros[i].Xfinal, dados->passageiros[i].Yfinal);
+		if (dados->passageiros[i].movimento)
 			_tprintf(_T(" - em movimento\n"));
 		else
 			_tprintf(_T(" - à espera\n"));
@@ -506,7 +506,7 @@ boolean adicionaPassageiro(DADOS* dados, PASSAGEIRO novo) {
 		return FALSE;
 
 	dados->passageiros[dados->nPassageiros] = novo;
-	dados->passageiros[dados->nPassageiros].detalhes.id_mapa = id_mapa_pass;
+	dados->passageiros[dados->nPassageiros].id_mapa = id_mapa_pass;
 	id_mapa_pass++;
 	dados->nPassageiros++;
 	_tprintf(TEXT("[NOVO PASSAGEIRO] Novo Passageiro: %s\n"), novo.id);
@@ -578,46 +578,46 @@ void deslocaPassageiroParaPorta(DADOS* dados) {
 	TCHAR aux[TAM] = TEXT("\n");
 	int VALIDO = 0;
 
-	if (dados->mapa[tamanhoMapa * dados->passageiros[dados->nPassageiros - 1].detalhes.Y + dados->passageiros[dados->nPassageiros - 1].detalhes.Y + dados->passageiros[dados->nPassageiros - 1].detalhes.X].caracter != '_') {
+	if (dados->mapa[tamanhoMapa * dados->passageiros[dados->nPassageiros - 1].Y + dados->passageiros[dados->nPassageiros - 1].Y + dados->passageiros[dados->nPassageiros - 1].X].caracter != '_') {
 		for (int i = 1; VALIDO != 1; i++) {
-			if (dados->mapa[tamanhoMapa * dados->passageiros[dados->nPassageiros - 1].detalhes.Y + dados->passageiros[dados->nPassageiros - 1].detalhes.Y + dados->passageiros[dados->nPassageiros - 1].detalhes.X + i].caracter == '_') {
-				dados->passageiros[dados->nPassageiros - 1].detalhes.X += i;
+			if (dados->mapa[tamanhoMapa * dados->passageiros[dados->nPassageiros - 1].Y + dados->passageiros[dados->nPassageiros - 1].Y + dados->passageiros[dados->nPassageiros - 1].X + i].caracter == '_') {
+				dados->passageiros[dados->nPassageiros - 1].X += i;
 				VALIDO = 1;
 			}
-			else if (dados->mapa[tamanhoMapa * (dados->passageiros[dados->nPassageiros - 1].detalhes.Y - i) + (dados->passageiros[dados->nPassageiros - 1].detalhes.Y - i) + dados->passageiros[dados->nPassageiros - 1].detalhes.X].caracter == '_') {
-				dados->passageiros[dados->nPassageiros - 1].detalhes.Y -= i;
+			else if (dados->mapa[tamanhoMapa * (dados->passageiros[dados->nPassageiros - 1].Y - i) + (dados->passageiros[dados->nPassageiros - 1].Y - i) + dados->passageiros[dados->nPassageiros - 1].X].caracter == '_') {
+				dados->passageiros[dados->nPassageiros - 1].Y -= i;
 				VALIDO = 1;
 			}
-			else if (dados->mapa[tamanhoMapa * (dados->passageiros[dados->nPassageiros - 1].detalhes.Y + i) + (dados->passageiros[dados->nPassageiros - 1].detalhes.Y + i) + dados->passageiros[dados->nPassageiros - 1].detalhes.X].caracter == '_') {
-				dados->passageiros[dados->nPassageiros - 1].detalhes.Y += i;
+			else if (dados->mapa[tamanhoMapa * (dados->passageiros[dados->nPassageiros - 1].Y + i) + (dados->passageiros[dados->nPassageiros - 1].Y + i) + dados->passageiros[dados->nPassageiros - 1].X].caracter == '_') {
+				dados->passageiros[dados->nPassageiros - 1].Y += i;
 				VALIDO = 1;
 			}
-			else if (dados->mapa[tamanhoMapa * dados->passageiros[dados->nPassageiros - 1].detalhes.Y + dados->passageiros[dados->nPassageiros - 1].detalhes.Y + dados->passageiros[dados->nPassageiros - 1].detalhes.X - i].caracter == '_') {
-				dados->passageiros[dados->nPassageiros - 1].detalhes.X -= i;
+			else if (dados->mapa[tamanhoMapa * dados->passageiros[dados->nPassageiros - 1].Y + dados->passageiros[dados->nPassageiros - 1].Y + dados->passageiros[dados->nPassageiros - 1].X - i].caracter == '_') {
+				dados->passageiros[dados->nPassageiros - 1].X -= i;
 				VALIDO = 1;
 			}
 		}
-		_stprintf_s(aux, TAM, TEXT("Passageiro %s deslocado para (%d,%d)!"), dados->passageiros[dados->nPassageiros - 1].id, dados->passageiros[dados->nPassageiros - 1].detalhes.X, dados->passageiros[dados->nPassageiros - 1].detalhes.Y);
+		_stprintf_s(aux, TAM, TEXT("Passageiro %s deslocado para (%d,%d)!"), dados->passageiros[dados->nPassageiros - 1].id, dados->passageiros[dados->nPassageiros - 1].X, dados->passageiros[dados->nPassageiros - 1].Y);
 		ptr_log(aux);
 		ptr_log((TCHAR*)aux);
-		_tprintf(TEXT("Passageiro %s deslocado para (%d,%d)!"), dados->passageiros[dados->nPassageiros - 1].id, dados->passageiros[dados->nPassageiros - 1].detalhes.X, dados->passageiros[dados->nPassageiros - 1].detalhes.Y);
+		_tprintf(TEXT("Passageiro %s deslocado para (%d,%d)!"), dados->passageiros[dados->nPassageiros - 1].id, dados->passageiros[dados->nPassageiros - 1].X, dados->passageiros[dados->nPassageiros - 1].Y);
 	}
-	if (dados->mapa[tamanhoMapa * dados->passageiros[dados->nPassageiros - 1].detalhes.Yfinal + dados->passageiros[dados->nPassageiros - 1].detalhes.Yfinal + dados->passageiros[dados->nPassageiros - 1].detalhes.Xfinal].caracter != '_') {
+	if (dados->mapa[tamanhoMapa * dados->passageiros[dados->nPassageiros - 1].Yfinal + dados->passageiros[dados->nPassageiros - 1].Yfinal + dados->passageiros[dados->nPassageiros - 1].Xfinal].caracter != '_') {
 		for (int i = 1; VALIDO != 1; i++) {
-			if (dados->mapa[tamanhoMapa * dados->passageiros[dados->nPassageiros - 1].detalhes.Yfinal + dados->passageiros[dados->nPassageiros - 1].detalhes.Yfinal + dados->passageiros[dados->nPassageiros - 1].detalhes.Xfinal + i].caracter == '_') {
-				dados->passageiros[dados->nPassageiros - 1].detalhes.Xfinal += i;
+			if (dados->mapa[tamanhoMapa * dados->passageiros[dados->nPassageiros - 1].Yfinal + dados->passageiros[dados->nPassageiros - 1].Yfinal + dados->passageiros[dados->nPassageiros - 1].Xfinal + i].caracter == '_') {
+				dados->passageiros[dados->nPassageiros - 1].Xfinal += i;
 				VALIDO = 1;
 			}
-			else if (dados->mapa[tamanhoMapa * (dados->passageiros[dados->nPassageiros - 1].detalhes.Yfinal - i) + (dados->passageiros[dados->nPassageiros - 1].detalhes.Yfinal - i) + dados->passageiros[dados->nPassageiros - 1].detalhes.Xfinal].caracter == '_') {
-				dados->passageiros[dados->nPassageiros - 1].detalhes.Yfinal -= i;
+			else if (dados->mapa[tamanhoMapa * (dados->passageiros[dados->nPassageiros - 1].Yfinal - i) + (dados->passageiros[dados->nPassageiros - 1].Yfinal - i) + dados->passageiros[dados->nPassageiros - 1].Xfinal].caracter == '_') {
+				dados->passageiros[dados->nPassageiros - 1].Yfinal -= i;
 				VALIDO = 1;
 			}
-			else if (dados->mapa[tamanhoMapa * (dados->passageiros[dados->nPassageiros - 1].detalhes.Yfinal + i) + (dados->passageiros[dados->nPassageiros - 1].detalhes.Yfinal + i) + dados->passageiros[dados->nPassageiros - 1].detalhes.Xfinal].caracter == '_') {
-				dados->passageiros[dados->nPassageiros - 1].detalhes.Yfinal += i;
+			else if (dados->mapa[tamanhoMapa * (dados->passageiros[dados->nPassageiros - 1].Yfinal + i) + (dados->passageiros[dados->nPassageiros - 1].Yfinal + i) + dados->passageiros[dados->nPassageiros - 1].Xfinal].caracter == '_') {
+				dados->passageiros[dados->nPassageiros - 1].Yfinal += i;
 				VALIDO = 1;
 			}
-			else if (dados->mapa[tamanhoMapa * dados->passageiros[dados->nPassageiros - 1].detalhes.Yfinal + dados->passageiros[dados->nPassageiros - 1].detalhes.Yfinal + dados->passageiros[dados->nPassageiros - 1].detalhes.Xfinal - i].caracter == '_') {
-				dados->passageiros[dados->nPassageiros - 1].detalhes.Xfinal -= i;
+			else if (dados->mapa[tamanhoMapa * dados->passageiros[dados->nPassageiros - 1].Yfinal + dados->passageiros[dados->nPassageiros - 1].Yfinal + dados->passageiros[dados->nPassageiros - 1].Xfinal - i].caracter == '_') {
+				dados->passageiros[dados->nPassageiros - 1].Xfinal -= i;
 				VALIDO = 1;
 			}
 		}
@@ -630,29 +630,29 @@ void newPassageiro(DADOS* dados) {
 	TCHAR aux[TAM] = TEXT("\n");
 
 	_tprintf(_T("\n[NOVO] Id do Passageiro: "));
-	_fgetts(novo.id, TAM, stdin);
+	_fgetts(novo.id, TAM_ID, stdin);
 	novo.id[_tcslen(novo.id) - 1] = '\0';
 
 	_tprintf(_T("\n[NOVO]  Localizacao do Passageiro (X Y) : "));
-	_tscanf_s(_T("%d"), &novo.detalhes.X);
-	_tscanf_s(_T("%d"), &novo.detalhes.Y);
+	_tscanf_s(_T("%d"), &novo.X);
+	_tscanf_s(_T("%d"), &novo.Y);
 
 	_tprintf(_T("\n[NOVO]  Local de destino do Passageiro (X Y) : "));
-	_tscanf_s(_T("%d"), &novo.detalhes.Xfinal);
-	_tscanf_s(_T("%d"), &novo.detalhes.Yfinal);
+	_tscanf_s(_T("%d"), &novo.Xfinal);
+	_tscanf_s(_T("%d"), &novo.Yfinal);
 
-	_stprintf_s(aux, TAM, TEXT("Passageiro %s em (%d,%d)!"), novo.id, novo.detalhes.X, novo.detalhes.Y);
+	_stprintf_s(aux, TAM, TEXT("Passageiro %s em (%d,%d)!"), novo.id, novo.X, novo.Y);
 	ptr_log(aux);
 	ptr_log((TCHAR*)aux);
 
-	novo.detalhes.movimento = 0;
-	novo.detalhes.terminar = 0;
-	novo.detalhes.id_mapa = TEXT('.');
+	novo.movimento = 0;
+	novo.terminar = 0;
+	novo.id_mapa = TEXT('.');
 	adicionaPassageiro(dados, novo);
 
 	WaitForSingleObject(sem_vazios, INFINITE);
 	WaitForSingleObject(sem_mutex, INFINITE);
-	BufferMemoria->Passageiros[BufferMemoria->NextIn] = novo.detalhes;
+	BufferMemoria->Passageiros[BufferMemoria->NextIn] = novo;
 	BufferMemoria->NextIn = (BufferMemoria->NextIn + 1) % MAX_PASS;
 	ptr_log((TCHAR*)TEXT("CenTaxi coloca passageiro em Buffer Circular!"));
 	ReleaseSemaphore(sem_mutex, 1, NULL);
@@ -687,10 +687,10 @@ void newPassageiro(DADOS* dados) {
 		_stprintf_s(aux, TAM, TEXT("Taxi %s vai transportar %s!"), dados->taxis[valor].matricula, novo.id);
 		ptr_log(aux);
 		ptr_log((TCHAR*)aux);
-		dados->taxis[valor].Xfinal = novo.detalhes.X;
-		dados->taxis[valor].Yfinal = novo.detalhes.Y;
+		dados->taxis[valor].Xfinal = novo.X;
+		dados->taxis[valor].Yfinal = novo.Y;
 		dados->taxis[valor].disponivel = 0;
-		dados->passageiros[dados->nPassageiros - 1].detalhes.movimento = 1;
+		dados->passageiros[dados->nPassageiros - 1].movimento = 1;
 
 		CopyMemory(dados->sharedTaxi, &dados->taxis[valor], sizeof(TAXI));
 		ptr_log((TCHAR*)TEXT("CenTaxi envia Taxi para ConTaxi por memória partilhada!"));
@@ -898,20 +898,20 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 					VALIDO = 0;
 					for (int j = 0; j < dados->nPassageiros && VALIDO == 0; j++) {
 						//SE TAXI CHEGOU AO SITIO DE RECOLHA DE PASSAGEIRO
-						if (dados->passageiros[j].detalhes.X == dados->taxis[i].Xfinal && dados->passageiros[j].detalhes.X == dados->taxis[i].X && dados->passageiros[j].detalhes.Y == dados->taxis[i].Yfinal && dados->passageiros[j].detalhes.Y == dados->taxis[i].Y) {
+						if (dados->passageiros[j].X == dados->taxis[i].Xfinal && dados->passageiros[j].X == dados->taxis[i].X && dados->passageiros[j].Y == dados->taxis[i].Yfinal && dados->passageiros[j].Y == dados->taxis[i].Y) {
 							_tprintf(_T("\n[MOVIMENTO] Taxi '%s' apanhou o Passageiro '%s'\n"), dados->taxis[i].matricula, dados->passageiros[j].id);
 							_stprintf_s(aux, TAM, TEXT("Passageiro %s a ser transportado!"), dados->passageiros[j].id);
 							ptr_log(aux);
 							ptr_log((TCHAR*)aux);
-							dados->taxis[i].Xfinal = dados->passageiros[j].detalhes.Xfinal;
-							dados->taxis[i].Yfinal = dados->passageiros[j].detalhes.Yfinal;
+							dados->taxis[i].Xfinal = dados->passageiros[j].Xfinal;
+							dados->taxis[i].Yfinal = dados->passageiros[j].Yfinal;
 							//AVISA O TÁXI
 							enviaTaxi(dados, &dados->taxis[i]);
 							Sleep(1000);
 							VALIDO = 1;
 						}
 						//SE TAXI CHEGOU AO SITIO DE DESTINO DO PASSAGEIRO
-						if (dados->passageiros[j].detalhes.Xfinal == dados->taxis[i].Xfinal && dados->passageiros[j].detalhes.Xfinal == dados->taxis[i].X && dados->passageiros[j].detalhes.Yfinal == dados->taxis[i].Yfinal && dados->passageiros[j].detalhes.Yfinal == dados->taxis[i].Y) {
+						if (dados->passageiros[j].Xfinal == dados->taxis[i].Xfinal && dados->passageiros[j].Xfinal == dados->taxis[i].X && dados->passageiros[j].Yfinal == dados->taxis[i].Yfinal && dados->passageiros[j].Yfinal == dados->taxis[i].Y) {
 							_tprintf(_T("\n[MOVIMENTO] Taxi '%s' deixou Passageiro '%s'\n"), dados->taxis[i].matricula, dados->passageiros[j].id);
 							_stprintf_s(aux, TAM, TEXT("Passageiro %s entregue!"), dados->passageiros[j].id);
 							ptr_log(aux);

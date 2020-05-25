@@ -38,16 +38,14 @@ typedef struct {
 	char caracter;
 } MAPA;
 
+#define TAM_ID 10
+
 typedef struct {
 	unsigned int X, Y, Xfinal, Yfinal;
 	int movimento;
 	int terminar;
 	char id_mapa;
-} PASSAGEIRO_BUFFER;
-
-typedef struct {
-	PASSAGEIRO_BUFFER detalhes;
-	TCHAR id[TAM];
+	TCHAR id[TAM_ID];
 } PASSAGEIRO;
 
 #define NOME_MUTEX_TAXI TEXT("MutexTaxi")
@@ -73,7 +71,7 @@ HANDLE hTimer;
 int acabouTempo = 0;
 
 typedef struct {
-	PASSAGEIRO_BUFFER Passageiros[MAX_PASS];
+	PASSAGEIRO Passageiros[MAX_PASS];
 	int NextIn = 0, NextOut = 0;
 } BUFFER;
 

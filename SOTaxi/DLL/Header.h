@@ -8,17 +8,14 @@
 #include <time.h>
 
 #define TAM 200
+#define TAM_ID 10
 
 typedef struct {
 	unsigned int X, Y, Xfinal, Yfinal;
 	int movimento;
 	int terminar;
 	char id_mapa;
-} PASSAGEIRO_BUFFER;
-
-typedef struct {
-	PASSAGEIRO_BUFFER detalhes;
-	TCHAR id[TAM];
+	TCHAR id[TAM_ID];
 } PASSAGEIRO;
 
 typedef struct {
@@ -61,7 +58,7 @@ typedef struct {
 HANDLE sem_mutex, sem_itens, sem_vazios;
 
 typedef struct {
-	PASSAGEIRO_BUFFER Passageiros[MAX_PASS];
+	PASSAGEIRO Passageiros[MAX_PASS];
 	int NextIn = 0, NextOut = 0;
 } BUFFER;
 
