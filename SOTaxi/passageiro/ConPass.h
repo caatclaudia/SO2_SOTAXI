@@ -36,6 +36,8 @@ HANDLE Semaphore;
 HANDLE hPipe;
 #define EVENT_NOVOP TEXT("NovoPass")
 HANDLE novoPass;
+#define EVENT_RESPOSTAP TEXT("RespostaPass")
+HANDLE respostaPass;
 
 void novoPassageiro(DADOS* dados);
 DWORD WINAPI ThreadComandos(LPVOID param);

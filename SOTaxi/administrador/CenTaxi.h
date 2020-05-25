@@ -94,6 +94,7 @@ BUFFER* BufferMemoria;
 #define EVENT_SAIUA TEXT("InfoAdmin")
 
 #define EVENT_NOVOP TEXT("NovoPass")
+#define EVENT_RESPOSTAP TEXT("RespostaPass")
 
 #define EVENT_ATUALIZAMAP TEXT("AtualizaMapa")
 
@@ -117,6 +118,7 @@ typedef struct {
 	int nPassageiros;
 	PASSAGEIRO passageiros[MAXPASS];
 	HANDLE novoPassageiro;
+	HANDLE respostaPass;
 
 	MAPA* mapa;
 	HANDLE hFile;

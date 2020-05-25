@@ -39,6 +39,17 @@ int _tmain() {
 	}
 	ptr_register((TCHAR*)EVENT_NOVOP, 4);
 
+	respostaPass = CreateEvent(NULL, TRUE, FALSE, EVENT_RESPOSTAP);
+	if (respostaPass == NULL) {
+		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
+		CloseHandle(Semaphore);
+		CloseHandle(novoPass);
+		return 0;
+	}
+	ptr_register((TCHAR*)EVENT_RESPOSTAP, 4);
+	SetEvent(respostaPass);
+	ResetEvent(respostaPass);
+
 	if (!WaitNamedPipe(PIPE_NAME, NMPWAIT_WAIT_FOREVER)) {
 		_tprintf(TEXT("[ERRO] Ligar ao pipe '%s'! (WaitNamedPipe)\n"), PIPE_NAME);
 		exit(-1);
@@ -87,6 +98,7 @@ int _tmain() {
 	CloseHandle(Semaphore);
 	CloseHandle(hPipe);
 	CloseHandle(novoPassageiro);
+	CloseHandle(respostaPass);
 	FreeLibrary(hLib);
 
 	return 0;
@@ -124,6 +136,14 @@ void novoPassageiro(DADOS* dados) {
 	Sleep(500);
 	ResetEvent(novoPass);
 	dados->passageiros[dados->nPassageiros] = novo;
+
+	WaitForSingleObject(respostaPass, INFINITE);
+
+	ReadFile(hPipe, (LPVOID)&dados->passageiros[dados->nPassageiros], sizeof(PASSAGEIRO), &n, NULL);
+	if(dados->passageiros[dados->nPassageiros].tempoEspera!=-1)
+		_tprintf(_T("\n[NOVO]  Tempo estimado de espera pelo Taxi '%s' é %d s"), dados->passageiros[dados->nPassageiros].matriculaTaxi, dados->passageiros[dados->nPassageiros].tempoEspera);
+	else
+		_tprintf(_T("\n[NOVO]  Não houve interesse neste transporte!"));
 
 	return;
 }

@@ -156,6 +156,21 @@ int _tmain(int argc, LPTSTR argv[]) {
 	SetEvent(dados.novoPassageiro);
 	ResetEvent(dados.novoPassageiro);
 
+	dados.respostaPass = CreateEvent(NULL, TRUE, FALSE, EVENT_RESPOSTAP);
+	if (dados.respostaPass == NULL) {
+		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
+		CloseHandle(Semaphore);
+		CloseHandle(dados.EspTaxis);
+		CloseHandle(dados.novoTaxi);
+		CloseHandle(dados.saiuTaxi);
+		CloseHandle(dados.movimentoTaxi);
+		CloseHandle(dados.respostaAdmin);
+		UnmapViewOfFile(dados.sharedTaxi);
+		CloseHandle(dados.novoPassageiro);
+		return 0;
+	}
+	ptr_register((TCHAR*)EVENT_RESPOSTAP, 4);
+
 	hTimer = CreateWaitableTimer(NULL, TRUE, NULL);
 	if (hTimer == NULL)
 	{
@@ -251,6 +266,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 	CloseHandle(dados.EspMapa);
 	CloseHandle(transporte);
 	CloseHandle(dados.novoPassageiro);
+	CloseHandle(dados.respostaPass);
 	FreeLibrary(hLib);
 	RegCloseKey(chave);
 
@@ -1016,6 +1032,11 @@ DWORD WINAPI ThreadNovoPassageiro(LPVOID param) {
 		adicionaPassageiro(dados, novo);
 
 		transportePassageiro(dados);
+
+		WriteFile(hPipe, (LPVOID)&dados->passageiros[dados->nPassageiros - 1], sizeof(PASSAGEIRO), &n, NULL);
+		SetEvent(dados->respostaPass);
+		Sleep(500);
+		ResetEvent(dados->respostaPass);
 
 		ReleaseMutex(dados->hMutexDados);
 
