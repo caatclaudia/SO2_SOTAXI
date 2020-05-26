@@ -15,7 +15,8 @@ HANDLE pipeT;
 #define EVENT_SAIUT TEXT("SaiuTaxi")
 #define EVENT_MOVIMENTO TEXT("MovimentoTaxi")
 #define EVENT_RESPOSTA TEXT("RespostaDoAdmin")
-#define EVENT_SAIUA TEXT("InfoAdmin")
+#define EVENT_INFOA TEXT("InfoAdmin")
+#define EVENT_SAIUA TEXT("SaiuAdmin")
 
 #define PATH_DLL TEXT("..\\SO2_TP_DLL_32.dll")
 #define PATH_MY_DLL TEXT("..\\Debug\\DLL.dll")
@@ -34,4 +35,5 @@ void leMapa(DADOS* dados);
 DWORD WINAPI ThreadComandos(LPVOID param);
 DWORD WINAPI ThreadMovimentaTaxi(LPVOID param);
 DWORD WINAPI ThreadInfoAdmin(LPVOID param);
+DWORD WINAPI ThreadVerificaAdmin(LPVOID param);
 DWORD WINAPI ThreadRespostaTransporte(LPVOID param);

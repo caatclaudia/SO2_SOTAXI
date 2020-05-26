@@ -43,6 +43,7 @@ typedef struct {
 	HANDLE movimentoTaxi;
 	HANDLE respostaAdmin;
 	HANDLE infoAdmin;
+	HANDLE saiuAdmin;
 
 	HANDLE EspTaxis;	//FileMapping
 	TAXI* shared;

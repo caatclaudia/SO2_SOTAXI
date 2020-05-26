@@ -99,8 +99,20 @@ int _tmain(int argc, LPTSTR argv[]) {
 	}
 	ptr_register((TCHAR*)EVENT_RESPOSTA, 4);
 
-	dados.infoAdmin = CreateEvent(NULL, TRUE, FALSE, EVENT_SAIUA);
+	dados.infoAdmin = CreateEvent(NULL, TRUE, FALSE, EVENT_INFOA);
 	if (dados.infoAdmin == NULL) {
+		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
+		CloseHandle(Semaphore);
+		CloseHandle(dados.novoTaxi);
+		CloseHandle(dados.saiuTaxi);
+		CloseHandle(dados.movimentoTaxi);
+		CloseHandle(dados.respostaAdmin);
+		return 0;
+	}
+	ptr_register((TCHAR*)EVENT_INFOA, 4);
+
+	dados.saiuAdmin = CreateEvent(NULL, TRUE, FALSE, EVENT_SAIUA);
+	if (dados.saiuAdmin == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao criar Evento!\n"));
 		CloseHandle(Semaphore);
 		CloseHandle(dados.novoTaxi);
@@ -247,6 +259,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 	TerminateThread(hThreadSaiuTaxi, 0);
 	TerminateThread(hThreadMovimento, 0);
 	TerminateThread(hThreadTempoTransporte, 0);
+	TerminateThread(hThreadNovoPassageiro, 0);
 
 	WaitForSingleObject(dados.hMutexDados, INFINITE);
 
@@ -266,9 +279,9 @@ int _tmain(int argc, LPTSTR argv[]) {
 	Sleep(500);
 	ResetEvent(dados.respostaMov);
 
-	SetEvent(dados.infoAdmin);
+	SetEvent(dados.saiuAdmin);
 	Sleep(500);
-	ResetEvent(dados.infoAdmin);
+	ResetEvent(dados.saiuAdmin);
 
 	ReleaseMutex(dados.hMutexDados);
 	Sleep(1000);
@@ -294,6 +307,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 	CloseHandle(dados.novoPassageiro);
 	CloseHandle(dados.respostaPass);
 	CloseHandle(dados.respostaMov);
+	CloseHandle(dados.saiuAdmin);
 	FreeLibrary(hLib);
 	RegCloseKey(chave);
 
@@ -580,6 +594,7 @@ void transportePassageiro(DADOS* dados) {
 				}
 		}
 	}
+	DWORD n;
 
 	if (interessados > 0) {
 		int valor;
@@ -599,8 +614,8 @@ void transportePassageiro(DADOS* dados) {
 		dados->passageiros[dados->nPassageiros - 1].tempoEspera = (int)(calculaDistancia(dados->taxis[valor].X, dados->taxis[valor].Y, dados->passageiros[dados->nPassageiros - 1].X, dados->passageiros[dados->nPassageiros - 1].Y) / dados->taxis[valor].velocidade);
 		_tprintf(_T("\n[PASS]  O tempo estimado de espera para este passageiro é %d s"), dados->passageiros[dados->nPassageiros - 1].tempoEspera);
 
-		CopyMemory(dados->sharedTaxi, &dados->taxis[valor], sizeof(TAXI));
-		ptr_log((TCHAR*)TEXT("CenTaxi envia Taxi para ConTaxi por memória partilhada!"));
+		WriteFile(pipeT[dados->taxis[valor].id_mapa], (LPVOID)&dados->taxis[valor], sizeof(TAXI), &n, NULL);
+		ptr_log((TCHAR*)TEXT("CenTaxi envia Taxi por Named Pipe!"));
 		SetEvent(dados->respostaAdmin);
 		Sleep(500);
 		ResetEvent(dados->respostaAdmin);
@@ -926,10 +941,9 @@ DWORD WINAPI ThreadNovoTaxi(LPVOID param) {
 		}
 		ptr_register((TCHAR*)PIPE, 8);
 		if (!ConnectNamedPipe(pipeT[numPipes], NULL)) {
-			_tprintf(TEXT("[ERRO] Ligação ao leitor! %d (ConnectNamedPipe\n"), GetLastError());
+			_tprintf(TEXT("[ERRO] Ligação ao Táxi! %d (ConnectNamedPipe\n"), GetLastError());
 			return 0;
 		}
-		//WriteFile(pipeT[numPipes], (LPVOID)&novo, sizeof(TAXI), &n, NULL);
 		numPipes++;
 
 		Sleep(1000);

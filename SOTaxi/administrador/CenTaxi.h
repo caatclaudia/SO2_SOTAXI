@@ -93,7 +93,9 @@ BUFFER* BufferMemoria;
 #define EVENT_SAIUT TEXT("SaiuTaxi")
 #define EVENT_MOVIMENTO TEXT("MovimentoTaxi")
 #define EVENT_RESPOSTA TEXT("RespostaDoAdmin")
-#define EVENT_SAIUA TEXT("InfoAdmin")
+#define EVENT_INFOA TEXT("InfoAdmin")
+#define EVENT_SAIUA TEXT("SaiuAdmin")
+
 
 #define EVENT_NOVOP TEXT("NovoPass")
 #define EVENT_RESPOSTAP TEXT("RespostaPass")
@@ -132,6 +134,7 @@ typedef struct {
 
 	int terminar;
 	HANDLE infoAdmin;
+	HANDLE saiuAdmin;
 } DADOS;
 
 void inicializaBuffer();
