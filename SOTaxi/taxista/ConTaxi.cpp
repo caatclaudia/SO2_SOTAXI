@@ -45,6 +45,7 @@ int _tmain() {
 			_tprintf(TEXT("[ERRO] Ligar ao pipe '%s'! (CreateFile)\n"), PIPE_NAME);
 			return 0;
 		}
+		_tprintf(TEXT("[ConTaxi] Ligado!\n"));
 
 		hThreadComandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadComandos, (LPVOID)&dados, 0, NULL);
 		if (hThreadComandos == NULL) {
@@ -184,14 +185,6 @@ void inicializaTaxi(DADOS* dados) {
 	dados->taxi->X = x;
 	dados->taxi->Y = y;
 
-	hMutex = CreateMutex(NULL, FALSE, NOME_MUTEX);
-	if (hMutex == NULL) {
-		_tprintf(TEXT("\n[ERRO] Erro ao criar Mutex!\n"));
-		return;
-	}
-	ptr_register((TCHAR*)NOME_MUTEX, 1);
-	WaitForSingleObject(hMutex, INFINITE);
-
 	dados->taxi->disponivel = 1;
 	dados->taxi->velocidade = 1;
 	dados->taxi->autoResposta = 1;
@@ -234,9 +227,6 @@ void inicializaTaxi(DADOS* dados) {
 		return;
 	}
 	ptr_register((TCHAR*)EVENT_RESPOSTA, 4);
-	SetEvent(dados->respostaAdmin);
-	Sleep(500);
-	ResetEvent(dados->respostaAdmin);
 
 	dados->infoAdmin = CreateEvent(NULL, TRUE, FALSE, EVENT_INFOA);
 	if (dados->infoAdmin == NULL) {
@@ -248,9 +238,6 @@ void inicializaTaxi(DADOS* dados) {
 		return;
 	}
 	ptr_register((TCHAR*)EVENT_INFOA, 4);
-	SetEvent(dados->infoAdmin);
-	Sleep(500);
-	ResetEvent(dados->infoAdmin);
 
 	dados->saiuAdmin = CreateEvent(NULL, TRUE, FALSE, EVENT_SAIUA);
 	if (dados->saiuAdmin == NULL) {
@@ -262,9 +249,6 @@ void inicializaTaxi(DADOS* dados) {
 		return;
 	}
 	ptr_register((TCHAR*)EVENT_SAIUA, 4);
-	SetEvent(dados->saiuAdmin);
-	Sleep(500);
-	ResetEvent(dados->saiuAdmin);
 
 	dados->EspTaxis = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(TAXI), SHM_NAME);
 	if (dados->EspTaxis == NULL)
@@ -298,6 +282,16 @@ void inicializaTaxi(DADOS* dados) {
 	avisaNovoTaxi(dados);
 	if (!dados->taxi->terminar)
 		_tprintf(TEXT("\nBem Vindo!\n"));
+
+	TCHAR MUTEX[200];
+	_stprintf_s(MUTEX, sizeof(TEXT("MUTEX%d")), TEXT("MUTEX%d"), dados->taxi->id_mapa);
+	hMutex = CreateMutex(NULL, FALSE, MUTEX);
+	if (hMutex == NULL) {
+		_tprintf(TEXT("\n[ERRO] Erro ao criar Mutex!\n"));
+		return;
+	}
+	ptr_register((TCHAR*)MUTEX, 1);
+	WaitForSingleObject(hMutex, INFINITE);
 
 	ReleaseMutex(hMutex);
 
@@ -553,11 +547,6 @@ DWORD WINAPI ThreadInfoAdmin(LPVOID param) {
 
 		recebeInfo(dados);
 
-		if (dados->taxi->disponivel)
-			_tprintf(_T("\n[PASS] Taxi entregou o Passageiro!"));
-		else
-			_tprintf(_T("\n[PASS] Taxi recolheu o Passageiro!"));
-
 		ReleaseMutex(hMutex);
 
 		Sleep(1000);
@@ -620,7 +609,6 @@ DWORD WINAPI ThreadRespostaTransporte(LPVOID param) {
 
 				ReadFile(pipeT, (LPVOID)&taxiA, sizeof(TAXI), &n, NULL);
 				dados->taxi = &taxiA;
-				//recebeInfo(dadosD);
 				if (dados->taxi->Xfinal == novo.X && dados->taxi->Yfinal == novo.Y) {
 					_tprintf(_T("\n[PASS] Confirmação recebida!"));
 					_tprintf(_T("\n[PASS] Passageiro a espera deste Taxi em (%d,%d)!"), novo.X, novo.Y);

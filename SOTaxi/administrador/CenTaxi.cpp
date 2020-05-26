@@ -261,8 +261,6 @@ int _tmain(int argc, LPTSTR argv[]) {
 	TerminateThread(hThreadTempoTransporte, 0);
 	TerminateThread(hThreadNovoPassageiro, 0);
 
-	WaitForSingleObject(dados.hMutexDados, INFINITE);
-
 	//NAMED PIPES
 	DWORD n;
 	for (int i = 0; i < dados.nTaxis; i++) {
@@ -283,7 +281,6 @@ int _tmain(int argc, LPTSTR argv[]) {
 	Sleep(500);
 	ResetEvent(dados.saiuAdmin);
 
-	ReleaseMutex(dados.hMutexDados);
 	Sleep(1000);
 
 	_tprintf(_T("Administrador vai encerrar!\n"));
@@ -931,20 +928,22 @@ DWORD WINAPI ThreadNovoTaxi(LPVOID param) {
 
 		ReleaseMutex(dados->hMutexDados);
 
-		TCHAR PIPE[200];
-		DWORD n;
-		_stprintf_s(PIPE, sizeof(TEXT("\\\\.\\pipe\\taxi%d")), TEXT("\\\\.\\pipe\\taxi%d"), novo.id_mapa);
-		pipeT[numPipes] = CreateNamedPipe(PIPE, PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED, PIPE_WAIT | PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE, 1, sizeof(TAXI), sizeof(TAXI), 1000, NULL);
-		if (pipeT[numPipes] == INVALID_HANDLE_VALUE) {
-			_tprintf(TEXT("[ERRO] Criar Named Pipe! %d (CreateNamedPipe)"), GetLastError());
-			return 0;
+		if (!novo.terminar) {
+			TCHAR PIPE[200];
+			DWORD n;
+			_stprintf_s(PIPE, sizeof(TEXT("\\\\.\\pipe\\taxi%d")), TEXT("\\\\.\\pipe\\taxi%d"), dados->taxis[dados->nTaxis - 1].id_mapa);
+			pipeT[numPipes] = CreateNamedPipe(PIPE, PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED, PIPE_WAIT | PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE, 1, sizeof(TAXI), sizeof(TAXI), 1000, NULL);
+			if (pipeT[numPipes] == INVALID_HANDLE_VALUE) {
+				_tprintf(TEXT("[ERRO] Criar Named Pipe! %d (CreateNamedPipe)"), GetLastError());
+				return 0;
+			}
+			ptr_register((TCHAR*)PIPE, 8);
+			if (!ConnectNamedPipe(pipeT[numPipes], NULL)) {
+				_tprintf(TEXT("[ERRO] Ligação ao Táxi! %d (ConnectNamedPipe\n"), GetLastError());
+				return 0;
+			}
+			numPipes++;
 		}
-		ptr_register((TCHAR*)PIPE, 8);
-		if (!ConnectNamedPipe(pipeT[numPipes], NULL)) {
-			_tprintf(TEXT("[ERRO] Ligação ao Táxi! %d (ConnectNamedPipe\n"), GetLastError());
-			return 0;
-		}
-		numPipes++;
 
 		Sleep(1000);
 	}

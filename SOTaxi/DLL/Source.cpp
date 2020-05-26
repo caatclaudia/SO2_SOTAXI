@@ -25,8 +25,13 @@ void recebeInfo(DADOS* dados) {
 	novo = (TAXI*)malloc(sizeof(TAXI));
 
 	CopyMemory(novo, dados->shared, sizeof(TAXI));
-	if (!_tcscmp(novo->matricula, dados->taxi->matricula))
+	if (!_tcscmp(novo->matricula, dados->taxi->matricula)) {
 		dados->taxi = novo;
+		if (dados->taxi->disponivel)
+			_tprintf(_T("\n[PASS] Taxi entregou o Passageiro!"));
+		else
+			_tprintf(_T("\n[PASS] Taxi recolheu o Passageiro!"));
+	}
 
 	return;
 }
