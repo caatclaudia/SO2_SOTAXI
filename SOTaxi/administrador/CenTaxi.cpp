@@ -1014,7 +1014,7 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 					VALIDO = 0;
 					for (int j = 0; j < dados->nPassageiros && VALIDO == 0; j++) {
 						//SE TAXI CHEGOU AO SITIO DE RECOLHA DE PASSAGEIRO
-						if (!_tcscmp(dados->passageiros[j].matriculaTaxi, dados->taxis[i].matricula) && dados->passageiros[j].X == dados->taxis[i].Xfinal && dados->passageiros[j].Y == dados->taxis[i].Yfinal) {
+						if (!_tcscmp(dados->passageiros[j].matriculaTaxi, dados->taxis[i].matricula) && dados->passageiros[j].X == dados->taxis[i].X && dados->passageiros[j].Y == dados->taxis[i].Y) {
 							_tprintf(_T("\n[MOVIMENTO] Taxi '%s' apanhou o Passageiro '%s'\n"), dados->taxis[i].matricula, dados->passageiros[j].id);
 							_stprintf_s(aux, TAM, TEXT("Passageiro %s a ser transportado!"), dados->passageiros[j].id);
 							ptr_log(aux);
@@ -1035,7 +1035,7 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 							ResetEvent(dados->respostaMov);
 						}
 						//SE TAXI CHEGOU AO SITIO DE DESTINO DO PASSAGEIRO
-						if (!_tcscmp(dados->passageiros[j].matriculaTaxi, dados->taxis[i].matricula) && dados->passageiros[j].Xfinal == dados->taxis[i].Xfinal && dados->passageiros[j].Yfinal == dados->taxis[i].Yfinal) {
+						if (!_tcscmp(dados->passageiros[j].matriculaTaxi, dados->taxis[i].matricula) && dados->passageiros[j].Xfinal == dados->taxis[i].X && dados->passageiros[j].Yfinal == dados->taxis[i].Y) {
 							_tprintf(_T("\n[MOVIMENTO] Taxi '%s' deixou Passageiro '%s'\n"), dados->taxis[i].matricula, dados->passageiros[j].id);
 							_stprintf_s(aux, TAM, TEXT("Passageiro %s entregue!"), dados->passageiros[j].id);
 							ptr_log(aux);

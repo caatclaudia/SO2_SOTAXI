@@ -32,7 +32,7 @@ int _tmain() {
 	if (!dados.taxi->terminar) {
 		inicializaBuffer();
 		Sleep(2000);
-		
+
 		TCHAR PIPE_NAME[200];
 		_stprintf_s(PIPE_NAME, sizeof(TEXT("\\\\.\\pipe\\taxi%d")), TEXT("\\\\.\\pipe\\taxi%d"), dados.taxi->id_mapa);
 		if (!WaitNamedPipe(PIPE_NAME, NMPWAIT_WAIT_FOREVER)) {
@@ -419,6 +419,7 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {
 	DADOS* dados = ((DADOS*)param);
 	int val, valido;
 	int quad = 0;
+	int paralela = 0;
 
 	do {
 		valido = 0;
@@ -466,21 +467,71 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {
 		//COM PASSAGEIRO
 		else if (dados->taxi->velocidade != 0) {
 			quad = (int)dados->taxi->velocidade;
-			if (dados->taxi->Y > dados->taxi->Yfinal && dados->mapa[tamanhoMapa * (dados->taxi->Y - quad) + (dados->taxi->Y - quad) + dados->taxi->X].caracter == '_') {
-				_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X, dados->taxi->Y - quad);
-				dados->taxi->Y -= quad;
+			if (paralela == 1) {
+				if (dados->taxi->Y > dados->taxi->Yfinal && dados->mapa[tamanhoMapa * (dados->taxi->Y - quad) + (dados->taxi->Y - quad) + dados->taxi->X].caracter == '_') {
+					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X, dados->taxi->Y - quad);
+					dados->taxi->Y -= quad;
+					paralela = 0;
+				}
+				else if (dados->taxi->Y < dados->taxi->Yfinal && dados->mapa[tamanhoMapa * (dados->taxi->Y + quad) + (dados->taxi->Y + quad) + dados->taxi->X].caracter == '_') {
+					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X, dados->taxi->Y + quad);
+					dados->taxi->Y += quad;
+					paralela = 0;
+				}
+				else if (dados->taxi->X <= (tamanhoMapa/2) && dados->taxi->Xfinal && dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X - quad].caracter == '_') {
+					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X - quad, dados->taxi->Y);
+					dados->taxi->X -= quad;
+				}
+				else if (dados->taxi->Xfinal && dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X + quad].caracter == '_') {
+					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X + quad, dados->taxi->Y);
+					dados->taxi->X += quad;
+				}
 			}
-			else if (dados->mapa[tamanhoMapa * (dados->taxi->Y + quad) + (dados->taxi->Y + quad) + dados->taxi->X].caracter == '_') {
-				_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X, dados->taxi->Y + quad);
-				dados->taxi->Y += quad;
+			else if (paralela == 2) {
+				if (dados->taxi->X > dados->taxi->Xfinal && dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X - quad].caracter == '_') {
+					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X - quad, dados->taxi->Y);
+					dados->taxi->X -= quad;
+					paralela = 0;
+				}
+				else if (dados->taxi->X < dados->taxi->Xfinal && dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X + quad].caracter == '_') {
+					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X + quad, dados->taxi->Y);
+					dados->taxi->X += quad;
+					paralela = 0;
+				}
+				else if (dados->taxi->Y <= (tamanhoMapa / 2) && dados->mapa[tamanhoMapa * (dados->taxi->Y - quad) + (dados->taxi->Y - quad) + dados->taxi->X].caracter == '_') {
+					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X, dados->taxi->Y - quad);
+					dados->taxi->Y -= quad;
+				}
+				else if (dados->mapa[tamanhoMapa * (dados->taxi->Y + quad) + (dados->taxi->Y + quad) + dados->taxi->X].caracter == '_') {
+					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X, dados->taxi->Y + quad);
+					dados->taxi->Y += quad;
+				}
 			}
-			else if (dados->taxi->X > dados->taxi->Xfinal && dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X - quad].caracter == '_') {
-				_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X - quad, dados->taxi->Y);
-				dados->taxi->X -= quad;
-			}
-			else if (dados->taxi->X < dados->taxi->Xfinal && dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X + quad].caracter == '_') {
-				_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X + quad, dados->taxi->Y);
-				dados->taxi->X += quad;
+			else {
+				if (dados->taxi->Y > dados->taxi->Yfinal && dados->mapa[tamanhoMapa * (dados->taxi->Y - quad) + (dados->taxi->Y - quad) + dados->taxi->X].caracter == '_') {
+					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X, dados->taxi->Y - quad);
+					dados->taxi->Y -= quad;
+				}
+				else if (dados->taxi->Y < dados->taxi->Yfinal && dados->mapa[tamanhoMapa * (dados->taxi->Y + quad) + (dados->taxi->Y + quad) + dados->taxi->X].caracter == '_') {
+					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X, dados->taxi->Y + quad);
+					dados->taxi->Y += quad;
+				}
+				else if (dados->taxi->X > dados->taxi->Xfinal && dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X - quad].caracter == '_') {
+					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X - quad, dados->taxi->Y);
+					dados->taxi->X -= quad;
+				}
+				else if (dados->taxi->X < dados->taxi->Xfinal && dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X + quad].caracter == '_') {
+					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X + quad, dados->taxi->Y);
+					dados->taxi->X += quad;
+				}
+				else {
+					if (dados->taxi->X == dados->taxi->Xfinal) {
+						paralela = 1;
+					}
+					else {
+						paralela = 2;
+					}
+				}
 			}
 			avisaMovimentoTaxi(dados);
 		}
@@ -502,7 +553,7 @@ DWORD WINAPI ThreadInfoAdmin(LPVOID param) {
 
 		recebeInfo(dados);
 
-		if(dados->taxi->disponivel)
+		if (dados->taxi->disponivel)
 			_tprintf(_T("\n[PASS] Taxi entregou o Passageiro!"));
 		else
 			_tprintf(_T("\n[PASS] Taxi recolheu o Passageiro!"));
