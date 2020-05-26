@@ -36,4 +36,5 @@ DWORD WINAPI ThreadComandos(LPVOID param);
 DWORD WINAPI ThreadMovimentaTaxi(LPVOID param);
 DWORD WINAPI ThreadInfoAdmin(LPVOID param);
 DWORD WINAPI ThreadVerificaAdmin(LPVOID param);
+DWORD WINAPI ThreadRespostaTransporte(LPVOID param);
 DWORD WINAPI ThreadTransporte(LPVOID param);

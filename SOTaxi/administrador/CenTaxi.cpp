@@ -255,6 +255,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 	ghEvents[4] = hThreadTempoTransporte;
 	ghEvents[5] = hThreadNovoPassageiro;
 	WaitForMultipleObjects(6, ghEvents, FALSE, INFINITE);
+	TerminateThread(hThreadComandos, 0);
 	TerminateThread(hThreadNovoTaxi, 0);
 	TerminateThread(hThreadSaiuTaxi, 0);
 	TerminateThread(hThreadMovimento, 0);
@@ -267,19 +268,20 @@ int _tmain(int argc, LPTSTR argv[]) {
 		dados.taxis[i].terminar = 1;
 		WriteFile(pipeT[dados.taxis[i].id_mapa], (LPVOID)&dados.taxis[i], sizeof(TAXI), &n, NULL);
 		ptr_log((TCHAR*)TEXT("CenTaxi envia Taxi por Named Pipe!"));
+		SetEvent(dados.saiuAdmin);
+		Sleep(1000);
+		ResetEvent(dados.saiuAdmin);
 	}
 	for (int i = 0; i < dados.nPassageiros; i++)
 		dados.passageiros[i].terminar = 1;
-	WriteFile(hPipe, (LPVOID)&dados.passageiros[0], sizeof(PASSAGEIRO), &n, NULL);
-	ptr_log((TCHAR*)TEXT("CenTaxi envia Passageiro por Named Pipe!"));
+	if (dados.nPassageiros > 0) {
+		WriteFile(hPipe, (LPVOID)&dados.passageiros[0], sizeof(PASSAGEIRO), &n, NULL);
+		ptr_log((TCHAR*)TEXT("CenTaxi envia Passageiro por Named Pipe!"));
+	}
 
 	SetEvent(dados.respostaMov);
 	Sleep(500);
 	ResetEvent(dados.respostaMov);
-
-	SetEvent(dados.saiuAdmin);
-	Sleep(500);
-	ResetEvent(dados.saiuAdmin);
 
 	Sleep(1000);
 
@@ -554,9 +556,9 @@ void novoP(DADOS* dados) {
 		novo.matriculaTaxi[i] = ' ';
 	novo.matriculaTaxi[6] = '\0';
 
-	if(adicionaPassageiro(dados, novo))
+	if (adicionaPassageiro(dados, novo))
 		transportePassageiro(dados);
-	
+
 	return;
 }
 
@@ -1026,7 +1028,7 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 
 							dados->passageiros[j].movimento = 1;
 							dados->passageiros[j].tempoEspera = -1;
-							
+
 							WriteFile(hPipe, (LPVOID)&dados->passageiros[j], sizeof(PASSAGEIRO), &n, NULL);
 							SetEvent(dados->respostaMov);
 							Sleep(500);
@@ -1047,7 +1049,7 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 							VALIDO = 1;
 
 							dados->passageiros[j].movimento = 0;
-							dados->passageiros[j].tempoEspera = -1; 
+							dados->passageiros[j].tempoEspera = -1;
 							for (int i = 0; i < 6; i++)
 								dados->passageiros[j].matriculaTaxi[i] = ' ';
 							dados->passageiros[j].matriculaTaxi[6] = '\0';

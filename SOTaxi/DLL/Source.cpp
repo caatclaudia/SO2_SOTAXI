@@ -12,9 +12,10 @@ void avisaNovoTaxi(DADOS* dados) {
 	Sleep(500);
 	ResetEvent(dados->novoTaxi);
 
-	if (WaitForSingleObject(dados->respostaAdmin, 5000) == WAIT_TIMEOUT)
+	/*if (WaitForSingleObject(dados->respostaAdmin, 5000) == WAIT_TIMEOUT)
 		dados->taxi->terminar = 1;
-	else
+	else*/
+		WaitForSingleObject(dados->respostaAdmin, INFINITE);
 		CopyMemory(dados->taxi, dados->shared, sizeof(TAXI));
 
 	return;

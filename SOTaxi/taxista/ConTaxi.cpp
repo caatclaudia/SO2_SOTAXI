@@ -1,7 +1,7 @@
 #include "ConTaxi.h"
 
 int _tmain() {
-	HANDLE hThreadComandos, hThreadMovimentaTaxi, hThreadTransporte, hThreadInfoAdmin, hThreadVerificaAdmin;
+	HANDLE hThreadComandos, hThreadMovimentaTaxi, hThreadTransporte, hThreadInfoAdmin, hThreadVerificaAdmin, hThreadRespostaTransporte;
 	DADOS dados;
 	TAXI taxi;
 	HINSTANCE hLib;
@@ -72,15 +72,25 @@ int _tmain() {
 			_tprintf(TEXT("\nErro ao lançar Thread!\n"));
 			return 0;
 		}
+		hThreadRespostaTransporte = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadRespostaTransporte, (LPVOID)&dados, 0, NULL);
+		if (hThreadRespostaTransporte == NULL) {
+			_tprintf(TEXT("\nErro ao lançar Thread!\n"));
+			return 0;
+		}
 
-		HANDLE ghEvents[5];
+		HANDLE ghEvents[6];
 		ghEvents[0] = hThreadComandos;
 		ghEvents[1] = hThreadMovimentaTaxi;
 		ghEvents[2] = hThreadInfoAdmin;
 		ghEvents[3] = hThreadTransporte;
 		ghEvents[4] = hThreadVerificaAdmin;
+		ghEvents[5] = hThreadRespostaTransporte;
 		WaitForMultipleObjects(5, ghEvents, FALSE, INFINITE);
 		TerminateThread(hThreadInfoAdmin, 0);
+		TerminateThread(hThreadTransporte, 0);
+		TerminateThread(hThreadVerificaAdmin, 0);
+		TerminateThread(hThreadMovimentaTaxi, 0);
+		TerminateThread(hThreadRespostaTransporte, 0);
 	}
 
 	_tprintf(TEXT("\nTaxi a sair!"));
@@ -283,19 +293,19 @@ void inicializaTaxi(DADOS* dados) {
 	if (!dados->taxi->terminar)
 		_tprintf(TEXT("\nBem Vindo!\n"));
 
-	TCHAR MUTEX[200];
-	_stprintf_s(MUTEX, sizeof(TEXT("MUTEX%d")), TEXT("MUTEX%d"), dados->taxi->id_mapa);
-	hMutex = CreateMutex(NULL, FALSE, MUTEX);
+	//TCHAR MUTEX[200];
+	//_stprintf_s(MUTEX, sizeof(TEXT("MUTEX%d")), TEXT("MUTEX%d"), dados->taxi->id_mapa);
+	hMutex = CreateMutex(NULL, FALSE, NOME_MUTEX);
 	if (hMutex == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao criar Mutex!\n"));
 		return;
 	}
-	ptr_register((TCHAR*)MUTEX, 1);
-	WaitForSingleObject(hMutex, INFINITE);
+	ptr_register((TCHAR*)NOME_MUTEX, 1);
+//	WaitForSingleObject(hMutex, INFINITE);
 
-	ReleaseMutex(hMutex);
+//	ReleaseMutex(hMutex);
 
-	Sleep(1000);
+//	Sleep(1000);
 
 	return;
 }
@@ -472,7 +482,7 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {
 					dados->taxi->Y += quad;
 					paralela = 0;
 				}
-				else if (dados->taxi->X <= (unsigned)(tamanhoMapa/2) && dados->taxi->Xfinal && dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X - quad].caracter == '_') {
+				else if (dados->taxi->X <= (unsigned)(tamanhoMapa / 2) && dados->taxi->Xfinal && dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X - quad].caracter == '_') {
 					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X - quad, dados->taxi->Y);
 					dados->taxi->X -= quad;
 				}
@@ -563,18 +573,46 @@ DWORD WINAPI ThreadVerificaAdmin(LPVOID param) {
 	while (1) {
 		WaitForSingleObject(dados->saiuAdmin, INFINITE);
 
-		WaitForSingleObject(hMutex, INFINITE);
+	//	WaitForSingleObject(hMutex, INFINITE);
 
 		ReadFile(pipeT, (LPVOID)&novo, sizeof(TAXI), &n, NULL);
+
+		WaitForSingleObject(hMutex, INFINITE);
+
 		if (novo.terminar) {
 			dados->taxi->terminar = 1;
 			ReleaseMutex(hMutex);
-			return 0;
+			ExitThread(0);
+		}
+
+	//	ReleaseMutex(hMutex);
+
+		Sleep(1000);
+	}
+
+	ExitThread(0);
+}
+
+DWORD WINAPI ThreadRespostaTransporte(LPVOID param) {
+	DADOS* dados = ((DADOS*)param);
+	DWORD n;
+	TAXI taxiA;
+
+	while (1) {
+		WaitForSingleObject(dados->respostaAdmin, INFINITE);
+
+		ReadFile(pipeT, (LPVOID)&taxiA, sizeof(TAXI), &n, NULL);
+		if (dados->taxi->interessado) {
+			WaitForSingleObject(hMutex, INFINITE);
+			dados->taxi = &taxiA;
+			_tprintf(_T("\n[PASS] Confirmação recebida!"));
+			_tprintf(_T("\n[PASS] Passageiro a espera deste Taxi em (%d,%d)!"), dados->taxi->Xfinal, dados->taxi->Yfinal);
+			_tprintf(_T("\n[PASS] Recolha de passageiro iniciada!"));
+			dados->taxi->disponivel = 0;
+			dados->taxi->interessado = 0;
 		}
 
 		ReleaseMutex(hMutex);
-
-		Sleep(1000);
 	}
 
 	ExitThread(0);
@@ -584,8 +622,6 @@ DWORD WINAPI ThreadVerificaAdmin(LPVOID param) {
 DWORD WINAPI ThreadTransporte(LPVOID param) {
 	DADOS* dados = ((DADOS*)param);
 	PASSAGEIRO novo;
-	TAXI taxiA;
-	DWORD n;
 
 	while (1) {
 		WaitForSingleObject(sem_itens, INFINITE);
@@ -604,18 +640,6 @@ DWORD WINAPI ThreadTransporte(LPVOID param) {
 				_tprintf(_T("\n[PASS] Tenho interesse neste transporte!"));
 
 				comunicacaoParaCentral(dados);
-
-				WaitForSingleObject(dados->respostaAdmin, INFINITE);
-
-				ReadFile(pipeT, (LPVOID)&taxiA, sizeof(TAXI), &n, NULL);
-				dados->taxi = &taxiA;
-				if (dados->taxi->Xfinal == novo.X && dados->taxi->Yfinal == novo.Y) {
-					_tprintf(_T("\n[PASS] Confirmação recebida!"));
-					_tprintf(_T("\n[PASS] Passageiro a espera deste Taxi em (%d,%d)!"), novo.X, novo.Y);
-					_tprintf(_T("\n[PASS] Recolha de passageiro iniciada!"));
-					dados->taxi->disponivel = 0;
-				}
-				dados->taxi->interessado = 0;
 			}
 		}
 		ReleaseMutex(hMutex);
