@@ -1,7 +1,7 @@
 #include "ConTaxi.h"
 
 int _tmain() {
-	HANDLE hThreadComandos, hThreadMovimentaTaxi, hThreadRespostaTransporte, hThreadInfoAdmin, hThreadVerificaAdmin;
+	HANDLE hThreadComandos, hThreadMovimentaTaxi, hThreadTransporte, hThreadInfoAdmin, hThreadVerificaAdmin;
 	DADOS dados;
 	TAXI taxi;
 	HINSTANCE hLib;
@@ -62,8 +62,8 @@ int _tmain() {
 			_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
 			return 0;
 		}
-		hThreadRespostaTransporte = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadRespostaTransporte, (LPVOID)&dados, 0, NULL);
-		if (hThreadRespostaTransporte == NULL) {
+		hThreadTransporte = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadTransporte, (LPVOID)&dados, 0, NULL);
+		if (hThreadTransporte == NULL) {
 			_tprintf(TEXT("\nErro ao lançar Thread!\n"));
 			return 0;
 		}
@@ -77,7 +77,7 @@ int _tmain() {
 		ghEvents[0] = hThreadComandos;
 		ghEvents[1] = hThreadMovimentaTaxi;
 		ghEvents[2] = hThreadInfoAdmin;
-		ghEvents[3] = hThreadRespostaTransporte;
+		ghEvents[3] = hThreadTransporte;
 		ghEvents[4] = hThreadVerificaAdmin;
 		WaitForMultipleObjects(5, ghEvents, FALSE, INFINITE);
 		TerminateThread(hThreadInfoAdmin, 0);
@@ -472,11 +472,11 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {
 					dados->taxi->Y += quad;
 					paralela = 0;
 				}
-				else if (dados->taxi->X <= (tamanhoMapa/2) && dados->taxi->Xfinal && dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X - quad].caracter == '_') {
+				else if (dados->taxi->X <= (unsigned)(tamanhoMapa/2) && dados->taxi->Xfinal && dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X - quad].caracter == '_') {
 					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X - quad, dados->taxi->Y);
 					dados->taxi->X -= quad;
 				}
-				else if (dados->taxi->Xfinal && dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X + quad].caracter == '_') {
+				else if (dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X + quad].caracter == '_') {
 					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X + quad, dados->taxi->Y);
 					dados->taxi->X += quad;
 				}
@@ -492,7 +492,7 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {
 					dados->taxi->X += quad;
 					paralela = 0;
 				}
-				else if (dados->taxi->Y <= (tamanhoMapa / 2) && dados->mapa[tamanhoMapa * (dados->taxi->Y - quad) + (dados->taxi->Y - quad) + dados->taxi->X].caracter == '_') {
+				else if (dados->taxi->Y <= (unsigned)(tamanhoMapa / 2) && dados->mapa[tamanhoMapa * (dados->taxi->Y - quad) + (dados->taxi->Y - quad) + dados->taxi->X].caracter == '_') {
 					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X, dados->taxi->Y - quad);
 					dados->taxi->Y -= quad;
 				}
@@ -581,7 +581,7 @@ DWORD WINAPI ThreadVerificaAdmin(LPVOID param) {
 }
 
 //MANDA TAXI AO ADMIN E RECEBE PASSAGEIRO DO ADMIN -- BUFFER CIRCULAR
-DWORD WINAPI ThreadRespostaTransporte(LPVOID param) {
+DWORD WINAPI ThreadTransporte(LPVOID param) {
 	DADOS* dados = ((DADOS*)param);
 	PASSAGEIRO novo;
 	TAXI taxiA;

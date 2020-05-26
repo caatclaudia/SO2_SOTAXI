@@ -1,4 +1,2 @@
 ﻿  ConTaxi.cpp
-C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\taxista\ConTaxi.cpp(475,29): warning C4018: '<=': signed/unsigned mismatch
-C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\taxista\ConTaxi.cpp(495,29): warning C4018: '<=': signed/unsigned mismatch
   taxista.vcxproj -> C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Debug\ConTaxi.exe
