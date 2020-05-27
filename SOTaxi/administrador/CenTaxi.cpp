@@ -263,7 +263,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 		WriteFile(pipeT[dados.taxis[i].id_mapa], (LPVOID)&dados.taxis[i], sizeof(TAXI), &n, NULL);
 		ptr_log((TCHAR*)TEXT("CenTaxi envia Taxi por Named Pipe!"));
 		SetEvent(dados.saiuAdmin);
-		Sleep(1000);
+		Sleep(2000);
 		ResetEvent(dados.saiuAdmin);
 	}
 	for (int i = 0; i < dados.nPassageiros; i++)

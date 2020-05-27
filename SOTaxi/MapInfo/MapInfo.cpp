@@ -1,75 +1,176 @@
 #include <windows.h>
 #include <tchar.h>
+#include <windowsx.h>
+#include "MapInfo.h"
+
+HANDLE hThreadAtualizaMapa;
+DADOS dados;
+
+void(*ptr_register)(TCHAR*, int);
 
 LRESULT CALLBACK TrataEventos(HWND, UINT, WPARAM, LPARAM);
 
-TCHAR szProgName[] = TEXT("Base");
+TCHAR szProgName[] = TEXT("MapInfo");
 
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nCmdShow) {
-	HWND hWnd; // hWnd é o handler da janela, gerado mais abaixo por CreateWindow()
-	MSG lpMsg; // MSG é uma estrutura definida no Windows para as mensagens
-	WNDCLASSEX wcApp; // WNDCLASSEX é uma estrutura cujos membros servem para
-	// definir as características da classe da janela
-	
-	wcApp.cbSize = sizeof(WNDCLASSEX); // Tamanho da estrutura WNDCLASSEX
-	wcApp.hInstance = hInst; // Instância da janela actualmente exibida
-	// ("hInst" é parâmetro de WinMain e vem
-	// inicializada daí)
-	wcApp.lpszClassName = szProgName; // Nome da janela (neste caso = nome do programa)
-	wcApp.lpfnWndProc = TrataEventos; // Endereço da função de processamento da janela // ("TrataEventos" foi declarada no início e // encontra-se mais abaixo)
-	wcApp.style = CS_HREDRAW | CS_VREDRAW;// Estilo da janela: Fazer o redraw se for // modificada horizontal ou verticalmente
-	wcApp.hIcon = LoadIcon(NULL, IDI_APPLICATION);// "hIcon" = handler do ícon normal
-	//"NULL" = Icon definido no Windows
-	// "IDI_AP..." Ícone "aplicação"
-	wcApp.hIconSm = LoadIcon(NULL, IDI_INFORMATION);// "hIconSm" = handler do ícon pequeno
-	//"NULL" = Icon definido no Windows
-	// "IDI_INF..." Ícon de informação
-	wcApp.hCursor = LoadCursor(NULL, IDC_ARROW); // "hCursor" = handler do cursor (rato)
-	// "NULL" = Forma definida no Windows
-	// "IDC_ARROW" Aspecto "seta"
-	wcApp.lpszMenuName = NULL; // Classe do menu que a janela pode ter
-	// (NULL = não tem menu)
-	wcApp.cbClsExtra = 0; // Livre, para uso particular
-	wcApp.cbWndExtra = 0; // Livre, para uso particular
+	dados.terminar = 0;
+
+	HINSTANCE hLib;
+
+	hLib = LoadLibrary(PATH_DLL);
+	if (hLib == NULL)
+		return 0;
+
+	ptr_register = (void(*)(TCHAR*, int))GetProcAddress(hLib, "dll_register");
+
+	hMutex = CreateMutex(NULL, FALSE, NOME_MUTEXMAPA);
+	if (hMutex == NULL) {
+		_tprintf(TEXT("\n[ERRO] Erro ao criar Mutex!\n"));
+		return -1;
+	}
+	ptr_register((TCHAR*)NOME_MUTEXMAPA, 1);
+	WaitForSingleObject(hMutex, INFINITE);
+	ReleaseMutex(hMutex);
+
+	EspMapa = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(dados.mapa), SHM_NAME);
+	if (EspMapa == NULL)
+	{
+		_tprintf(TEXT("\n[ERRO] Erro ao criar FileMapping!\n"));
+		return -1;
+	}
+	ptr_register((TCHAR*)SHM_NAME, 6);
+
+	shared = (MAPA*)MapViewOfFile(EspMapa, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(dados.mapa));
+	if (shared == NULL)
+	{
+		_tprintf(TEXT("\n[ERRO] Erro em MapViewOfFile!\n"));
+		CloseHandle(EspMapa);
+		return -1;
+	}
+	ptr_register((TCHAR*)SHM_NAME, 7);
+
+	recebeMapa(&dados);
+
+	hThreadAtualizaMapa = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadAtualizaMapa, (LPVOID)&dados, 0, NULL);
+	if (hThreadAtualizaMapa == NULL) {
+		_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
+		return 0;
+	}
+
+
+	HWND hWnd;
+	MSG lpMsg;
+	WNDCLASSEX wcApp;
+
+	wcApp.cbSize = sizeof(WNDCLASSEX);
+	wcApp.hInstance = hInst;
+	wcApp.lpszClassName = szProgName;
+	wcApp.lpfnWndProc = TrataEventos;
+	wcApp.style = CS_HREDRAW | CS_VREDRAW;
+	wcApp.hIcon = LoadIcon(NULL, IDI_APPLICATION);
+
+	wcApp.hIconSm = LoadIcon(NULL, IDI_INFORMATION);
+
+	wcApp.hCursor = LoadCursor(NULL, IDC_ARROW);
+
+	wcApp.lpszMenuName = NULL;
+
+	wcApp.cbClsExtra = 0;
+	wcApp.cbWndExtra = 0;
 	wcApp.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
-	// "hbrBackground" = handler para "brush" de pintura do fundo da janela. Devolvido por // "GetStockObject".Neste caso o fundo será branco
-	
+
 	if (!RegisterClassEx(&wcApp))
 		return(0);
-	
+
 	hWnd = CreateWindow(
-		szProgName, // Nome da janela (programa) definido acima
-		TEXT("Exemplo de Janela Principal em C"),// Texto que figura na barra do título
-		WS_OVERLAPPEDWINDOW, // Estilo da janela (WS_OVERLAPPED= normal)
-		CW_USEDEFAULT, // Posição x pixels (default=à direita da última)
-		CW_USEDEFAULT, // Posição y pixels (default=abaixo da última)
-		CW_USEDEFAULT, // Largura da janela (em pixels)
-		CW_USEDEFAULT, // Altura da janela (em pixels)
-		(HWND)HWND_DESKTOP, // handle da janela pai (se se criar uma a partir de
-		// outra) ou HWND_DESKTOP se a janela for a primeira,
-		// criada a partir do "desktop"
-		(HMENU)NULL, // handle do menu da janela (se tiver menu)
-		(HINSTANCE)hInst, // handle da instância do programa actual ("hInst" é
-		// passado num dos parâmetros de WinMain()
-		0); // Não há parâmetros adicionais para a janela
-		
-	ShowWindow(hWnd, nCmdShow); // "hWnd"= handler da janela, devolvido por
-	
-	UpdateWindow(hWnd); // Refrescar a janela (Windows envia à janela uma
-	
+		szProgName,
+		TEXT("MapInfo"),
+		WS_OVERLAPPEDWINDOW,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		(HWND)HWND_DESKTOP,
+		(HMENU)NULL,
+		(HINSTANCE)hInst,
+		0);
+
+	ShowWindow(hWnd, nCmdShow);
+
+	UpdateWindow(hWnd);
+
 	while (GetMessage(&lpMsg, NULL, 0, 0)) {
-		TranslateMessage(&lpMsg); // Pré-processamento da mensagem (p.e. obter código
-		// ASCII da tecla premida)
-		DispatchMessage(&lpMsg); // Enviar a mensagem traduzida de volta ao Windows, que
-		// aguarda até que a possa reenviar à função de
-		// tratamento da janela, CALLBACK TrataEventos (abaixo)
+		TranslateMessage(&lpMsg);
+		DispatchMessage(&lpMsg);
 	}
-	
-	return((int)lpMsg.wParam); // Retorna sempre o parâmetro wParam da estrutura lpMsg
+
+	HANDLE ghEvents[2];
+	ghEvents[0] = hThreadAtualizaMapa;
+	WaitForMultipleObjects(1, ghEvents, TRUE, INFINITE);
+
+
+
+	_tprintf(TEXT("\nPrima uma tecla...\n"));
+	_gettch();
+
+	CloseHandle(EspMapa);
+	CloseHandle(atualizaMap);
+	FreeLibrary(hLib);
+
+	return((int)lpMsg.wParam);
 }
 
 LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam) {
+	HDC hdc;
+	RECT rect;
+	PAINTSTRUCT ps;
+	HFONT hFont;
+	TCHAR caract;
+	int xPos = 0, yPos = 0;
+
+	hFont = CreateFont(12, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_OUTLINE_PRECIS,
+		CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH, TEXT("Impact"));
+
 	switch (messg) {
+	case WM_LBUTTONDOWN: {
+		hdc = GetDC(hWnd);
+		SetTextColor(hdc, RGB(0, 0, 0));
+		SelectObject(hdc, hFont);
+		SetBkMode(hdc, TRANSPARENT);
+		for (int i = 0; i < tamanhoMapa * tamanhoMapa; i++) {
+			caract = shared[i].caracter;
+			rect.left = 80 + (8 * xPos);
+			rect.top = 15 + (9 * yPos);
+			DrawText(hdc, &caract, 1, &rect, DT_SINGLELINE | DT_NOCLIP);
+			xPos++;
+			if (xPos == (tamanhoMapa + 1)) {
+				yPos++;
+				xPos = 0;
+			}
+		}
+		ReleaseDC(hWnd, hdc);
+
+		break;
+	}
+	case WM_PAINT: {
+		hdc = BeginPaint(hWnd, &ps);
+		SetTextColor(hdc, RGB(0, 0, 0));
+		SelectObject(hdc, hFont);
+		SetBkMode(hdc, TRANSPARENT);
+		for (int i = 0; i < tamanhoMapa * tamanhoMapa; i++) {
+			caract = shared[i].caracter;
+			rect.left = 80 + (8 * xPos);
+			rect.top = 15 + (9 * yPos);
+			DrawText(hdc, &caract, 1, &rect, DT_SINGLELINE | DT_NOCLIP);
+			xPos++;
+			if (xPos == (tamanhoMapa + 1)) {
+				yPos++;
+				xPos = 0;
+			}
+		}
+		EndPaint(hWnd, &ps);
+		break;
+	}
 	case WM_CLOSE: {
 		int value = MessageBox(hWnd, TEXT("Tem a certeza que deseja sair?"), TEXT("Confirmação"), MB_ICONQUESTION | MB_YESNO);
 
@@ -81,12 +182,48 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		break;
 	}
 	case WM_DESTROY: // Destruir a janela e terminar o programa
+		TerminateThread(hThreadAtualizaMapa, 0);
 		PostQuitMessage(0);
 		break;
 	default:
-		
+
 		return DefWindowProc(hWnd, messg, wParam, lParam);
 		break;
 	}
 	return(0);
+}
+
+void recebeMapa(DADOS* dados) {
+	MAPA* aux = NULL;
+	CopyMemory(&aux, shared, sizeof(shared));
+	for (int i = 0; tamanhoMapa == -1; i++)
+		if (shared[i].caracter == '\n')
+			tamanhoMapa = i;
+	dados->mapa = (MAPA*)malloc(sizeof(MAPA) * tamanhoMapa * tamanhoMapa);
+	CopyMemory(dados->mapa, &aux, sizeof(dados->mapa));
+}
+
+DWORD WINAPI ThreadAtualizaMapa(LPVOID param) {
+	DADOS* dados = ((DADOS*)param);
+
+	atualizaMap = CreateEvent(NULL, TRUE, FALSE, EVENT_ATUALIZAMAP);
+	if (atualizaMap == NULL) {
+		return 0;
+	}
+	SetEvent(atualizaMap);
+	Sleep(500);
+	ResetEvent(atualizaMap);
+
+	while (1) {
+		WaitForSingleObject(atualizaMap, INFINITE);
+
+		if (dados->terminar)
+			return 0;
+
+		CopyMemory(dados->mapa, shared, sizeof(dados->mapa));
+		Sleep(3000);
+	}
+	Sleep(500);
+
+	ExitThread(0);
 }
