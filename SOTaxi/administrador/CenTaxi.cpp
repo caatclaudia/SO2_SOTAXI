@@ -255,12 +255,6 @@ int _tmain(int argc, LPTSTR argv[]) {
 	ghEvents[4] = hThreadTempoTransporte;
 	ghEvents[5] = hThreadNovoPassageiro;
 	WaitForMultipleObjects(6, ghEvents, FALSE, INFINITE);
-	TerminateThread(hThreadComandos, 0);
-	TerminateThread(hThreadNovoTaxi, 0);
-	TerminateThread(hThreadSaiuTaxi, 0);
-	TerminateThread(hThreadMovimento, 0);
-	TerminateThread(hThreadTempoTransporte, 0);
-	TerminateThread(hThreadNovoPassageiro, 0);
 
 	//NAMED PIPES
 	DWORD n;

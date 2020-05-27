@@ -86,11 +86,6 @@ int _tmain() {
 		ghEvents[4] = hThreadVerificaAdmin;
 		ghEvents[5] = hThreadRespostaTransporte;
 		WaitForMultipleObjects(5, ghEvents, FALSE, INFINITE);
-		TerminateThread(hThreadInfoAdmin, 0);
-		TerminateThread(hThreadTransporte, 0);
-		TerminateThread(hThreadVerificaAdmin, 0);
-		TerminateThread(hThreadMovimentaTaxi, 0);
-		TerminateThread(hThreadRespostaTransporte, 0);
 	}
 
 	_tprintf(TEXT("\nTaxi a sair!"));
@@ -293,19 +288,12 @@ void inicializaTaxi(DADOS* dados) {
 	if (!dados->taxi->terminar)
 		_tprintf(TEXT("\nBem Vindo!\n"));
 
-	//TCHAR MUTEX[200];
-	//_stprintf_s(MUTEX, sizeof(TEXT("MUTEX%d")), TEXT("MUTEX%d"), dados->taxi->id_mapa);
 	hMutex = CreateMutex(NULL, FALSE, NOME_MUTEX);
 	if (hMutex == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao criar Mutex!\n"));
 		return;
 	}
 	ptr_register((TCHAR*)NOME_MUTEX, 1);
-//	WaitForSingleObject(hMutex, INFINITE);
-
-//	ReleaseMutex(hMutex);
-
-//	Sleep(1000);
 
 	return;
 }

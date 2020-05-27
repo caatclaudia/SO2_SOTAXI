@@ -1,180 +1,92 @@
-// MapInfo.cpp : Defines the entry point for the application.
-//
+#include <windows.h>
+#include <tchar.h>
 
-#include "framework.h"
-#include "MapInfo.h"
+LRESULT CALLBACK TrataEventos(HWND, UINT, WPARAM, LPARAM);
 
-#define MAX_LOADSTRING 100
+TCHAR szProgName[] = TEXT("Base");
 
-// Global Variables:
-HINSTANCE hInst;                                // current instance
-WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
-WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
-
-// Forward declarations of functions included in this code module:
-ATOM                MyRegisterClass(HINSTANCE hInstance);
-BOOL                InitInstance(HINSTANCE, int);
-LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
-
-int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
-                     _In_opt_ HINSTANCE hPrevInstance,
-                     _In_ LPWSTR    lpCmdLine,
-                     _In_ int       nCmdShow)
-{
-    UNREFERENCED_PARAMETER(hPrevInstance);
-    UNREFERENCED_PARAMETER(lpCmdLine);
-
-    // TODO: Place code here.
-
-    // Initialize global strings
-    LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-    LoadStringW(hInstance, IDC_MAPINFO, szWindowClass, MAX_LOADSTRING);
-    MyRegisterClass(hInstance);
-
-    // Perform application initialization:
-    if (!InitInstance (hInstance, nCmdShow))
-    {
-        return FALSE;
-    }
-
-    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_MAPINFO));
-
-    MSG msg;
-
-    // Main message loop:
-    while (GetMessage(&msg, nullptr, 0, 0))
-    {
-        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-    }
-
-    return (int) msg.wParam;
+int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nCmdShow) {
+	HWND hWnd; // hWnd é o handler da janela, gerado mais abaixo por CreateWindow()
+	MSG lpMsg; // MSG é uma estrutura definida no Windows para as mensagens
+	WNDCLASSEX wcApp; // WNDCLASSEX é uma estrutura cujos membros servem para
+	// definir as características da classe da janela
+	
+	wcApp.cbSize = sizeof(WNDCLASSEX); // Tamanho da estrutura WNDCLASSEX
+	wcApp.hInstance = hInst; // Instância da janela actualmente exibida
+	// ("hInst" é parâmetro de WinMain e vem
+	// inicializada daí)
+	wcApp.lpszClassName = szProgName; // Nome da janela (neste caso = nome do programa)
+	wcApp.lpfnWndProc = TrataEventos; // Endereço da função de processamento da janela // ("TrataEventos" foi declarada no início e // encontra-se mais abaixo)
+	wcApp.style = CS_HREDRAW | CS_VREDRAW;// Estilo da janela: Fazer o redraw se for // modificada horizontal ou verticalmente
+	wcApp.hIcon = LoadIcon(NULL, IDI_APPLICATION);// "hIcon" = handler do ícon normal
+	//"NULL" = Icon definido no Windows
+	// "IDI_AP..." Ícone "aplicação"
+	wcApp.hIconSm = LoadIcon(NULL, IDI_INFORMATION);// "hIconSm" = handler do ícon pequeno
+	//"NULL" = Icon definido no Windows
+	// "IDI_INF..." Ícon de informação
+	wcApp.hCursor = LoadCursor(NULL, IDC_ARROW); // "hCursor" = handler do cursor (rato)
+	// "NULL" = Forma definida no Windows
+	// "IDC_ARROW" Aspecto "seta"
+	wcApp.lpszMenuName = NULL; // Classe do menu que a janela pode ter
+	// (NULL = não tem menu)
+	wcApp.cbClsExtra = 0; // Livre, para uso particular
+	wcApp.cbWndExtra = 0; // Livre, para uso particular
+	wcApp.hbrBackground = (HBRUSH)GetStockObject(WHITE_BRUSH);
+	// "hbrBackground" = handler para "brush" de pintura do fundo da janela. Devolvido por // "GetStockObject".Neste caso o fundo será branco
+	
+	if (!RegisterClassEx(&wcApp))
+		return(0);
+	
+	hWnd = CreateWindow(
+		szProgName, // Nome da janela (programa) definido acima
+		TEXT("Exemplo de Janela Principal em C"),// Texto que figura na barra do título
+		WS_OVERLAPPEDWINDOW, // Estilo da janela (WS_OVERLAPPED= normal)
+		CW_USEDEFAULT, // Posição x pixels (default=à direita da última)
+		CW_USEDEFAULT, // Posição y pixels (default=abaixo da última)
+		CW_USEDEFAULT, // Largura da janela (em pixels)
+		CW_USEDEFAULT, // Altura da janela (em pixels)
+		(HWND)HWND_DESKTOP, // handle da janela pai (se se criar uma a partir de
+		// outra) ou HWND_DESKTOP se a janela for a primeira,
+		// criada a partir do "desktop"
+		(HMENU)NULL, // handle do menu da janela (se tiver menu)
+		(HINSTANCE)hInst, // handle da instância do programa actual ("hInst" é
+		// passado num dos parâmetros de WinMain()
+		0); // Não há parâmetros adicionais para a janela
+		
+	ShowWindow(hWnd, nCmdShow); // "hWnd"= handler da janela, devolvido por
+	
+	UpdateWindow(hWnd); // Refrescar a janela (Windows envia à janela uma
+	
+	while (GetMessage(&lpMsg, NULL, 0, 0)) {
+		TranslateMessage(&lpMsg); // Pré-processamento da mensagem (p.e. obter código
+		// ASCII da tecla premida)
+		DispatchMessage(&lpMsg); // Enviar a mensagem traduzida de volta ao Windows, que
+		// aguarda até que a possa reenviar à função de
+		// tratamento da janela, CALLBACK TrataEventos (abaixo)
+	}
+	
+	return((int)lpMsg.wParam); // Retorna sempre o parâmetro wParam da estrutura lpMsg
 }
 
+LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam) {
+	switch (messg) {
+	case WM_CLOSE: {
+		int value = MessageBox(hWnd, TEXT("Tem a certeza que deseja sair?"), TEXT("Confirmação"), MB_ICONQUESTION | MB_YESNO);
 
+		if (value == IDYES)
+		{
+			DestroyWindow(hWnd);
+		}
 
-//
-//  FUNCTION: MyRegisterClass()
-//
-//  PURPOSE: Registers the window class.
-//
-ATOM MyRegisterClass(HINSTANCE hInstance)
-{
-    WNDCLASSEXW wcex;
-
-    wcex.cbSize = sizeof(WNDCLASSEX);
-
-    wcex.style          = CS_HREDRAW | CS_VREDRAW;
-    wcex.lpfnWndProc    = WndProc;
-    wcex.cbClsExtra     = 0;
-    wcex.cbWndExtra     = 0;
-    wcex.hInstance      = hInstance;
-    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_MAPINFO));
-    wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_MAPINFO);
-    wcex.lpszClassName  = szWindowClass;
-    wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
-
-    return RegisterClassExW(&wcex);
-}
-
-//
-//   FUNCTION: InitInstance(HINSTANCE, int)
-//
-//   PURPOSE: Saves instance handle and creates main window
-//
-//   COMMENTS:
-//
-//        In this function, we save the instance handle in a global variable and
-//        create and display the main program window.
-//
-BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
-{
-   hInst = hInstance; // Store instance handle in our global variable
-
-   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
-
-   if (!hWnd)
-   {
-      return FALSE;
-   }
-
-   ShowWindow(hWnd, nCmdShow);
-   UpdateWindow(hWnd);
-
-   return TRUE;
-}
-
-//
-//  FUNCTION: WndProc(HWND, UINT, WPARAM, LPARAM)
-//
-//  PURPOSE: Processes messages for the main window.
-//
-//  WM_COMMAND  - process the application menu
-//  WM_PAINT    - Paint the main window
-//  WM_DESTROY  - post a quit message and return
-//
-//
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    switch (message)
-    {
-    case WM_COMMAND:
-        {
-            int wmId = LOWORD(wParam);
-            // Parse the menu selections:
-            switch (wmId)
-            {
-            case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-                break;
-            case IDM_EXIT:
-                DestroyWindow(hWnd);
-                break;
-            default:
-                return DefWindowProc(hWnd, message, wParam, lParam);
-            }
-        }
-        break;
-    case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: Add any drawing code that uses hdc here...
-            EndPaint(hWnd, &ps);
-        }
-        break;
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        break;
-    default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
-    }
-    return 0;
-}
-
-// Message handler for about box.
-INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    UNREFERENCED_PARAMETER(lParam);
-    switch (message)
-    {
-    case WM_INITDIALOG:
-        return (INT_PTR)TRUE;
-
-    case WM_COMMAND:
-        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
-        {
-            EndDialog(hDlg, LOWORD(wParam));
-            return (INT_PTR)TRUE;
-        }
-        break;
-    }
-    return (INT_PTR)FALSE;
+		break;
+	}
+	case WM_DESTROY: // Destruir a janela e terminar o programa
+		PostQuitMessage(0);
+		break;
+	default:
+		
+		return DefWindowProc(hWnd, messg, wParam, lParam);
+		break;
+	}
+	return(0);
 }
