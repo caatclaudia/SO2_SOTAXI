@@ -316,9 +316,7 @@ void leMapa(DADOS* dados) {
 	}
 	ptr_register((TCHAR*)SHM_NAME, 7);
 
-	MAPA* aux = NULL;
-	CopyMemory(&aux, dados->sharedMap, sizeof(dados->sharedMap));
-	if (aux == NULL) {
+	if (dados->sharedMap == NULL) {
 		_tprintf(TEXT("\n[MAPA] CenTaxi não enviou mapa!\n"));
 		dados->mapa = NULL;
 		return;
@@ -327,7 +325,7 @@ void leMapa(DADOS* dados) {
 		if (dados->sharedMap[i].caracter == '\n')
 			tamanhoMapa = i;
 	dados->mapa = (MAPA*)malloc(sizeof(MAPA) * tamanhoMapa * tamanhoMapa);
-	CopyMemory(dados->mapa, &aux, sizeof(dados->mapa));
+	CopyMemory(dados->mapa, dados->sharedMap, sizeof(dados->mapa));
 
 	for (int i = 0; i < tamanhoMapa * tamanhoMapa; i++) {
 		dados->mapa[i].caracter = dados->sharedMap[i].caracter;
