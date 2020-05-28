@@ -133,23 +133,33 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH, TEXT("Impact"));
 
 	switch (messg) {
+	//SE FOR PASSAGEIRO MOSTRA DESTINO E (TAXI QUE O FOR BUSCAR)
 	case WM_LBUTTONDOWN: {
-		hdc = GetDC(hWnd);
-		SetTextColor(hdc, RGB(0, 0, 0));
-		SelectObject(hdc, hFont);
-		SetBkMode(hdc, TRANSPARENT);
-		for (int i = 0; i < tamanhoMapa * tamanhoMapa; i++) {
-			caract = shared[i].caracter;
-			rect.left = 80 + (8 * xPos);
-			rect.top = 15 + (9 * yPos);
-			DrawText(hdc, &caract, 1, &rect, DT_SINGLELINE | DT_NOCLIP);
-			xPos++;
-			if (xPos == (tamanhoMapa + 1)) {
-				yPos++;
-				xPos = 0;
+		xPos = GET_X_LPARAM(lParam);
+		yPos = GET_Y_LPARAM(lParam);
+
+		int x = (xPos - 80) / 8;
+		int y = (yPos - 15) / 9;
+		for (int i = 0; i < info.npassageiros; i++) {
+			if (info.passageiros[i].X == x && info.passageiros[i].Y == y) {
+				//MOSTRA DESTINO E (TAXI QUE O FOR BUSCAR)
 			}
 		}
-		ReleaseDC(hWnd, hdc);
+
+		break;
+	}
+	//SE FOR TAXI MOSTRA MATRICULA E (DESTINO)
+	case WM_MOUSEMOVE: {
+		xPos = GET_X_LPARAM(lParam);
+		yPos = GET_Y_LPARAM(lParam);
+
+		int x = (xPos - 80) / 8;
+		int y = (yPos - 15) / 9;
+		for (int i = 0; i < info.ntaxis; i++) {
+			if (info.taxis[i].X == x && info.taxis[i].Y == y) {
+				//MOSTRA MATRICULA E (DESTINO)
+			}
+		}
 
 		break;
 	}
@@ -158,6 +168,8 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		SetTextColor(hdc, RGB(0, 0, 0));
 		SelectObject(hdc, hFont);
 		SetBkMode(hdc, TRANSPARENT);
+		xPos = 0;
+		yPos = 0;
 		for (int i = 0; i < tamanhoMapa * tamanhoMapa; i++) {
 			caract = shared[i].caracter;
 			rect.left = 80 + (8 * xPos);
