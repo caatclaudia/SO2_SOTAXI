@@ -31,6 +31,43 @@ typedef struct {
 HANDLE EspMapa;	//FileMapping
 MAPA* shared;
 
+#define MAXTAXIS 10
+#define MAXPASS 10
+#define TAM_ID 10
+
+typedef struct {
+	unsigned int X, Y, Xfinal, Yfinal;
+	int movimento;
+	int terminar;
+	char id_mapa;
+	TCHAR matriculaTaxi[7];
+	int tempoEspera;
+	TCHAR id[TAM_ID];
+} PASSAGEIRO;
+
+#define NOME_MUTEX_TAXI TEXT("MutexTaxi")
+typedef struct {
+	TCHAR matricula[7];
+	unsigned int X, Y, Xfinal, Yfinal;
+	int disponivel;
+	int autoResposta;
+	int interessado;
+	int terminar;
+	int id_mapa;
+	float velocidade;
+} TAXI;
+
+typedef struct {
+	TAXI taxis[MAXTAXIS];
+	int ntaxis;
+	PASSAGEIRO passageiros[MAXPASS];
+	int npassageiros;
+} INFO;
+
+#define SHM_INFO TEXT("EspacoInfo")
+HANDLE EspInfo;	//FileMapping
+INFO* sharedInfo = NULL;
+
 //SEMAFOROS
 #define EVENT_ATUALIZAMAP TEXT("AtualizaMapa")
 HANDLE atualizaMap;

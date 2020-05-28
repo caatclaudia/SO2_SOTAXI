@@ -559,8 +559,6 @@ DWORD WINAPI ThreadVerificaAdmin(LPVOID param) {
 	while (1) {
 		WaitForSingleObject(dados->saiuAdmin, INFINITE);
 
-	//	WaitForSingleObject(hMutex, INFINITE);
-
 		ReadFile(pipeT, (LPVOID)&novo, sizeof(TAXI), &n, NULL);
 
 		WaitForSingleObject(hMutex, INFINITE);
@@ -570,8 +568,6 @@ DWORD WINAPI ThreadVerificaAdmin(LPVOID param) {
 			ReleaseMutex(hMutex);
 			ExitThread(0);
 		}
-
-	//	ReleaseMutex(hMutex);
 
 		Sleep(1000);
 	}

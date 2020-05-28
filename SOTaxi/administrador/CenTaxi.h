@@ -88,6 +88,17 @@ typedef struct {
 HANDLE hMemoria;
 BUFFER* BufferMemoria;
 
+typedef struct {
+	TAXI taxis[MAXTAXIS];
+	int nTaxis;
+	PASSAGEIRO passageiros[MAXPASS];
+	int nPassageiros;
+} INFO;
+
+#define SHM_INFO TEXT("EspacoInfo")
+HANDLE EspInfo;	//FileMapping
+INFO* sharedInfo = NULL;
+
 //SEMAFOROS
 #define EVENT_NOVOT TEXT("NovoTaxi")
 #define EVENT_SAIUT TEXT("SaiuTaxi")
@@ -108,8 +119,8 @@ BUFFER* BufferMemoria;
 
 #define NOME_MUTEX_DADOS TEXT("MutexDados")
 typedef struct {
-	int nTaxis;
-	TAXI taxis[MAXTAXIS];
+	INFO *info;
+
 	HANDLE EspTaxis;	//FileMapping
 	HANDLE hMutexDados;
 	TAXI* sharedTaxi;
@@ -120,8 +131,6 @@ typedef struct {
 	int aceitacaoT;
 	int esperaManifestacoes;
 
-	int nPassageiros;
-	PASSAGEIRO passageiros[MAXPASS];
 	HANDLE novoPassageiro;
 	HANDLE respostaPass;
 	HANDLE respostaMov;

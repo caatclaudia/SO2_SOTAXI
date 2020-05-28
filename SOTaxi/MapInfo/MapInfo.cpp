@@ -5,6 +5,7 @@
 
 HANDLE hThreadAtualizaMapa;
 DADOS dados;
+INFO info;
 
 void(*ptr_register)(TCHAR*, int);
 
@@ -194,6 +195,22 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 }
 
 void recebeMapa(DADOS* dados) {
+	EspInfo = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(INFO), SHM_INFO);
+	if (EspInfo == NULL)
+	{
+		_tprintf(TEXT("\n[ERRO] Erro ao criar FileMapping!\n"));
+		return;
+	}
+	ptr_register((TCHAR*)SHM_INFO, 6);
+
+	sharedInfo = (INFO*)MapViewOfFile(EspInfo, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(INFO));
+	if (sharedInfo == NULL)
+	{
+		_tprintf(TEXT("\n[ERRO] Erro em MapViewOfFile!\n"));
+		return;
+	}
+	ptr_register((TCHAR*)SHM_INFO, 7);
+
 	MAPA* aux = NULL;
 	CopyMemory(&aux, shared, sizeof(shared));
 	for (int i = 0; tamanhoMapa == -1; i++)
@@ -201,6 +218,9 @@ void recebeMapa(DADOS* dados) {
 			tamanhoMapa = i;
 	dados->mapa = (MAPA*)malloc(sizeof(MAPA) * tamanhoMapa * tamanhoMapa);
 	CopyMemory(dados->mapa, &aux, sizeof(dados->mapa));
+
+	CopyMemory(&info, sharedInfo, sizeof(INFO));
+	return;
 }
 
 DWORD WINAPI ThreadAtualizaMapa(LPVOID param) {
@@ -221,6 +241,9 @@ DWORD WINAPI ThreadAtualizaMapa(LPVOID param) {
 			return 0;
 
 		CopyMemory(dados->mapa, shared, sizeof(dados->mapa));
+
+		CopyMemory(&info, sharedInfo, sizeof(INFO));
+
 		Sleep(3000);
 	}
 	Sleep(500);
