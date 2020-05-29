@@ -143,9 +143,14 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		for (int i = 0; i < info.npassageiros; i++) {
 			if (info.passageiros[i].X == x && info.passageiros[i].Y == y) {
 				//MOSTRA DESTINO E (TAXI QUE O FOR BUSCAR)
+				TCHAR aux[TAM];
+				if (info.passageiros[i].tempoEspera != -1) 	//ESTA A ESPERA DO TAXI
+					_stprintf_s(aux, TAM, TEXT("Passageiro a espera de '%s' para ir para (%d,%d)!"), info.passageiros[i].matriculaTaxi, info.passageiros[i].Xfinal, info.passageiros[i].Yfinal);
+				else
+					_stprintf_s(aux, TAM, TEXT("Passageiro quer ir para (%d,%d)!"), info.passageiros[i].Xfinal, info.passageiros[i].Yfinal);
+				MessageBox(hWnd, aux, TEXT("Confirma��o"), MB_ICONINFORMATION | MB_OK);
 			}
 		}
-
 		break;
 	}
 	//SE FOR TAXI MOSTRA MATRICULA E (DESTINO)
