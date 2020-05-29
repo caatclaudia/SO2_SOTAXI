@@ -148,7 +148,7 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 					_stprintf_s(aux, TAM, TEXT("Passageiro a espera de '%s' para ir para (%d,%d)!"), info.passageiros[i].matriculaTaxi, info.passageiros[i].Xfinal, info.passageiros[i].Yfinal);
 				else
 					_stprintf_s(aux, TAM, TEXT("Passageiro quer ir para (%d,%d)!"), info.passageiros[i].Xfinal, info.passageiros[i].Yfinal);
-				MessageBox(hWnd, aux, TEXT("Confirmaï¿½ï¿½o"), MB_ICONINFORMATION | MB_OK);
+				MessageBox(hWnd, aux, TEXT("Confirmação"), MB_ICONINFORMATION | MB_OK);
 			}
 		}
 		break;
@@ -163,6 +163,12 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		for (int i = 0; i < info.ntaxis; i++) {
 			if (info.taxis[i].X == x && info.taxis[i].Y == y) {
 				//MOSTRA MATRICULA E (DESTINO)
+				TCHAR aux[TAM];
+				if (!info.taxis[i].disponivel) 	//SE TIVER UM PASSAGEIRO ATRIBUIDO
+					_stprintf_s(aux, TAM, TEXT("Táxi '%s' vai para (%d,%d)!"), info.taxis[i].matricula, info.taxis[i].Xfinal, info.taxis[i].Yfinal);
+				else
+					_stprintf_s(aux, TAM, TEXT("Táxi '%s'!"), info.taxis[i].matricula);
+				MessageBox(hWnd, aux, TEXT("Confirmação"), MB_ICONINFORMATION | MB_OK);
 			}
 		}
 
