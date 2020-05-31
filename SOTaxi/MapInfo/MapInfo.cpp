@@ -4,11 +4,17 @@
 #include "MapInfo.h"
 #include "resource.h"
 
+HKEY chave;
+
 HANDLE hThreadAtualizaMapa;
 DADOS dados;
 INFO info;
 int MODIFICOU = 0;
 TCHAR str[256] = TEXT(" ");
+TCHAR str_taxiLivre[256] = TEXT(" ");
+TCHAR str_taxiOcupado[256] = TEXT(" ");
+TCHAR str_pessoaSemTaxi[256] = TEXT(" ");
+TCHAR str_pessoaComTaxi[256] = TEXT(" ");
 
 void(*ptr_register)(TCHAR*, int);
 
@@ -62,6 +68,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	ptr_register((TCHAR*)SHM_NAME, 7);
 
 	recebeMapa(&dados);
+	inicializaVariaveis();
 
 	hThreadAtualizaMapa = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadAtualizaMapa, (LPVOID)&dados, 0, NULL);
 	if (hThreadAtualizaMapa == NULL) {
@@ -128,6 +135,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 	CloseHandle(EspMapa);
 	CloseHandle(atualizaMap);
 	FreeLibrary(hLib);
+	RegCloseKey(chave);
 
 	return((int)lpMsg.wParam);
 }
@@ -148,19 +156,19 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		hdc = GetDC(hWnd);
 
 		hdcTaxiLivre = CreateCompatibleDC(hdc);
-		hTaxiLivre = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_TAXI_LIVRE));
+		hTaxiLivre = (HBITMAP)LoadImage(GetModuleHandle(NULL), str_taxiLivre, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 		SelectObject(hdcTaxiLivre, hTaxiLivre);
 
 		hdcTaxiOcupado = CreateCompatibleDC(hdc);
-		hTaxiOcupado = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_TAXI_OCUPADO));
+		hTaxiOcupado = (HBITMAP)LoadImage(GetModuleHandle(NULL), str_taxiOcupado, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 		SelectObject(hdcTaxiOcupado, hTaxiOcupado);
 
 		hdcPessoaSemTaxi = CreateCompatibleDC(hdc);
-		hPessoaSemTaxi = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_PESSOA_SEM));
+		hPessoaSemTaxi = (HBITMAP)LoadImage(GetModuleHandle(NULL), str_pessoaSemTaxi, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 		SelectObject(hdcPessoaSemTaxi, hPessoaSemTaxi);
 
 		hdcPessoaComTaxi = CreateCompatibleDC(hdc);
-		hPessoaComTaxi = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_PESSOA_COM));
+		hPessoaComTaxi = (HBITMAP)LoadImage(GetModuleHandle(NULL), str_pessoaComTaxi, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 		SelectObject(hdcPessoaComTaxi, hPessoaComTaxi);
 
 		ReleaseDC(hWnd, hdc);
@@ -258,7 +266,11 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 				hTaxiLivre = (HBITMAP)LoadImage(GetModuleHandle(NULL), str, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 				//SE CONSEGUIR ABRIR TEM DE SER GUARDADO NO REGISTRY
 				if (hTaxiLivre == NULL)
-					hTaxiLivre = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_TAXI_LIVRE));
+					hTaxiLivre = (HBITMAP)LoadImage(GetModuleHandle(NULL), str_taxiLivre, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+				else {
+					RegSetValueEx(chave, TEXT("TaxiLivre"), 0, REG_SZ, (LPBYTE)str, _tcslen(str) * sizeof(TCHAR));
+					wcscpy_s(str_taxiLivre, str);
+				}
 				SelectObject(hdcTaxiLivre, hTaxiLivre);
 			}
 			break;
@@ -270,7 +282,11 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 				hTaxiOcupado = (HBITMAP)LoadImage(GetModuleHandle(NULL), str, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 				//SE CONSEGUIR ABRIR TEM DE SER GUARDADO NO REGISTRY
 				if (hTaxiOcupado == NULL)
-					hTaxiOcupado = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_TAXI_OCUPADO));
+					hTaxiOcupado = (HBITMAP)LoadImage(GetModuleHandle(NULL), str_taxiOcupado, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+				else{
+					RegSetValueEx(chave, TEXT("TaxiLivre"), 0, REG_SZ, (LPBYTE)str, _tcslen(str) * sizeof(TCHAR));
+					wcscpy_s(str_taxiOcupado, str);
+				}
 				SelectObject(hdcTaxiOcupado, hTaxiOcupado);
 			}
 			break;
@@ -282,7 +298,11 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 				hPessoaSemTaxi = (HBITMAP)LoadImage(GetModuleHandle(NULL), str, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 				//SE CONSEGUIR ABRIR TEM DE SER GUARDADO NO REGISTRY
 				if (hPessoaSemTaxi == NULL)
-					hPessoaSemTaxi = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_PESSOA_SEM));
+					hPessoaSemTaxi = (HBITMAP)LoadImage(GetModuleHandle(NULL), str_pessoaSemTaxi, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+				else{
+					RegSetValueEx(chave, TEXT("TaxiLivre"), 0, REG_SZ, (LPBYTE)str, _tcslen(str) * sizeof(TCHAR));
+					wcscpy_s(str_pessoaSemTaxi, str);
+				}
 				SelectObject(hdcPessoaSemTaxi, hPessoaSemTaxi);
 			}
 			break;
@@ -294,7 +314,11 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 				hPessoaComTaxi = (HBITMAP)LoadImage(GetModuleHandle(NULL), str, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
 				//SE CONSEGUIR ABRIR TEM DE SER GUARDADO NO REGISTRY
 				if (hPessoaComTaxi == NULL)
-					hPessoaComTaxi = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_PESSOA_COM));
+					hPessoaComTaxi = (HBITMAP)LoadImage(GetModuleHandle(NULL), str_pessoaComTaxi, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+				else{
+					RegSetValueEx(chave, TEXT("TaxiLivre"), 0, REG_SZ, (LPBYTE)str, _tcslen(str) * sizeof(TCHAR));
+					wcscpy_s(str_pessoaComTaxi, str);
+				}
 				SelectObject(hdcPessoaComTaxi, hPessoaComTaxi);
 			}
 			break;
@@ -438,6 +462,43 @@ void recebeMapa(DADOS* dados) {
 
 	CopyMemory(&info, sharedInfo, sizeof(INFO));
 	return;
+}
+
+void inicializaVariaveis() {
+	DWORD queAconteceu;
+	DWORD tamanho;
+
+	//Criar/abrir uma chave em HKEY_CURRENT_USER\Software\Mapa
+	if (RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("Software\\Mapa"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &chave, &queAconteceu) != ERROR_SUCCESS) {
+		_tprintf(TEXT("[ERRO] Erro ao criar/abrir chave (%d)\n"), GetLastError());
+		return;
+	}
+	else {
+		//Se a chave foi criada, inicializar os valores
+		if (queAconteceu == REG_CREATED_NEW_KEY) {
+			_tprintf(TEXT("[DETALHES] Chave: HKEY_CURRENT_USER\\Software\\Mapa\n"));
+			RegSetValueEx(chave, TEXT("TaxiLivre"), 0, REG_SZ, (LPBYTE)TEXT("taxi_livre.bmp"), _tcslen(TEXT("taxi_livre.bmp")) * sizeof(TCHAR));
+			RegSetValueEx(chave, TEXT("TaxiOcupado"), 0, REG_SZ, (LPBYTE)TEXT("taxi_ocupado.bmp"), _tcslen(TEXT("taxi_ocupado.bmp")) * sizeof(TCHAR));
+			RegSetValueEx(chave, TEXT("PessoaSemTaxi"), 0, REG_SZ, (LPBYTE)TEXT("pessoa_semTaxi.bmp"), _tcslen(TEXT("pessoa_semTaxi.bmp")) * sizeof(TCHAR));
+			RegSetValueEx(chave, TEXT("PessoaComTaxi"), 0, REG_SZ, (LPBYTE)TEXT("pessoa_comTaxi.bmp"), _tcslen(TEXT("pessoa_comTaxi.bmp")) * sizeof(TCHAR));
+		}
+		//Se a chave foi aberta, ler os valores lá guardados
+		else if (queAconteceu == REG_OPENED_EXISTING_KEY) {
+			_tprintf(TEXT("Chave: HKEY_CURRENT_USER\\Software\\Mapa\n"));
+			tamanho = 256;
+			RegQueryValueEx(chave, TEXT("TaxiLivre"), NULL, NULL, (LPBYTE)str_taxiLivre, &tamanho);
+			str_taxiLivre[tamanho / sizeof(TCHAR)] = '\0';
+			tamanho = 256;
+			RegQueryValueEx(chave, TEXT("TaxiOcupado"), NULL, NULL, (LPBYTE)str_taxiOcupado, &tamanho);
+			str_taxiOcupado[tamanho / sizeof(TCHAR)] = '\0';
+			tamanho = 256;
+			RegQueryValueEx(chave, TEXT("PessoaSemTaxi"), NULL, NULL, (LPBYTE)str_pessoaSemTaxi, &tamanho);
+			str_pessoaSemTaxi[tamanho / sizeof(TCHAR)] = '\0';
+			tamanho = 256;
+			RegQueryValueEx(chave, TEXT("PessoaComTaxi"), NULL, NULL, (LPBYTE)str_pessoaComTaxi, &tamanho);
+			str_pessoaComTaxi[tamanho / sizeof(TCHAR)] = '\0';
+		}
+	}
 }
 
 DWORD WINAPI ThreadAtualizaMapa(LPVOID param) {

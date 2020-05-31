@@ -10,10 +10,6 @@
 void(*ptr_register)(TCHAR*, int);
 void(*ptr_log)(TCHAR*);
 
-HKEY chave;
-DWORD queAconteceu;
-DWORD tamanho;
-
 #define TAM 50
 #define MAXTAXIS 10
 #define MAXPASS 10
@@ -147,7 +143,6 @@ typedef struct {
 } DADOS;
 
 void inicializaBuffer();
-void inicializaVariaveis();
 void ajuda();
 void listarTaxis(DADOS* dados);
 void listarPassageiros(DADOS* dados);

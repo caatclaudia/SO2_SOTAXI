@@ -1,4 +1,4 @@
-#include "CenTaxi.h"
+Ôªø#include "CenTaxi.h"
 
 int _tmain(int argc, LPTSTR argv[]) {
 	HANDLE hThreadComandos, hThreadNovoTaxi, hThreadSaiuTaxi, hThreadMovimento, hThreadNovoPassageiro, hThreadTempoTransporte;
@@ -33,11 +33,10 @@ int _tmain(int argc, LPTSTR argv[]) {
 	}
 	ptr_register((TCHAR*)SEMAPHORE_NAME, 3);
 
-	_tprintf(TEXT("\nAguardando autorizaÁ„o para entrar...\n"));
+	_tprintf(TEXT("\nAguardando autoriza√ß√£o para entrar...\n"));
 	WaitForSingleObject(Semaphore, INFINITE);
 	_tprintf(TEXT("\nEntrei!\n\n"));
 
-	inicializaVariaveis();
 	inicializaBuffer();
 
 	if (argc == 3) {
@@ -235,32 +234,32 @@ int _tmain(int argc, LPTSTR argv[]) {
 
 	hThreadComandos = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadComandos, (LPVOID)&dados, 0, NULL);
 	if (hThreadComandos == NULL) {
-		_tprintf(TEXT("\n[ERRO] Erro ao lanÁar Thread!\n"));
+		_tprintf(TEXT("\n[ERRO] Erro ao lan√ßar Thread!\n"));
 		return 0;
 	}
 	hThreadNovoTaxi = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadNovoTaxi, (LPVOID)&dados, 0, NULL);
 	if (hThreadNovoTaxi == NULL) {
-		_tprintf(TEXT("\n[ERRO] Erro ao lanÁar Thread!\n"));
+		_tprintf(TEXT("\n[ERRO] Erro ao lan√ßar Thread!\n"));
 		return 0;
 	}
 	hThreadSaiuTaxi = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadSaiuTaxi, (LPVOID)&dados, 0, NULL);
 	if (hThreadSaiuTaxi == NULL) {
-		_tprintf(TEXT("\n[ERRO] Erro ao lanÁar Thread!\n"));
+		_tprintf(TEXT("\n[ERRO] Erro ao lan√ßar Thread!\n"));
 		return 0;
 	}
 	hThreadMovimento = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadMovimento, (LPVOID)&dados, 0, NULL);
 	if (hThreadMovimento == NULL) {
-		_tprintf(TEXT("\n[ERRO] Erro ao lanÁar Thread!\n"));
+		_tprintf(TEXT("\n[ERRO] Erro ao lan√ßar Thread!\n"));
 		return 0;
 	}
 	hThreadNovoPassageiro = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadNovoPassageiro, (LPVOID)&dados, 0, NULL);
 	if (hThreadNovoPassageiro == NULL) {
-		_tprintf(TEXT("\nErro ao lanÁar Thread!\n"));
+		_tprintf(TEXT("\nErro ao lan√ßar Thread!\n"));
 		return 0;
 	}
 	hThreadTempoTransporte = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadTempoTransporte, (LPVOID)&dados, 0, NULL);
 	if (hThreadTempoTransporte == NULL) {
-		_tprintf(TEXT("\n[ERRO] Erro ao lanÁar Thread!\n"));
+		_tprintf(TEXT("\n[ERRO] Erro ao lan√ßar Thread!\n"));
 		return 0;
 	}
 
@@ -319,7 +318,6 @@ int _tmain(int argc, LPTSTR argv[]) {
 	CloseHandle(dados.respostaMov);
 	CloseHandle(dados.saiuAdmin);
 	FreeLibrary(hLib);
-	RegCloseKey(chave);
 
 	return 0;
 }
@@ -333,21 +331,21 @@ void inicializaBuffer() {
 
 	sem_mutex = CreateSemaphore(NULL, 1, 1, SEMAPHORE_MUTEX);
 	if (sem_mutex == NULL) {
-		_tprintf(TEXT("\n[ERRO] Erro ao criar Sem·foro!\n"));
+		_tprintf(TEXT("\n[ERRO] Erro ao criar SemÔøΩforo!\n"));
 		return;
 	}
 	ptr_register((TCHAR*)SEMAPHORE_MUTEX, 3);
 
 	sem_itens = CreateSemaphore(NULL, 0, MAX_PASS, SEMAPHORE_ITENS);
 	if (sem_itens == NULL) {
-		_tprintf(TEXT("\n[ERRO] Erro ao criar Sem·foro!\n"));
+		_tprintf(TEXT("\n[ERRO] Erro ao criar SemÔøΩforo!\n"));
 		return;
 	}
 	ptr_register((TCHAR*)SEMAPHORE_ITENS, 3);
 
 	sem_vazios = CreateSemaphore(NULL, MAX_PASS, MAX_PASS, SEMAPHORE_VAZIOS);
 	if (sem_vazios == NULL) {
-		_tprintf(TEXT("\n[ERRO] Erro ao criar Sem·foro!\n"));
+		_tprintf(TEXT("\n[ERRO] Erro ao criar SemÔøΩforo!\n"));
 		return;
 	}
 	ptr_register((TCHAR*)SEMAPHORE_VAZIOS, 3);
@@ -355,89 +353,21 @@ void inicializaBuffer() {
 	return;
 }
 
-void inicializaVariaveis() {
-	DWORD opcao;
-	TCHAR str[TAM], op;
-
-	//Criar/abrir uma chave em HKEY_CURRENT_USER\Software\MinhaAplicacao
-	if (RegCreateKeyEx(HKEY_CURRENT_USER, TEXT("Software\\Mapa"), 0, NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &chave, &queAconteceu) != ERROR_SUCCESS) {
-		_tprintf(TEXT("[ERRO] Erro ao criar/abrir chave (%d)\n"), GetLastError());
-		return;
-	}
-	else {
-		//Se a chave foi criada, inicializar os valores
-		if (queAconteceu == REG_CREATED_NEW_KEY) {
-			_tprintf(TEXT("[DETALHES] Chave: HKEY_CURRENT_USER\\Software\\Mapa\n"));
-			//Criar valor "TaxiOcupado"
-			RegSetValueEx(chave, TEXT("TaxiOcupado"), 0, REG_SZ, (LPBYTE)TEXT("Vermelho"), _tcslen(TEXT("Vermelho")) * sizeof(TCHAR));
-			//Criar valor "TaxiLivre"
-			RegSetValueEx(chave, TEXT("TaxiLivre"), 0, REG_SZ, (LPBYTE)TEXT("Verde"), _tcslen(TEXT("Verde")) * sizeof(TCHAR));
-			//Criar valor "TaxiBuscarPassageiro"
-			RegSetValueEx(chave, TEXT("TaxiBuscarPassageiro"), 0, REG_SZ, (LPBYTE)TEXT("Laranja"), _tcslen(TEXT("Laranja")) * sizeof(TCHAR));
-			_tprintf(TEXT("[DETALHES] Valores TaxiOcupado, TaxiLivre e TaxiBuscarPassageiro guardados\n"));
-		}
-		//Se a chave foi aberta, ler os valores l· guardados
-		else if (queAconteceu == REG_OPENED_EXISTING_KEY) {
-			_tprintf(TEXT("Chave: HKEY_CURRENT_USER\\Software\\Mapa\n"));
-			tamanho = TAM;
-			RegQueryValueEx(chave, TEXT("TaxiOcupado"), NULL, NULL, (LPBYTE)str, &tamanho);
-			str[tamanho / sizeof(TCHAR)] = '\0';
-			_tprintf(TEXT("[DETALHES] TaxiOcupado: %s\n"), str);
-			RegQueryValueEx(chave, TEXT("TaxiLivre"), NULL, NULL, (LPBYTE)str, &tamanho);
-			str[tamanho / sizeof(TCHAR)] = '\0';
-			_tprintf(TEXT("[DETALHES] TaxiLivre: %s\n"), str);
-			RegQueryValueEx(chave, TEXT("TaxiBuscarPassageiro"), NULL, NULL, (LPBYTE)str, &tamanho);
-			str[tamanho / sizeof(TCHAR)] = '\0';
-			_tprintf(TEXT("[DETALHES] TaxiBuscarPassageiro: %s\n"), str);
-		}
-		do {
-			_tprintf(TEXT("\n[DETALHES] Deseja alterar algum destes valores (s/n)? "));
-			_tscanf_s(_T("%c"), &op, sizeof(op));
-		} while (op != 's' && op != 'n');
-		if (op == 's') {
-			do {
-				_tprintf(TEXT("\n[DETALHES] 1- Valor TaxiOcupado"));
-				_tprintf(TEXT("\n[DETALHES] 2- Valor TaxiLivre"));
-				_tprintf(TEXT("\n[DETALHES] 3- Valor TaxiBuscarPassageiro"));
-				_tprintf(TEXT("\n[DETALHES] 4- Voltar"));
-				_tprintf(TEXT("\n[DETALHES] OpÁ„o: "));
-				_tscanf_s(_T("%d"), &opcao);
-				if (opcao == 1) {
-					_tprintf(TEXT("\n[DETALHES] Valor TaxiOcupado: "));
-					_tscanf_s(_T("%s"), str, sizeof(str));
-					RegSetValueEx(chave, TEXT("TaxiOcupado"), 0, REG_SZ, (LPBYTE)str, _tcslen(str) * sizeof(TCHAR));
-				}
-				else if (opcao == 2) {
-					_tprintf(TEXT("\n[DETALHES] Valor TaxiLivre: "));
-					_tscanf_s(_T("%s"), str, sizeof(str));
-					RegSetValueEx(chave, TEXT("TaxiLivre"), 0, REG_SZ, (LPBYTE)str, _tcslen(str) * sizeof(TCHAR));
-				}
-				else if (opcao == 3) {
-					_tprintf(TEXT("\n[DETALHES] Valor TaxiBuscarPassageiro: "));
-					_tscanf_s(_T("%s"), str, sizeof(str));
-					RegSetValueEx(chave, TEXT("TaxiBuscarPassageiro"), 0, REG_SZ, (LPBYTE)str, _tcslen(str) * sizeof(TCHAR));
-				}
-			} while (opcao != 4);
-		}
-	}
-	return;
-}
-
 void ajuda() {
 	_tprintf(_T("\n\n novoP - ADICIONA PASSAGEIRO"));
 	_tprintf(_T("\n mapa - VISUALIZA MAPA"));
 	_tprintf(_T("\n expulsar - EXPULSAR TAXI"));
-	_tprintf(_T("\n listarT - LISTAR T¡XIS"));
+	_tprintf(_T("\n listarT - LISTAR T√ÅXIS"));
 	_tprintf(_T("\n listarP - LISTAR PASSAGEIROS"));
-	_tprintf(_T("\n aceitacaoT - PAUSAR/RECOMECAR ACEITA«√O DE TAXIS"));
-	_tprintf(_T("\n manifestacoes - DEFINIR INTERVALO DE TEMPO DURANTE O QUAL AGUARDA MANIFESTA«OES DOS TAXIS"));
+	_tprintf(_T("\n aceitacaoT - PAUSAR/RECOMECAR ACEITA√á√ÉO DE TAXIS"));
+	_tprintf(_T("\n manifestacoes - DEFINIR INTERVALO DE TEMPO DURANTE O QUAL AGUARDA MANIFESTA√áOES DOS TAXIS"));
 	_tprintf(_T("\n fim - ENCERRAR TODO O SISTEMA"));
 	return;
 }
 
 void listarTaxis(DADOS* dados) {
 	if (dados->info->nTaxis == 0) {
-		_tprintf(_T("\n[LISTAR TAXIS] N„o h· Taxis!"));
+		_tprintf(_T("\n[LISTAR TAXIS] N√£o h√° Taxis!"));
 		return;
 	}
 	for (int i = 0; i < dados->info->nTaxis; i++) {
@@ -453,7 +383,7 @@ void listarTaxis(DADOS* dados) {
 
 void listarPassageiros(DADOS* dados) {
 	if (dados->info->nPassageiros == 0) {
-		_tprintf(_T("\n[LISTAR PASSAGEIRO] N„o h· Passageiros!"));
+		_tprintf(_T("\n[LISTAR PASSAGEIRO] N√£o h√° Passageiros!"));
 		return;
 	}
 	for (int i = 0; i < dados->info->nPassageiros; i++) {
@@ -462,7 +392,7 @@ void listarPassageiros(DADOS* dados) {
 		if (dados->info->passageiros[i].movimento)
 			_tprintf(_T(" - em movimento\n"));
 		else
-			_tprintf(_T(" - ‡ espera\n"));
+			_tprintf(_T(" - √† espera\n"));
 	}
 	return;
 }
@@ -595,7 +525,7 @@ void transportePassageiro(DADOS* dados) {
 
 		//RECEBE TODOS OS INTERESSES
 		CopyMemory(&novoT, dados->sharedTaxi, sizeof(TAXI));
-		ptr_log((TCHAR*)TEXT("CenTaxi recebe Taxi do ConTaxi por memÛria partilhada!"));
+		ptr_log((TCHAR*)TEXT("CenTaxi recebe Taxi do ConTaxi por mem√≥ria partilhada!"));
 		if (novoT.interessado) {
 			for (int i = 0; i < dados->info->nTaxis; i++)
 				if (!_tcscmp(novoT.matricula, dados->info->taxis[i].matricula)) {
@@ -622,7 +552,7 @@ void transportePassageiro(DADOS* dados) {
 
 		//CALCULA TEMPO ESTIMADO DE ESPERA
 		dados->info->passageiros[dados->info->nPassageiros - 1].tempoEspera = (int)(calculaDistancia(dados->info->taxis[valor].X, dados->info->taxis[valor].Y, dados->info->passageiros[dados->info->nPassageiros - 1].X, dados->info->passageiros[dados->info->nPassageiros - 1].Y) / dados->info->taxis[valor].velocidade);
-		_tprintf(_T("\n[PASS]  O tempo estimado de espera para este passageiro È %d s"), dados->info->passageiros[dados->info->nPassageiros - 1].tempoEspera);
+		_tprintf(_T("\n[PASS]  O tempo estimado de espera para este passageiro √© %d s"), dados->info->passageiros[dados->info->nPassageiros - 1].tempoEspera);
 
 		WriteFile(pipeT[dados->info->taxis[valor].id_mapa], (LPVOID)&dados->info->taxis[valor], sizeof(TAXI), &n, NULL);
 		ptr_log((TCHAR*)TEXT("CenTaxi envia Taxi por Named Pipe!"));
@@ -632,7 +562,7 @@ void transportePassageiro(DADOS* dados) {
 
 	}
 	else
-		_tprintf(_T("\n[PASS]  N„o houve interesse de nenhum Taxi em fazer este transporte!"));
+		_tprintf(_T("\n[PASS]  N√£o houve interesse de nenhum Taxi em fazer este transporte!"));
 	transporteAceite(dados);
 
 	return;
@@ -661,9 +591,9 @@ boolean adicionaTaxi(DADOS* dados, TAXI novo) {
 	dados->mapa[tamanhoMapa * novo.Y + novo.Y + novo.X].caracter = buf;
 
 	CopyMemory(dados->sharedMapa, dados->mapa, sizeof(dados->mapa));
-	ptr_log((TCHAR*)TEXT("CenTaxi envia Mapa para MapInfo por memÛria partilhada!"));
+	ptr_log((TCHAR*)TEXT("CenTaxi envia Mapa para MapInfo por mem√≥ria partilhada!"));
 	CopyMemory(sharedInfo, dados->info, sizeof(INFO));
-	ptr_log((TCHAR*)TEXT("CenTaxi envia Info para MapInfo por memÛria partilhada!"));
+	ptr_log((TCHAR*)TEXT("CenTaxi envia Info para MapInfo por mem√≥ria partilhada!"));
 	_tprintf(TEXT("\n[MAPA] Mapa atualizado com sucesso!\n"));
 
 	SetEvent(dados->atualizaMap);
@@ -689,9 +619,9 @@ boolean removeTaxi(DADOS* dados, TAXI novo) {
 			buf = dados->info->taxis[i].id_mapa + '0';
 			eliminaIdMapa(dados, buf);
 			CopyMemory(dados->sharedMapa, dados->mapa, sizeof(dados->mapa));
-			ptr_log((TCHAR*)TEXT("CenTaxi envia Mapa para MapInfo por memÛria partilhada!"));
+			ptr_log((TCHAR*)TEXT("CenTaxi envia Mapa para MapInfo por mem√≥ria partilhada!"));
 			CopyMemory(sharedInfo, dados->info, sizeof(INFO));
-			ptr_log((TCHAR*)TEXT("CenTaxi envia Info para MapInfo por memÛria partilhada!"));
+			ptr_log((TCHAR*)TEXT("CenTaxi envia Info para MapInfo por mem√≥ria partilhada!"));
 			_tprintf(TEXT("\n[MAPA] Mapa atualizado com sucesso!\n"));
 
 			SetEvent(dados->atualizaMap);
@@ -720,9 +650,9 @@ boolean adicionaPassageiro(DADOS* dados, PASSAGEIRO novo) {
 
 	dados->mapa[tamanhoMapa * dados->info->passageiros[dados->info->nPassageiros-1].Y + dados->info->passageiros[dados->info->nPassageiros-1].Y + dados->info->passageiros[dados->info->nPassageiros-1].X].caracter = (char)dados->info->passageiros[dados->info->nPassageiros-1].id_mapa;
 	CopyMemory(dados->sharedMapa, dados->mapa, sizeof(dados->mapa));
-	ptr_log((TCHAR*)TEXT("CenTaxi envia Mapa para MapInfo por memÛria partilhada!"));
+	ptr_log((TCHAR*)TEXT("CenTaxi envia Mapa para MapInfo por mem√≥ria partilhada!"));
 	CopyMemory(sharedInfo, dados->info, sizeof(INFO));
-	ptr_log((TCHAR*)TEXT("CenTaxi envia Info para MapInfo por memÛria partilhada!"));
+	ptr_log((TCHAR*)TEXT("CenTaxi envia Info para MapInfo por mem√≥ria partilhada!"));
 	_tprintf(TEXT("\n[MAPA] Mapa atualizado com sucesso!\n"));
 
 	SetEvent(dados->atualizaMap);
@@ -746,9 +676,9 @@ boolean removePassageiro(DADOS* dados, PASSAGEIRO novo) {
 
 			eliminaIdMapa(dados, novo.id_mapa);
 			CopyMemory(dados->sharedMapa, dados->mapa, sizeof(dados->mapa));
-			ptr_log((TCHAR*)TEXT("CenTaxi envia Mapa para MapInfo por memÛria partilhada!"));
+			ptr_log((TCHAR*)TEXT("CenTaxi envia Mapa para MapInfo por mem√≥ria partilhada!"));
 			CopyMemory(sharedInfo, dados->info, sizeof(INFO));
-			ptr_log((TCHAR*)TEXT("CenTaxi envia Info para MapInfo por memÛria partilhada!"));
+			ptr_log((TCHAR*)TEXT("CenTaxi envia Info para MapInfo por mem√≥ria partilhada!"));
 			_tprintf(TEXT("\n[MAPA] Mapa atualizado com sucesso!\n"));
 
 			SetEvent(dados->atualizaMap);
@@ -791,7 +721,7 @@ void transporteAceite(DADOS* dados) {
 
 void enviaTaxi(DADOS* dados, TAXI* taxi) {
 	CopyMemory(dados->sharedTaxi, taxi, sizeof(TAXI));
-	ptr_log((TCHAR*)TEXT("CenTaxi envia Taxi para ConTaxi por memÛria partilhada!"));
+	ptr_log((TCHAR*)TEXT("CenTaxi envia Taxi para ConTaxi por mem√≥ria partilhada!"));
 	SetEvent(dados->infoAdmin);
 	Sleep(500);
 	ResetEvent(dados->infoAdmin);
@@ -909,7 +839,7 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 		}
 		//EXPULSAR TAXI
 		else if (!_tcscmp(op, TEXT("expulsar"))) {
-			_tprintf(_T("\n Matricula do T·xi: "));
+			_tprintf(_T("\n Matricula do T√°xi: "));
 			_fgetts(matr, sizeof(matr), stdin);
 			matr[_tcslen(matr) - 1] = '\0';
 			expulsarTaxi(dados, matr);
@@ -922,20 +852,20 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 		else if (!_tcscmp(op, TEXT("listarP"))) {
 			listarPassageiros(dados);
 		}
-		//PAUSAR/RECOMECAR ACEITA«√O DE TAXIS
+		//PAUSAR/RECOMECAR ACEITA√á√ÉO DE TAXIS
 		else if (!_tcscmp(op, TEXT("aceitacaoT"))) {
 			if (dados->aceitacaoT) {
 				dados->aceitacaoT = 0;
-				_tprintf(_T("\n[COMANDO] Pausar aceitaÁ„o de Taxis"));
+				_tprintf(_T("\n[COMANDO] Pausar aceita√ß√£o de Taxis"));
 			}
 			else {
 				dados->aceitacaoT = 1;
-				_tprintf(_T("\n[COMANDO] RecomeÁar aceitaÁ„o de Taxis"));
+				_tprintf(_T("\n[COMANDO] Recome√ßar aceita√ß√£o de Taxis"));
 			}
 		}
-		//DEFINIR INTERVALO DE TEMPO DURANTE O QUAL AGUARDA MANIFESTA«OES DOS TAXIS
+		//DEFINIR INTERVALO DE TEMPO DURANTE O QUAL AGUARDA MANIFESTA√áOES DOS TAXIS
 		else if (!_tcscmp(op, TEXT("manifestacoes"))) {
-			_tprintf(_T("\n[COMANDO] Intervalo de tempo durante o qual aguarda manifestaÁıes (em segundos): "));
+			_tprintf(_T("\n[COMANDO] Intervalo de tempo durante o qual aguarda manifesta√ß√µes (em segundos): "));
 			_tscanf_s(_T("%d"), &dados->esperaManifestacoes);
 			if (dados->esperaManifestacoes <= 0)
 				dados->esperaManifestacoes = TempoManifestacoes;
@@ -970,7 +900,7 @@ DWORD WINAPI ThreadNovoTaxi(LPVOID param) {
 		WaitForSingleObject(dados->hMutexDados, INFINITE);
 
 		CopyMemory(&novo, dados->sharedTaxi, sizeof(TAXI));
-		ptr_log((TCHAR*)TEXT("CenTaxi recebe Taxi do ConTaxi por memÛria partilhada!"));
+		ptr_log((TCHAR*)TEXT("CenTaxi recebe Taxi do ConTaxi por mem√≥ria partilhada!"));
 		if (adicionaTaxi(dados, novo)) {
 			_tprintf(TEXT("Novo Taxi: %s\n"), dados->info->taxis[dados->info->nTaxis - 1].matricula);
 			CopyMemory(dados->sharedTaxi, &dados->info->taxis[dados->info->nTaxis - 1], sizeof(TAXI));
@@ -983,7 +913,7 @@ DWORD WINAPI ThreadNovoTaxi(LPVOID param) {
 			novo.terminar = 1;
 			CopyMemory(dados->sharedTaxi, &novo, sizeof(TAXI));
 		}
-		ptr_log((TCHAR*)TEXT("CenTaxi envia Taxi para ConTaxi por memÛria partilhada!"));
+		ptr_log((TCHAR*)TEXT("CenTaxi envia Taxi para ConTaxi por mem√≥ria partilhada!"));
 		SetEvent(dados->respostaAdmin);
 		Sleep(500);
 		ResetEvent(dados->respostaAdmin);
@@ -998,7 +928,7 @@ DWORD WINAPI ThreadNovoTaxi(LPVOID param) {
 			}
 			ptr_register((TCHAR*)PIPE, 8);
 			if (!ConnectNamedPipe(pipeT[numPipes], NULL)) {
-				_tprintf(TEXT("[ERRO] LigaÁ„o ao T·xi! %d (ConnectNamedPipe\n"), GetLastError());
+				_tprintf(TEXT("[ERRO] Liga√ß√£o ao T√°xi! %d (ConnectNamedPipe\n"), GetLastError());
 				return 0;
 			}
 			numPipes++; 
@@ -1028,7 +958,7 @@ DWORD WINAPI ThreadSaiuTaxi(LPVOID param) {
 		CopyMemory(&novo, dados->sharedTaxi, sizeof(TAXI));
 		_stprintf_s(aux, TAM, TEXT("Taxi %s saiu!"), novo.matricula);
 		ptr_log(aux);
-		ptr_log((TCHAR*)TEXT("CenTaxi recebe Taxi do ConTaxi por memÛria partilhada!"));
+		ptr_log((TCHAR*)TEXT("CenTaxi recebe Taxi do ConTaxi por mem√≥ria partilhada!"));
 		removeTaxi(dados, novo);
 
 		ReleaseMutex(dados->hMutexDados);
@@ -1060,7 +990,7 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 		WaitForSingleObject(dados->hMutexDados, INFINITE);
 
 		CopyMemory(&novo, dados->sharedTaxi, sizeof(TAXI));
-		ptr_log((TCHAR*)TEXT("CenTaxi recebe Taxi do ConTaxi por memÛria partilhada!"));
+		ptr_log((TCHAR*)TEXT("CenTaxi recebe Taxi do ConTaxi por mem√≥ria partilhada!"));
 		for (int i = 0; i < dados->info->nTaxis; i++)
 			if (!_tcscmp(novo.matricula, dados->info->taxis[i].matricula)) {
 				dados->info->taxis[i] = novo;
@@ -1081,7 +1011,7 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 							ptr_log((TCHAR*)aux);
 							dados->info->taxis[i].Xfinal = dados->info->passageiros[j].Xfinal;
 							dados->info->taxis[i].Yfinal = dados->info->passageiros[j].Yfinal;
-							//AVISA O T¡XI
+							//AVISA O T√ÅXI
 							enviaTaxi(dados, &dados->info->taxis[i]);
 							Sleep(1000);
 							VALIDO = 1;
@@ -1103,7 +1033,7 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 							dados->info->taxis[i].disponivel = 1;
 							dados->info->taxis[i].Xfinal = 0;
 							dados->info->taxis[i].Yfinal = 0;
-							//AVISA O T¡XI
+							//AVISA O T√ÅXI
 							enviaTaxi(dados, &dados->info->taxis[i]);
 							Sleep(1000);
 							VALIDO = 1;
@@ -1125,9 +1055,9 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 				}
 			}
 		CopyMemory(dados->sharedMapa, dados->mapa, sizeof(dados->mapa));
-		ptr_log((TCHAR*)TEXT("CenTaxi envia Mapa para MapInfo por memÛria partilhada!")); 
+		ptr_log((TCHAR*)TEXT("CenTaxi envia Mapa para MapInfo por mem√≥ria partilhada!")); 
 		CopyMemory(sharedInfo, dados->info, sizeof(INFO));
-		ptr_log((TCHAR*)TEXT("CenTaxi envia Info para MapInfo por memÛria partilhada!"));
+		ptr_log((TCHAR*)TEXT("CenTaxi envia Info para MapInfo por mem√≥ria partilhada!"));
 		_tprintf(TEXT("\n[MAPA] Mapa atualizado com sucesso!\n"));
 
 		ReleaseMutex(dados->hMutexDados);
@@ -1156,7 +1086,7 @@ DWORD WINAPI ThreadNovoPassageiro(LPVOID param) {
 	}
 	ptr_register((TCHAR*)PIPE_NAME, 8);
 	if (!ConnectNamedPipe(hPipe, NULL)) {
-		_tprintf(TEXT("[ERRO] LigaÁ„o ao leitor! %d (ConnectNamedPipe\n"), GetLastError());
+		_tprintf(TEXT("[ERRO] Liga√ß√£o ao leitor! %d (ConnectNamedPipe\n"), GetLastError());
 		return 0;
 	}
 

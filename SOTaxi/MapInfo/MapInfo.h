@@ -73,4 +73,5 @@ INFO* sharedInfo = NULL;
 HANDLE atualizaMap;
 
 void recebeMapa(DADOS* dados);
+void inicializaVariaveis();
 DWORD WINAPI ThreadAtualizaMapa(LPVOID param);
