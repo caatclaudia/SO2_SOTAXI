@@ -17,10 +17,6 @@
 #define IDB_TAXI_OCUPADO                131
 #define IDB_PESSOA_COM                  132
 #define IDB_PESSOA_SEM                  133
-#define IDB_TAXI_LIVRE1                 136
-#define IDB_TAXI_OCUPADO1               137
-#define IDB_PESSOA_COM1                 138
-#define IDB_PESSOA_SEM1                 139
 #define IDD_CONF_TAXI_O                 141
 #define IDD_CONF_PESS_S                 142
 #define IDD_CONF_PESS_C                 143
