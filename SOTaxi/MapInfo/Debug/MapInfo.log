@@ -1,2 +1,4 @@
 ﻿  MapInfo.cpp
+C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\MapInfo\MapInfo.cpp(139,6): warning C4101: 'mWith': unreferenced local variable
+C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\MapInfo\MapInfo.cpp(139,13): warning C4101: 'mHeight': unreferenced local variable
   MapInfo.vcxproj -> C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Debug\MapInfo.exe
