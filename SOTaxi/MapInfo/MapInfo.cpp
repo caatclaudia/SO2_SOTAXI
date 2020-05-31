@@ -7,10 +7,16 @@
 HANDLE hThreadAtualizaMapa;
 DADOS dados;
 INFO info;
+int MODIFICOU = 0;
+TCHAR str[256] = TEXT(" ");
 
 void(*ptr_register)(TCHAR*, int);
 
 LRESULT CALLBACK TrataEventos(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK TrataConfTaxiL(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK TrataConfTaxiO(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK TrataConfPessoaS(HWND, UINT, WPARAM, LPARAM);
+LRESULT CALLBACK TrataConfPessoaC(HWND, UINT, WPARAM, LPARAM);
 
 TCHAR szProgName[] = TEXT("MapInfo");
 
@@ -79,7 +85,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 
 	wcApp.hCursor = LoadCursor(NULL, IDC_ARROW);
 
-	wcApp.lpszMenuName = NULL;
+	wcApp.lpszMenuName = MAKEINTRESOURCE(IDC_MAPINFO);
 
 	wcApp.cbClsExtra = 0;
 	wcApp.cbWndExtra = 0;
@@ -242,14 +248,68 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		EndPaint(hWnd, &ps);
 		break;
 	}
+	case  WM_COMMAND: {
+		hdc = GetDC(hWnd);
+		switch (LOWORD(wParam)) {
+		case ID_CONFIGURAR_TAXI_L: {
+			DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_CONF_TAXI_L), hWnd, (DLGPROC)TrataConfTaxiL);
+			if (MODIFICOU) {
+				hdcTaxiLivre = CreateCompatibleDC(hdc);
+				hTaxiLivre = (HBITMAP)LoadImage(GetModuleHandle(NULL), str, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+				//SE CONSEGUIR ABRIR TEM DE SER GUARDADO NO REGISTRY
+				if (hTaxiLivre == NULL)
+					hTaxiLivre = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_TAXI_LIVRE));
+				SelectObject(hdcTaxiLivre, hTaxiLivre);
+			}
+			break;
+		}
+		case ID_CONFIGURAR_TAXI_O: {
+			DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_CONF_TAXI_O), hWnd, (DLGPROC)TrataConfTaxiO);
+			if (MODIFICOU) {
+				hdcTaxiOcupado = CreateCompatibleDC(hdc);
+				hTaxiOcupado = (HBITMAP)LoadImage(GetModuleHandle(NULL), str, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+				//SE CONSEGUIR ABRIR TEM DE SER GUARDADO NO REGISTRY
+				if (hTaxiOcupado == NULL)
+					hTaxiOcupado = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_TAXI_OCUPADO));
+				SelectObject(hdcTaxiOcupado, hTaxiOcupado);
+			}
+			break;
+		}
+		case ID_CONFIGURAR_PESSOA_S: {
+			DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_CONF_PESS_S), hWnd, (DLGPROC)TrataConfPessoaS);
+			if (MODIFICOU) {
+				hdcPessoaSemTaxi = CreateCompatibleDC(hdc);
+				hPessoaSemTaxi = (HBITMAP)LoadImage(GetModuleHandle(NULL), str, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+				//SE CONSEGUIR ABRIR TEM DE SER GUARDADO NO REGISTRY
+				if (hPessoaSemTaxi == NULL)
+					hPessoaSemTaxi = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_PESSOA_SEM));
+				SelectObject(hdcPessoaSemTaxi, hPessoaSemTaxi);
+			}
+			break;
+		}
+		case ID_CONFIGURAR_PESSOA_C: {
+			DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_CONF_PESS_C), hWnd, (DLGPROC)TrataConfPessoaC);
+			if (MODIFICOU) {
+				hdcPessoaComTaxi = CreateCompatibleDC(hdc);
+				hPessoaComTaxi = (HBITMAP)LoadImage(GetModuleHandle(NULL), str, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
+				//SE CONSEGUIR ABRIR TEM DE SER GUARDADO NO REGISTRY
+				if (hPessoaComTaxi == NULL)
+					hPessoaComTaxi = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_PESSOA_COM));
+				SelectObject(hdcPessoaComTaxi, hPessoaComTaxi);
+			}
+			break;
+		}
+		}
+		MODIFICOU = 0;
+		ReleaseDC(hWnd, hdc);
+		break;
+	}
 	case WM_CLOSE: {
 		int value = MessageBox(hWnd, TEXT("Tem a certeza que deseja sair?"), TEXT("Confirmação"), MB_ICONQUESTION | MB_YESNO);
-
 		if (value == IDYES)
 		{
 			DestroyWindow(hWnd);
 		}
-
 		break;
 	}
 	case WM_DESTROY: // Destruir a janela e terminar o programa
@@ -257,11 +317,98 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		PostQuitMessage(0);
 		break;
 	default:
-
 		return DefWindowProc(hWnd, messg, wParam, lParam);
 		break;
 	}
 	return(0);
+}
+
+LRESULT CALLBACK TrataConfTaxiL(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam) {
+
+	switch (messg) {
+	case WM_CLOSE:
+		EndDialog(hWnd, 0);
+		return true;
+	case WM_COMMAND:
+		switch (LOWORD(wParam)) {
+		case IDC_CANCEL:
+			EndDialog(hWnd, 0);
+			return true;
+		case IDC_OK:
+			GetDlgItemText(hWnd, IDC_NOME_TAXI_L, str, 256);
+			MessageBox(hWnd, str, TEXT("Conteudo da Caixa de Texto "), MB_OK);
+			MODIFICOU = 1;
+			EndDialog(hWnd, 0);
+			return true;
+		}
+	}
+	return false;
+}
+
+LRESULT CALLBACK TrataConfTaxiO(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam) {
+
+	switch (messg) {
+	case WM_CLOSE:
+		EndDialog(hWnd, 0);
+		return true;
+	case WM_COMMAND:
+		switch (LOWORD(wParam)) {
+		case IDC_CANCEL:
+			EndDialog(hWnd, 0);
+			return true;
+		case IDC_OK:
+			GetDlgItemText(hWnd, IDC_NOME_TAXI_O, str, 256);
+			MessageBox(hWnd, str, TEXT("Conteudo da Caixa de Texto "), MB_OK);
+			MODIFICOU = 1;
+			EndDialog(hWnd, 0);
+			return true;
+		}
+	}
+	return false;
+}
+
+LRESULT CALLBACK TrataConfPessoaS(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam) {
+
+	switch (messg) {
+	case WM_CLOSE:
+		EndDialog(hWnd, 0);
+		return true;
+	case WM_COMMAND:
+		switch (LOWORD(wParam)) {
+		case IDC_CANCEL:
+			EndDialog(hWnd, 0);
+			return true;
+		case IDC_OK:
+			GetDlgItemText(hWnd, IDC_NOME_PESS_S, str, 256);
+			MessageBox(hWnd, str, TEXT("Conteudo da Caixa de Texto "), MB_OK);
+			MODIFICOU = 1;
+			EndDialog(hWnd, 0);
+			return true;
+		}
+	}
+	return false;
+}
+
+LRESULT CALLBACK TrataConfPessoaC(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam) {
+
+	switch (messg) {
+	case WM_CLOSE:
+		EndDialog(hWnd, 0);
+		return true;
+	case WM_COMMAND:
+		switch (LOWORD(wParam)) {
+		case IDC_CANCEL:
+			EndDialog(hWnd, 0);
+			return true;
+		case IDC_OK:
+			GetDlgItemText(hWnd, IDC_NOME_PESS_C, str, 256);
+			MessageBox(hWnd, str, TEXT("Conteudo da Caixa de Texto "), MB_OK);
+			MODIFICOU = 1;
+			EndDialog(hWnd, 0);
+			return true;
+		}
+	}
+	return false;
 }
 
 void recebeMapa(DADOS* dados) {
