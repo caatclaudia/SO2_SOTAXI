@@ -323,6 +323,18 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 			}
 			break;
 		}
+		case IDM_ABOUT: {
+			MessageBox(hWnd, TEXT("Este trabalho é realizado por Cláudia Tavares - 2017009310\nNo âmbito de Sistemas Operativos II - 2019/2020"), TEXT("About"), MB_ICONINFORMATION | MB_OK);
+			break;
+		}
+		case IDM_EXIT: {
+			int value = MessageBox(hWnd, TEXT("Tem a certeza que deseja sair?"), TEXT("Confirmação"), MB_ICONQUESTION | MB_YESNO);
+			if (value == IDYES)
+			{
+				DestroyWindow(hWnd);
+			}
+			break;
+		}
 		}
 		MODIFICOU = 0;
 		ReleaseDC(hWnd, hdc);
