@@ -161,10 +161,14 @@
   <ItemGroup>
     <Image Include="MapInfo.ico" />
     <Image Include="pessoa_comTaxi.bmp" />
+    <Image Include="pessoa_comTaxi1.bmp" />
     <Image Include="pessoa_semTaxi.bmp" />
+    <Image Include="pessoa_semTaxi1.bmp" />
     <Image Include="small.ico" />
     <Image Include="taxi_livre.bmp" />
+    <Image Include="taxi_livre1.bmp" />
     <Image Include="taxi_ocupado.bmp" />
+    <Image Include="taxi_ocupado1.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -14,11 +14,8 @@ LRESULT CALLBACK TrataEventos(HWND, UINT, WPARAM, LPARAM);
 
 TCHAR szProgName[] = TEXT("MapInfo");
 
-//Icons
-HBITMAP hTaxiLivre;
-HBITMAP hTaxiOcupado;
-HBITMAP hPessoaSemTaxi;
-HBITMAP hPessoaComTaxi;
+//Icones
+HBITMAP hTaxiLivre, hTaxiOcupado, hPessoaSemTaxi, hPessoaComTaxi;
 HDC hdcTaxiLivre, hdcTaxiOcupado, hdcPessoaSemTaxi, hdcPessoaComTaxi;
 
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nCmdShow) {
@@ -136,13 +133,33 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 	HFONT hFont;
 	TCHAR caract;
 	int xPos = 0, yPos = 0;
-	int mWith, mHeight;
 
 	hFont = CreateFont(12, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_OUTLINE_PRECIS,
 		CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH, TEXT("Impact"));
 
 	switch (messg) {
-	//SE FOR PASSAGEIRO MOSTRA DESTINO E (TAXI QUE O FOR BUSCAR)
+	case WM_CREATE:
+		hdc = GetDC(hWnd);
+
+		hdcTaxiLivre = CreateCompatibleDC(hdc);
+		hTaxiLivre = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_TAXI_LIVRE));
+		SelectObject(hdcTaxiLivre, hTaxiLivre);
+
+		hdcTaxiOcupado = CreateCompatibleDC(hdc);
+		hTaxiOcupado = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_TAXI_OCUPADO));
+		SelectObject(hdcTaxiOcupado, hTaxiOcupado);
+
+		hdcPessoaSemTaxi = CreateCompatibleDC(hdc);
+		hPessoaSemTaxi = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_PESSOA_SEM));
+		SelectObject(hdcPessoaSemTaxi, hPessoaSemTaxi);
+
+		hdcPessoaComTaxi = CreateCompatibleDC(hdc);
+		hPessoaComTaxi = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_PESSOA_COM));
+		SelectObject(hdcPessoaComTaxi, hPessoaComTaxi);
+
+		ReleaseDC(hWnd, hdc);
+		break;
+		//SE FOR PASSAGEIRO MOSTRA DESTINO E (TAXI QUE O FOR BUSCAR)
 	case WM_LBUTTONDOWN: {
 		xPos = GET_X_LPARAM(lParam);
 		yPos = GET_Y_LPARAM(lParam);
@@ -162,7 +179,7 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		}
 		break;
 	}
-	//SE FOR TAXI MOSTRA MATRICULA E (DESTINO)
+					   //SE FOR TAXI MOSTRA MATRICULA E (DESTINO)
 	case WM_MOUSEMOVE: {
 		xPos = GET_X_LPARAM(lParam);
 		yPos = GET_Y_LPARAM(lParam);
@@ -194,41 +211,25 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 			caract = shared[i].caracter;
 			rect.left = 80 + (8 * xPos);
 			rect.top = 15 + (9 * yPos);
-			if(caract=='_' || caract=='X')
+			if (caract == '_' || caract == 'X')
 				DrawText(hdc, &caract, 1, &rect, DT_SINGLELINE | DT_NOCLIP);
 			else {
 				int x = (xPos - 80) / 8;
 				int y = (yPos - 15) / 9;
 				if (isdigit(caract)) {
 					for (int i = 0; i < info.ntaxis; i++) {
-						if (info.taxis[i].X == x && info.taxis[i].Y == y && info.taxis[i].disponivel == 1) {
-							hdcTaxiLivre = CreateCompatibleDC(hdc);
-							hTaxiLivre = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP1));
-							SelectObject(hdcTaxiLivre, hTaxiLivre);
+						if (info.taxis[i].X == x && info.taxis[i].Y == y && info.taxis[i].disponivel == 1)
 							BitBlt(hdc, rect.left, rect.top, 100, 100, hdcTaxiLivre, 0, 0, SRCCOPY);
-						}
-						else if (info.taxis[i].X == x && info.taxis[i].Y == y) {
-							hdcTaxiOcupado = CreateCompatibleDC(hdc);
-							hTaxiOcupado = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP2));
-							SelectObject(hdcTaxiOcupado, hTaxiOcupado);
+						else if (info.taxis[i].X == x && info.taxis[i].Y == y)
 							BitBlt(hdc, rect.left, rect.top, 100, 100, hdcTaxiOcupado, 0, 0, SRCCOPY);
-						}
 					}
 				}
 				else {
 					for (int i = 0; i < info.npassageiros; i++) {
-						if (info.passageiros[i].X == x && info.passageiros[i].Y == y && info.passageiros[i].tempoEspera == -1) {
-							hdcPessoaSemTaxi = CreateCompatibleDC(hdc);
-							hPessoaSemTaxi = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP3));
-							SelectObject(hdcPessoaSemTaxi, hPessoaSemTaxi);
+						if (info.passageiros[i].X == x && info.passageiros[i].Y == y && info.passageiros[i].tempoEspera == -1)
 							BitBlt(hdc, rect.left, rect.top, 100, 100, hdcPessoaSemTaxi, 0, 0, SRCCOPY);
-						}
-						else if (info.passageiros[i].X == x && info.passageiros[i].Y == y) {
-							hdcPessoaComTaxi = CreateCompatibleDC(hdc);
-							hPessoaComTaxi = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_BITMAP4));
-							SelectObject(hdcPessoaComTaxi, hPessoaComTaxi);
+						else if (info.passageiros[i].X == x && info.passageiros[i].Y == y)
 							BitBlt(hdc, rect.left, rect.top, 100, 100, hdcPessoaComTaxi, 0, 0, SRCCOPY);
-						}
 					}
 				}
 			}

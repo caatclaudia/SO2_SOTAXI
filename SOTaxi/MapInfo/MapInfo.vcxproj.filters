@@ -57,5 +57,17 @@
     <Image Include="pessoa_semTaxi.bmp">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="taxi_livre1.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="taxi_ocupado1.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="pessoa_comTaxi1.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="pessoa_semTaxi1.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>
