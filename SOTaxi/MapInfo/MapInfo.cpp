@@ -27,8 +27,16 @@ LRESULT CALLBACK TrataConfPessoaC(HWND, UINT, WPARAM, LPARAM);
 TCHAR szProgName[] = TEXT("MapInfo");
 
 //Icones
-HBITMAP hTaxiLivre, hTaxiOcupado, hPessoaSemTaxi, hPessoaComTaxi;
-HDC hdcTaxiLivre, hdcTaxiOcupado, hdcPessoaSemTaxi, hdcPessoaComTaxi;
+HBITMAP hEdificio, hEstrada, hTaxiLivre, hTaxiOcupado, hPessoaSemTaxi, hPessoaComTaxi;
+HDC hdcEdificio, hdcEstrada, hdcTaxiLivre, hdcTaxiOcupado, hdcPessoaSemTaxi, hdcPessoaComTaxi;
+
+#define WND_WIDTH 1000
+#define WND_HEIGHT 600
+
+// "Double Buffering"
+
+HDC memDc = NULL;
+HBITMAP fundo;
 
 int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nCmdShow) {
 	dados.terminar = 0;
@@ -107,8 +115,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
+		WND_WIDTH,
+		WND_HEIGHT,
 		(HWND)HWND_DESKTOP,
 		(HMENU)NULL,
 		(HINSTANCE)hInst,
@@ -142,7 +150,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrevInst, LPSTR lpCmdLine, int nC
 
 LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam) {
 	HDC hdc;
-	RECT rect;
+	RECT rect, area;
 	PAINTSTRUCT ps;
 	HFONT hFont;
 	TCHAR caract;
@@ -154,6 +162,14 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 	switch (messg) {
 	case WM_CREATE:
 		hdc = GetDC(hWnd);
+		
+		hEdificio = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_EDIFICIO));
+		hdcEdificio = CreateCompatibleDC(hdc);
+		SelectObject(hdcEdificio, hEdificio);
+
+		hEstrada = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_ESTRADA));
+		hdcEstrada = CreateCompatibleDC(hdc);
+		SelectObject(hdcEstrada, hEstrada);
 
 		hdcTaxiLivre = CreateCompatibleDC(hdc);
 		hTaxiLivre = (HBITMAP)LoadImage(GetModuleHandle(NULL), str_taxiLivre, IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE);
@@ -215,45 +231,55 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		break;
 	}
 	case WM_PAINT: {
-		hdc = BeginPaint(hWnd, &ps);
-		SetTextColor(hdc, RGB(0, 0, 0));
-		SelectObject(hdc, hFont);
-		SetBkMode(hdc, TRANSPARENT);
-		xPos = 0;
-		yPos = 0;
-		for (int i = 0; i < tamanhoMapa * tamanhoMapa; i++) {
-			caract = shared[i].caracter;
-			rect.left = 80 + (8 * xPos);
-			rect.top = 15 + (9 * yPos);
-			if (caract == '_' || caract == 'X')
-				DrawText(hdc, &caract, 1, &rect, DT_SINGLELINE | DT_NOCLIP);
-			else {
-				int x = (xPos - 80) / 8;
-				int y = (yPos - 15) / 9;
-				if (isdigit(caract)) {
-					for (int i = 0; i < info.ntaxis; i++) {
-						if (info.taxis[i].X == x && info.taxis[i].Y == y && info.taxis[i].disponivel == 1)
-							BitBlt(hdc, rect.left, rect.top, 100, 100, hdcTaxiLivre, 0, 0, SRCCOPY);
-						else if (info.taxis[i].X == x && info.taxis[i].Y == y)
-							BitBlt(hdc, rect.left, rect.top, 100, 100, hdcTaxiOcupado, 0, 0, SRCCOPY);
-					}
-				}
+			hdc = BeginPaint(hWnd, &ps);
+			SetTextColor(hdc, RGB(0, 0, 0));
+			SelectObject(hdc, hFont);
+			SetBkMode(hdc, TRANSPARENT);
+			xPos = 0;
+			yPos = 0;
+			GetClientRect(hWnd, &area);
+			if (memDc == NULL) {
+				memDc = CreateCompatibleDC(hdc);
+				fundo = CreateCompatibleBitmap(hdc, area.right, area.bottom);
+				SelectObject(memDc, fundo);
+			}
+			FillRect(memDc, &area, (HBRUSH)(WHITE_BRUSH));
+			for (int i = 0; i < tamanhoMapa * tamanhoMapa; i++) {
+				caract = shared[i].caracter;
+				rect.left = 80 + (8 * xPos);
+				rect.top = 15 + (9 * yPos);
+				if (caract == '_')
+					BitBlt(memDc, rect.left, rect.top, 100, 100, hdcEstrada, 0, 0, SRCCOPY);
+				else if(caract == 'X')
+					BitBlt(memDc, rect.left, rect.top, 100, 100, hdcEdificio, 0, 0, SRCCOPY);
 				else {
-					for (int i = 0; i < info.npassageiros; i++) {
-						if (info.passageiros[i].X == x && info.passageiros[i].Y == y && info.passageiros[i].tempoEspera == -1)
-							BitBlt(hdc, rect.left, rect.top, 100, 100, hdcPessoaSemTaxi, 0, 0, SRCCOPY);
-						else if (info.passageiros[i].X == x && info.passageiros[i].Y == y)
-							BitBlt(hdc, rect.left, rect.top, 100, 100, hdcPessoaComTaxi, 0, 0, SRCCOPY);
+					int x = (xPos - 80) / 8;
+					int y = (yPos - 15) / 9;
+					if (isdigit(caract)) {
+						for (int i = 0; i < info.ntaxis; i++) {
+							if (info.taxis[i].X == x && info.taxis[i].Y == y && info.taxis[i].disponivel == 1)
+								BitBlt(memDc, rect.left, rect.top, 100, 100, hdcTaxiLivre, 0, 0, SRCCOPY);
+							else if (info.taxis[i].X == x && info.taxis[i].Y == y)
+								BitBlt(memDc, rect.left, rect.top, 100, 100, hdcTaxiOcupado, 0, 0, SRCCOPY);
+						}
+					}
+					else {
+						for (int i = 0; i < info.npassageiros; i++) {
+							if (info.passageiros[i].X == x && info.passageiros[i].Y == y && info.passageiros[i].tempoEspera == -1)
+								BitBlt(memDc, rect.left, rect.top, 100, 100, hdcPessoaSemTaxi, 0, 0, SRCCOPY);
+							else if (info.passageiros[i].X == x && info.passageiros[i].Y == y)
+								BitBlt(memDc, rect.left, rect.top, 100, 100, hdcPessoaComTaxi, 0, 0, SRCCOPY);
+						}
 					}
 				}
+				xPos++;
+				if (xPos == (tamanhoMapa + 1)) {
+					yPos++;
+					xPos = 0;
+				}
 			}
-			xPos++;
-			if (xPos == (tamanhoMapa + 1)) {
-				yPos++;
-				xPos = 0;
-			}
-		}
-		EndPaint(hWnd, &ps);
+			BitBlt(hdc, 0, 0, area.right, area.bottom, memDc, 0, 0, SRCCOPY);
+			EndPaint(hWnd, &ps);
 		break;
 	}
 	case  WM_COMMAND: {

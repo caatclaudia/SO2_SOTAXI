@@ -69,5 +69,11 @@
     <Image Include="pessoa_semTaxi1.bmp">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="edificio.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="estrada.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

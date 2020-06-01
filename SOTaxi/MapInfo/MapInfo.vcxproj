@@ -159,6 +159,8 @@
     <ResourceCompile Include="MapInfo.rc" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="edificio.bmp" />
+    <Image Include="estrada.bmp" />
     <Image Include="MapInfo.ico" />
     <Image Include="pessoa_comTaxi.bmp" />
     <Image Include="pessoa_comTaxi1.bmp" />
