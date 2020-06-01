@@ -921,7 +921,7 @@ DWORD WINAPI ThreadNovoTaxi(LPVOID param) {
 		if (!novo.terminar) {
 			TCHAR PIPE[200];
 			_stprintf_s(PIPE, sizeof(TEXT("\\\\.\\pipe\\taxi%d")), TEXT("\\\\.\\pipe\\taxi%d"), dados->info->taxis[dados->info->nTaxis - 1].id_mapa);
-			pipeT[numPipes] = CreateNamedPipe(PIPE, PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED, PIPE_WAIT | PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE, 1, sizeof(TAXI), sizeof(TAXI), 1000, NULL);
+			pipeT[numPipes] = CreateNamedPipe(PIPE, PIPE_ACCESS_OUTBOUND, PIPE_WAIT | PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE, 1, sizeof(TAXI), sizeof(TAXI), 1000, NULL);
 			if (pipeT[numPipes] == INVALID_HANDLE_VALUE) {
 				_tprintf(TEXT("[ERRO] Criar Named Pipe! %d (CreateNamedPipe)"), GetLastError());
 				return 0;

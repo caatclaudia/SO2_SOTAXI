@@ -40,7 +40,7 @@ int _tmain() {
 			return 0;
 		}
 		_tprintf(TEXT("[ConTaxi] Ligação ao pipe da Central...\n"));
-		pipeT = CreateFile(PIPE_NAME, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		pipeT = CreateFile(PIPE_NAME, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 		if (pipeT == NULL) {
 			_tprintf(TEXT("[ERRO] Ligar ao pipe '%s'! (CreateFile)\n"), PIPE_NAME);
 			return 0;
