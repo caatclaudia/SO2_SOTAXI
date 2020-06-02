@@ -498,17 +498,17 @@ void novoP(DADOS* dados) {
 	novo.matriculaTaxi[6] = '\0';
 
 	if (adicionaPassageiro(dados, novo))
-		transportePassageiro(dados);
+		transportePassageiro(dados, (dados->info->nPassageiros-1));
 
 	return;
 }
 
-void transportePassageiro(DADOS* dados) {
+void transportePassageiro(DADOS* dados, int indice) {
 	TCHAR aux[TAM] = TEXT("\n");
 
 	WaitForSingleObject(sem_vazios, INFINITE);
 	WaitForSingleObject(sem_mutex, INFINITE);
-	BufferMemoria->Passageiros[BufferMemoria->NextIn] = dados->info->passageiros[dados->info->nPassageiros - 1];
+	BufferMemoria->Passageiros[BufferMemoria->NextIn] = dados->info->passageiros[indice];
 	BufferMemoria->NextIn = (BufferMemoria->NextIn + 1) % MAX_PASS;
 	ptr_log((TCHAR*)TEXT("CenTaxi coloca passageiro em Buffer Circular!"));
 	ReleaseSemaphore(sem_mutex, 1, NULL);
@@ -541,18 +541,18 @@ void transportePassageiro(DADOS* dados) {
 		do {
 			valor = rand() % dados->info->nTaxis;
 		} while (!dados->info->taxis[valor].interessado);
-		_stprintf_s(aux, TAM, TEXT("Taxi %s vai transportar %s!"), dados->info->taxis[valor].matricula, dados->info->passageiros[dados->info->nPassageiros - 1].id);
+		_stprintf_s(aux, TAM, TEXT("Taxi %s vai transportar %s!"), dados->info->taxis[valor].matricula, dados->info->passageiros[indice].id);
 		ptr_log(aux);
 		ptr_log((TCHAR*)aux);
-		dados->info->taxis[valor].Xfinal = dados->info->passageiros[dados->info->nPassageiros - 1].X;
-		dados->info->taxis[valor].Yfinal = dados->info->passageiros[dados->info->nPassageiros - 1].Y;
+		dados->info->taxis[valor].Xfinal = dados->info->passageiros[indice].X;
+		dados->info->taxis[valor].Yfinal = dados->info->passageiros[indice].Y;
 		dados->info->taxis[valor].disponivel = 0;
 		for (int i = 0; i < 6; i++)
-			dados->info->passageiros[dados->info->nPassageiros - 1].matriculaTaxi[i] = dados->info->taxis[valor].matricula[i];
+			dados->info->passageiros[indice].matriculaTaxi[i] = dados->info->taxis[valor].matricula[i];
 
 		//CALCULA TEMPO ESTIMADO DE ESPERA
-		dados->info->passageiros[dados->info->nPassageiros - 1].tempoEspera = (int)(calculaDistancia(dados->info->taxis[valor].X, dados->info->taxis[valor].Y, dados->info->passageiros[dados->info->nPassageiros - 1].X, dados->info->passageiros[dados->info->nPassageiros - 1].Y) / dados->info->taxis[valor].velocidade);
-		_tprintf(_T("\n[PASS]  O tempo estimado de espera para este passageiro é %d s"), dados->info->passageiros[dados->info->nPassageiros - 1].tempoEspera);
+		dados->info->passageiros[indice].tempoEspera = (int)(calculaDistancia(dados->info->taxis[valor].X, dados->info->taxis[valor].Y, dados->info->passageiros[indice].X, dados->info->passageiros[indice].Y) / dados->info->taxis[valor].velocidade);
+		_tprintf(_T("\n[PASS]  O tempo estimado de espera para este passageiro é %d s"), dados->info->passageiros[indice].tempoEspera);
 
 		WriteFile(pipeT[dados->info->taxis[valor].id_mapa], (LPVOID)&dados->info->taxis[valor], sizeof(TAXI), &n, NULL);
 		ptr_log((TCHAR*)TEXT("CenTaxi envia Taxi por Named Pipe!"));
@@ -562,7 +562,7 @@ void transportePassageiro(DADOS* dados) {
 
 	}
 	else
-		_tprintf(_T("\n[PASS]  Não houve interesse de nenhum Taxi em fazer este transporte!"));
+		_tprintf(_T("\n[PASS]  Não houve interesse de nenhum Taxi o transporte de '%s'!"), dados->info->passageiros[indice].id);
 	transporteAceite(dados);
 
 	return;
@@ -974,6 +974,7 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 	TAXI novo;
 	int VALIDO;
 	DWORD n;
+	int num = 10;
 
 	dados->atualizaMap = CreateEvent(NULL, TRUE, FALSE, EVENT_ATUALIZAMAP);
 	if (dados->atualizaMap == NULL) {
@@ -982,6 +983,7 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 	}
 
 	while (1) {
+		num--;
 		TCHAR aux[TAM] = TEXT("\n");
 		WaitForSingleObject(dados->movimentoTaxi, INFINITE);
 
@@ -1066,6 +1068,21 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 		Sleep(500);
 		ResetEvent(dados->atualizaMap);
 
+		if (num == 0) {
+			for (int i = 0; i < dados->info->nPassageiros; i++) {
+				if (dados->info->passageiros[i].tempoEspera == -1) {
+					transportePassageiro(dados, i);
+
+					WriteFile(hPipe, (LPVOID)&dados->info->passageiros[dados->info->nPassageiros - 1], sizeof(PASSAGEIRO), &n, NULL);
+					ptr_log((TCHAR*)TEXT("CenTaxi envia Passageiro por Named Pipe!"));
+					SetEvent(dados->respostaPass);
+					Sleep(500);
+					ResetEvent(dados->respostaPass);
+				}
+			}
+			num = 10;
+		}
+
 		Sleep(500);
 	}
 
@@ -1108,7 +1125,7 @@ DWORD WINAPI ThreadNovoPassageiro(LPVOID param) {
 			ResetEvent(dados->respostaPass);
 		}
 		else {
-			transportePassageiro(dados);
+			transportePassageiro(dados, (dados->info->nPassageiros - 1));
 
 			WriteFile(hPipe, (LPVOID)&dados->info->passageiros[dados->info->nPassageiros - 1], sizeof(PASSAGEIRO), &n, NULL);
 			ptr_log((TCHAR*)TEXT("CenTaxi envia Passageiro por Named Pipe!"));

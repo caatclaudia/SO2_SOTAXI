@@ -616,13 +616,11 @@ DWORD WINAPI ThreadTransporte(LPVOID param) {
 		_tprintf(_T("\n[PASS] Ha um passageiro a espera em (%d,%d)!"), novo.X, novo.Y);
 
 		//TEM INTERESSE
-		if (dados->taxi->interessado || dados->taxi->autoResposta) {
-			if (calculaDistancia(novo.X, novo.Y, dados->taxi->X, dados->taxi->Y) <= (int)NQ) {
-				dados->taxi->interessado = 1;
-				_tprintf(_T("\n[PASS] Tenho interesse neste transporte!"));
+		if (dados->taxi->interessado || (dados->taxi->autoResposta && calculaDistancia(novo.X, novo.Y, dados->taxi->X, dados->taxi->Y) <= (int)NQ)) {
+			dados->taxi->interessado = 1;
+			_tprintf(_T("\n[PASS] Tenho interesse neste transporte!"));
 
-				comunicacaoParaCentral(dados);
-			}
+			comunicacaoParaCentral(dados);
 		}
 		ReleaseMutex(hMutex);
 	}

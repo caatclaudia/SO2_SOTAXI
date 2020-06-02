@@ -3,7 +3,7 @@
 void(*ptr_register)(TCHAR*, int);
 
 int _tmain() {
-	HANDLE hThreadComandos, hThreadMovimentaPassageiro;
+	HANDLE hThreadComandos, hThreadMovimentaPassageiro, hThreadRespostaTransporte;
 	DADOS dados;
 	dados.nPassageiros = 0;
 	dados.terminar = 0;
@@ -91,12 +91,18 @@ int _tmain() {
 		_tprintf(TEXT("\nErro ao lançar Thread!\n"));
 		return 0;
 	}
+	hThreadRespostaTransporte = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadRespostaTransporte, (LPVOID)&dados, 0, NULL);
+	if (hThreadRespostaTransporte == NULL) {
+		_tprintf(TEXT("\n[ERRO] Erro ao lançar Thread!\n"));
+		return 0;
+	}
 	ReleaseMutex(dados.hMutex);
 
-	HANDLE ghEvents[2];
+	HANDLE ghEvents[3];
 	ghEvents[0] = hThreadComandos;
 	ghEvents[1] = hThreadMovimentaPassageiro;
-	WaitForMultipleObjects(2, ghEvents, FALSE, INFINITE);
+	ghEvents[2] = hThreadRespostaTransporte;
+	WaitForMultipleObjects(3, ghEvents, FALSE, INFINITE);
 
 	_tprintf(TEXT("\nPassageiros vão sair!\n"));
 	_tprintf(TEXT("Prima uma tecla...\n"));
@@ -166,18 +172,6 @@ void novoPassageiro(DADOS* dados) {
 	Sleep(500);
 	ResetEvent(novoPass);
 	dados->passageiros[dados->nPassageiros] = novo;
-
-	WaitForSingleObject(respostaPass, INFINITE);
-
-	ReadFile(hPipe, (LPVOID)&dados->passageiros[dados->nPassageiros], sizeof(PASSAGEIRO), &n, NULL);
-	if (dados->passageiros[dados->nPassageiros].terminar)
-		_tprintf(_T("\n[NOVO] Passageiro terá de aguardar!"));
-	else {
-		if (dados->passageiros[dados->nPassageiros].tempoEspera != -1)
-			_tprintf(_T("\n[NOVO]  Tempo estimado de espera pelo Taxi '%s' é %d s"), dados->passageiros[dados->nPassageiros].matriculaTaxi, dados->passageiros[dados->nPassageiros].tempoEspera);
-		else
-			_tprintf(_T("\n[NOVO]  Não houve interesse neste transporte!"));
-	}
 
 	return;
 }
@@ -266,6 +260,40 @@ DWORD WINAPI ThreadMovimentoPassageiro(LPVOID param) {	//ADMIN MANDA PASSAGEIRO
 			//REMOVE PASSAGEIRO
 			removePassageiro(dados, dados->passageiros[num]);
 		}
+		ReleaseMutex(dados->hMutex);
+	}
+
+	ExitThread(0);
+}
+
+DWORD WINAPI ThreadRespostaTransporte(LPVOID param) {
+	DADOS* dados = ((DADOS*)param);
+	DWORD n;
+	PASSAGEIRO novo;
+
+	while (1) {
+		WaitForSingleObject(respostaPass, INFINITE);
+
+		if (dados->terminar)
+			return 0;
+
+		WaitForSingleObject(dados->hMutex, INFINITE);
+
+		ReadFile(hPipe, (LPVOID)&novo, sizeof(PASSAGEIRO), &n, NULL);
+		for (int i = 0; i < dados->nPassageiros; i++) {
+			if (!_tcscmp(dados->passageiros[i].id, novo.id)) {
+				dados->passageiros[i] = novo;
+				if (dados->passageiros[i].terminar)
+					_tprintf(_T("\n[NOVO] Passageiro '%s' terá de aguardar!"), dados->passageiros[i].id);
+				else {
+					if (dados->passageiros[i].tempoEspera != -1)
+						_tprintf(_T("\n[NOVO]  Tempo estimado de espera pelo Taxi '%s' é %d s"), dados->passageiros[i].matriculaTaxi, dados->passageiros[i].tempoEspera);
+					else
+						_tprintf(_T("\n[NOVO]  Não houve interesse no transporte de '%s'!"), dados->passageiros[i].id);
+				}
+			}
+		}
+		
 		ReleaseMutex(dados->hMutex);
 	}
 

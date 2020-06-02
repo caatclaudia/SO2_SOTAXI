@@ -149,7 +149,7 @@ void listarPassageiros(DADOS* dados);
 void verMapa(DADOS* dados);
 void leMapa(DADOS* dados);
 void novoP(DADOS* dados);
-void transportePassageiro(DADOS* dados);
+void transportePassageiro(DADOS* dados, int indice);
 boolean adicionaTaxi(DADOS* dados, TAXI novo);
 boolean removeTaxi(DADOS* dados, TAXI novo);
 boolean adicionaPassageiro(DADOS* dados, PASSAGEIRO novo);
