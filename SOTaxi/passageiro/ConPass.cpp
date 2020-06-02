@@ -213,7 +213,7 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 		else if (!_tcscmp(op, TEXT("listar"))) {
 			listarPassageiros(dados);
 		}
-		_tprintf(_T("\n\n"));
+		_tprintf(_T("\n"));
 		//ReleaseMutex(dados->hMutex);
 	} while (_tcscmp(op, TEXT("fim")));
 
