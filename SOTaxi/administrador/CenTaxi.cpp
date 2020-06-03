@@ -587,7 +587,7 @@ boolean adicionaTaxi(DADOS* dados, TAXI novo) {
 	ptr_log((TCHAR*)aux);
 
 	char buf;
-	buf = dados->info->taxis[dados->info->nTaxis].id_mapa + '0';
+	buf = dados->info->taxis[dados->info->nTaxis-1].id_mapa + '0';
 	dados->mapa[tamanhoMapa * novo.Y + novo.Y + novo.X].caracter = buf;
 
 	CopyMemory(dados->sharedMapa, dados->mapa, sizeof(dados->mapa));

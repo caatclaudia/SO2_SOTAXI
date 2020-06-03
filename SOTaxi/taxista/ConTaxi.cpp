@@ -174,9 +174,13 @@ void inicializaTaxi(DADOS* dados) {
 		num = 0;
 		_tprintf(_T("\n Matricula do Táxi: "));
 		_tscanf_s(_T("%s"), dados->taxi->matricula, sizeof(dados->taxi->matricula));
-		for (int i = 0; i < 6; i++)
-			if (isdigit(dados->taxi->matricula[i]))
-				num++;
+		if (_tcslen(dados->taxi->matricula) != 6)
+			num = 0;
+		else {
+			for (int i = 0; i < 6; i++)
+				if (isdigit(dados->taxi->matricula[i]))
+					num++;
+		}
 	} while (num != 4);
 	dados->taxi->matricula[6] = '\0';
 

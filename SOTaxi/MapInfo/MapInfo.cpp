@@ -159,6 +159,7 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 	hFont = CreateFont(12, 0, 0, 0, FW_DONTCARE, FALSE, FALSE, FALSE, DEFAULT_CHARSET, OUT_OUTLINE_PRECIS,
 		CLIP_DEFAULT_PRECIS, CLEARTYPE_QUALITY, VARIABLE_PITCH, TEXT("Impact"));
 
+	WaitForSingleObject(hMutex, INFINITE);
 	switch (messg) {
 	case WM_CREATE:
 		hdc = GetDC(hWnd);
@@ -245,7 +246,7 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 			}
 			FillRect(memDc, &area, (HBRUSH)(WHITE_BRUSH));
 			for (int i = 0; i < tamanhoMapa * tamanhoMapa; i++) {
-				caract = shared[i].caracter;
+				caract = dados.mapa[i].caracter;
 				rect.left = 80 + (8 * xPos);
 				rect.top = 15 + (9 * yPos);
 				if (caract == '_')
@@ -255,21 +256,17 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 				else {
 					int x = (xPos - 80) / 8;
 					int y = (yPos - 15) / 9;
-					if (isdigit(caract)) {
-						for (int i = 0; i < info.ntaxis; i++) {
-							if (info.taxis[i].X == x && info.taxis[i].Y == y && info.taxis[i].disponivel == 1)
-								BitBlt(memDc, rect.left, rect.top, 100, 100, hdcTaxiLivre, 0, 0, SRCCOPY);
-							else if (info.taxis[i].X == x && info.taxis[i].Y == y)
-								BitBlt(memDc, rect.left, rect.top, 100, 100, hdcTaxiOcupado, 0, 0, SRCCOPY);
-						}
+					for (int i = 0; i < info.ntaxis; i++) {
+						if (info.taxis[i].X == x && info.taxis[i].Y == y && info.taxis[i].disponivel == 1)
+							BitBlt(memDc, rect.left, rect.top, 100, 100, hdcTaxiLivre, 0, 0, SRCCOPY);
+						else if (info.taxis[i].X == x && info.taxis[i].Y == y)
+							BitBlt(memDc, rect.left, rect.top, 100, 100, hdcTaxiOcupado, 0, 0, SRCCOPY);
 					}
-					else {
-						for (int i = 0; i < info.npassageiros; i++) {
-							if (info.passageiros[i].X == x && info.passageiros[i].Y == y && info.passageiros[i].tempoEspera == -1)
-								BitBlt(memDc, rect.left, rect.top, 100, 100, hdcPessoaSemTaxi, 0, 0, SRCCOPY);
-							else if (info.passageiros[i].X == x && info.passageiros[i].Y == y)
-								BitBlt(memDc, rect.left, rect.top, 100, 100, hdcPessoaComTaxi, 0, 0, SRCCOPY);
-						}
+					for (int i = 0; i < info.npassageiros; i++) {
+						if (info.passageiros[i].X == x && info.passageiros[i].Y == y && info.passageiros[i].tempoEspera == -1)
+							BitBlt(memDc, rect.left, rect.top, 100, 100, hdcPessoaSemTaxi, 0, 0, SRCCOPY);
+						else if (info.passageiros[i].X == x && info.passageiros[i].Y == y)
+							BitBlt(memDc, rect.left, rect.top, 100, 100, hdcPessoaComTaxi, 0, 0, SRCCOPY);
 					}
 				}
 				xPos++;
@@ -382,6 +379,8 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		return DefWindowProc(hWnd, messg, wParam, lParam);
 		break;
 	}
+
+	ReleaseMutex(hMutex);
 	return(0);
 }
 
@@ -556,9 +555,13 @@ DWORD WINAPI ThreadAtualizaMapa(LPVOID param) {
 		if (dados->terminar)
 			return 0;
 
+		WaitForSingleObject(hMutex, INFINITE);
+
 		CopyMemory(dados->mapa, shared, sizeof(dados->mapa));
 
 		CopyMemory(&info, sharedInfo, sizeof(INFO));
+
+		ReleaseMutex(hMutex);
 
 		Sleep(3000);
 	}
