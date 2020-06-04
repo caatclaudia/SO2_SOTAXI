@@ -24,7 +24,6 @@ HANDLE hMutex;
 
 typedef struct {
 	MAPA* mapa;
-	int terminar;
 } DADOS;
 
 #define SHM_NAME TEXT("EspacoMapa")

@@ -648,7 +648,7 @@ boolean adicionaPassageiro(DADOS* dados, PASSAGEIRO novo) {
 	ptr_log((TCHAR*)aux);
 	deslocaPassageiroParaPorta(dados);
 
-	dados->mapa[tamanhoMapa * dados->info->passageiros[dados->info->nPassageiros-1].Y + dados->info->passageiros[dados->info->nPassageiros-1].Y + dados->info->passageiros[dados->info->nPassageiros-1].X].caracter = (char)dados->info->passageiros[dados->info->nPassageiros-1].id_mapa;
+	dados->mapa[tamanhoMapa * dados->info->passageiros[dados->info->nPassageiros-1].Y + dados->info->passageiros[dados->info->nPassageiros-1].Y + dados->info->passageiros[dados->info->nPassageiros-1].X].caracter = (char)dados->info->passageiros[dados->info->nPassageiros - 1].id_mapa;
 	CopyMemory(dados->sharedMapa, dados->mapa, sizeof(dados->mapa));
 	ptr_log((TCHAR*)TEXT("CenTaxi envia Mapa para MapInfo por memória partilhada!"));
 	CopyMemory(sharedInfo, dados->info, sizeof(INFO));
@@ -993,7 +993,7 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 
 		CopyMemory(&novo, dados->sharedTaxi, sizeof(TAXI));
 		ptr_log((TCHAR*)TEXT("CenTaxi recebe Taxi do ConTaxi por memória partilhada!"));
-		for (int i = 0; i < dados->info->nTaxis; i++)
+		for (int i = 0; i < dados->info->nTaxis; i++) {
 			if (!_tcscmp(novo.matricula, dados->info->taxis[i].matricula)) {
 				dados->info->taxis[i] = novo;
 				_tprintf(_T("\n[MOVIMENTO] Taxi %s -> (%d,%d)"), novo.matricula, novo.X, novo.Y);
@@ -1055,12 +1055,13 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 						}
 					}
 				}
+				CopyMemory(dados->sharedMapa, dados->mapa, sizeof(dados->mapa));
+				ptr_log((TCHAR*)TEXT("CenTaxi envia Mapa para MapInfo por memória partilhada!"));
+				CopyMemory(sharedInfo, dados->info, sizeof(INFO));
+				ptr_log((TCHAR*)TEXT("CenTaxi envia Info para MapInfo por memória partilhada!"));
+				_tprintf(TEXT("\n[MAPA] Mapa atualizado com sucesso!\n"));
 			}
-		CopyMemory(dados->sharedMapa, dados->mapa, sizeof(dados->mapa));
-		ptr_log((TCHAR*)TEXT("CenTaxi envia Mapa para MapInfo por memória partilhada!")); 
-		CopyMemory(sharedInfo, dados->info, sizeof(INFO));
-		ptr_log((TCHAR*)TEXT("CenTaxi envia Info para MapInfo por memória partilhada!"));
-		_tprintf(TEXT("\n[MAPA] Mapa atualizado com sucesso!\n"));
+		}
 
 		ReleaseMutex(dados->hMutexDados);
 
