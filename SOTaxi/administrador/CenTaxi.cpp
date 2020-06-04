@@ -590,6 +590,8 @@ boolean adicionaTaxi(DADOS* dados, TAXI novo) {
 	buf = dados->info->taxis[dados->info->nTaxis-1].id_mapa + '0';
 	dados->mapa[tamanhoMapa * novo.Y + novo.Y + novo.X].caracter = buf;
 
+	for (int i = 0; i < tamanhoMapa * tamanhoMapa; i++)
+		dados->sharedMapa[i].caracter = dados->mapa[i].caracter;
 	CopyMemory(dados->sharedMapa, dados->mapa, sizeof(dados->mapa));
 	ptr_log((TCHAR*)TEXT("CenTaxi envia Mapa para MapInfo por memória partilhada!"));
 	CopyMemory(sharedInfo, dados->info, sizeof(INFO));
@@ -618,6 +620,8 @@ boolean removeTaxi(DADOS* dados, TAXI novo) {
 			char buf;
 			buf = dados->info->taxis[i].id_mapa + '0';
 			eliminaIdMapa(dados, buf);
+			for (int i = 0; i < tamanhoMapa * tamanhoMapa; i++)
+				dados->sharedMapa[i].caracter = dados->mapa[i].caracter;
 			CopyMemory(dados->sharedMapa, dados->mapa, sizeof(dados->mapa));
 			ptr_log((TCHAR*)TEXT("CenTaxi envia Mapa para MapInfo por memória partilhada!"));
 			CopyMemory(sharedInfo, dados->info, sizeof(INFO));
@@ -649,6 +653,8 @@ boolean adicionaPassageiro(DADOS* dados, PASSAGEIRO novo) {
 	deslocaPassageiroParaPorta(dados);
 
 	dados->mapa[tamanhoMapa * dados->info->passageiros[dados->info->nPassageiros-1].Y + dados->info->passageiros[dados->info->nPassageiros-1].Y + dados->info->passageiros[dados->info->nPassageiros-1].X].caracter = (char)dados->info->passageiros[dados->info->nPassageiros - 1].id_mapa;
+	for (int i = 0; i < tamanhoMapa * tamanhoMapa; i++)
+		dados->sharedMapa[i].caracter = dados->mapa[i].caracter;
 	CopyMemory(dados->sharedMapa, dados->mapa, sizeof(dados->mapa));
 	ptr_log((TCHAR*)TEXT("CenTaxi envia Mapa para MapInfo por memória partilhada!"));
 	CopyMemory(sharedInfo, dados->info, sizeof(INFO));
@@ -675,6 +681,8 @@ boolean removePassageiro(DADOS* dados, PASSAGEIRO novo) {
 			ptr_log((TCHAR*)aux);
 
 			eliminaIdMapa(dados, novo.id_mapa);
+			for (int i = 0; i < tamanhoMapa * tamanhoMapa; i++)
+				dados->sharedMapa[i].caracter = dados->mapa[i].caracter;
 			CopyMemory(dados->sharedMapa, dados->mapa, sizeof(dados->mapa));
 			ptr_log((TCHAR*)TEXT("CenTaxi envia Mapa para MapInfo por memória partilhada!"));
 			CopyMemory(sharedInfo, dados->info, sizeof(INFO));
@@ -1055,6 +1063,8 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 						}
 					}
 				}
+				for (int i = 0; i < tamanhoMapa * tamanhoMapa; i++)
+					dados->sharedMapa[i].caracter = dados->mapa[i].caracter;
 				CopyMemory(dados->sharedMapa, dados->mapa, sizeof(dados->mapa));
 				ptr_log((TCHAR*)TEXT("CenTaxi envia Mapa para MapInfo por memória partilhada!"));
 				CopyMemory(sharedInfo, dados->info, sizeof(INFO));

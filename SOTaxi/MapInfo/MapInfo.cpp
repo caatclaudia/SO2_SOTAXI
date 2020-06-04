@@ -103,6 +103,8 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 
 	switch (messg) {
 	case WM_CREATE:
+		inicializaVariaveis();
+
 		hdc = GetDC(hWnd);
 		
 		hEdificio = LoadBitmap(GetModuleHandle(NULL), MAKEINTRESOURCE(IDB_EDIFICIO));
@@ -178,7 +180,6 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		ptr_register((TCHAR*)SHM_NAME, 7);
 
 		recebeMapa(&dados);
-		inicializaVariaveis();	
 		
 		hThreadAtualizaMapa = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)ThreadAtualizaMapa, (LPVOID)&dados, 0, NULL);
 		if (hThreadAtualizaMapa == NULL) {
@@ -252,18 +253,18 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 				else if(caract == 'X')
 					BitBlt(memDc, rect.left, rect.top, 100, 100, hdcEdificio, 0, 0, SRCCOPY);
 				else {
-					int x = (xPos - 80) / 8;
-					int y = (yPos - 15) / 9;
 					for (int i = 0; i < info.ntaxis; i++) {
-						if (info.taxis[i].X == x && info.taxis[i].Y == y && info.taxis[i].disponivel == 1)
+						char buf;
+						buf = info.taxis[i].id_mapa + '0';
+						if (buf == caract && info.taxis[i].disponivel == 1)
 							BitBlt(memDc, rect.left, rect.top, 100, 100, hdcTaxiLivre, 0, 0, SRCCOPY);
-						else if (info.taxis[i].X == x && info.taxis[i].Y == y)
+						else if (buf == caract)
 							BitBlt(memDc, rect.left, rect.top, 100, 100, hdcTaxiOcupado, 0, 0, SRCCOPY);
 					}
 					for (int i = 0; i < info.npassageiros; i++) {
-						if (info.passageiros[i].X == x && info.passageiros[i].Y == y && info.passageiros[i].tempoEspera == -1)
+						if (info.passageiros[i].id_mapa == caract && info.passageiros[i].tempoEspera == -1)
 							BitBlt(memDc, rect.left, rect.top, 100, 100, hdcPessoaSemTaxi, 0, 0, SRCCOPY);
-						else if (info.passageiros[i].X == x && info.passageiros[i].Y == y)
+						else if (info.passageiros[i].id_mapa == caract)
 							BitBlt(memDc, rect.left, rect.top, 100, 100, hdcPessoaComTaxi, 0, 0, SRCCOPY);
 					}
 				}
