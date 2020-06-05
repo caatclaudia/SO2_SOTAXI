@@ -248,8 +248,8 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 			WaitForSingleObject(hMutex, INFINITE);
 			for (int i = 0; i < tamanhoMapa * tamanhoMapa; i++) {
 				caract = dados.mapa[i].caracter;
-				rect.left = 80 + (8 * xPos);
-				rect.top = 15 + (9 * yPos);
+				rect.left = 80 + (15 * xPos);
+				rect.top = 15 + (10 * yPos);
 				if (caract == '_')
 					BitBlt(memDc, rect.left, rect.top, 100, 100, hdcEstrada, 0, 0, SRCCOPY);
 				else if(caract == 'X')

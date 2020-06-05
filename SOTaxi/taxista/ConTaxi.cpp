@@ -512,6 +512,7 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {
 		}
 		//COM PASSAGEIRO
 		else if (dados->taxi->velocidade != 0) {
+			ir = -1;
 			quad = (int)dados->taxi->velocidade;
 			unsigned int Xfinal, Yfinal;
 			if (irParaX == -1 && irParaY == -1) {
