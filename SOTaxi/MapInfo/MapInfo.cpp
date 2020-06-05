@@ -554,7 +554,7 @@ DWORD WINAPI ThreadAtualizaMapa(LPVOID param) {
 
 		ReleaseMutex(hMutex);
 
-		InvalidateRect(gHwnd, NULL, TRUE);
+		InvalidateRect(gHwnd, NULL, FALSE);
 	}
 	Sleep(500);
 
