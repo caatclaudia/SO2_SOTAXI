@@ -329,13 +329,6 @@ void inicializaBuffer() {
 	BufferMemoria = (BUFFER*)MapViewOfFile(hMemoria, FILE_MAP_WRITE, 0, 0, sizeof(BUFFER));
 	ptr_register((TCHAR*)BUFFER_CIRCULAR, 7);
 
-	sem_mutex = CreateSemaphore(NULL, 1, 1, SEMAPHORE_MUTEX);
-	if (sem_mutex == NULL) {
-		_tprintf(TEXT("\n[ERRO] Erro ao criar Sem�foro!\n"));
-		return;
-	}
-	ptr_register((TCHAR*)SEMAPHORE_MUTEX, 3);
-
 	sem_itens = CreateSemaphore(NULL, 0, MAX_PASS, SEMAPHORE_ITENS);
 	if (sem_itens == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao criar Sem�foro!\n"));
@@ -507,11 +500,9 @@ void transportePassageiro(DADOS* dados, int indice) {
 	TCHAR aux[TAM] = TEXT("\n");
 
 	WaitForSingleObject(sem_vazios, INFINITE);
-	WaitForSingleObject(sem_mutex, INFINITE);
 	BufferMemoria->Passageiros[BufferMemoria->NextIn] = dados->info->passageiros[indice];
 	BufferMemoria->NextIn = (BufferMemoria->NextIn + 1) % MAX_PASS;
 	ptr_log((TCHAR*)TEXT("CenTaxi coloca passageiro em Buffer Circular!"));
-	ReleaseSemaphore(sem_mutex, 1, NULL);
 	ReleaseSemaphore(sem_itens, dados->info->nTaxis, NULL);
 
 	TAXI novoT;

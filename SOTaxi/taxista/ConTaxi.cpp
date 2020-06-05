@@ -144,12 +144,6 @@ void inicializaBuffer() {
 	BufferMemoria = (BUFFER*)MapViewOfFile(hMemoria, FILE_MAP_WRITE, 0, 0, sizeof(BUFFER));
 	ptr_register((TCHAR*)BUFFER_CIRCULAR, 7);
 
-	sem_mutex = CreateSemaphore(NULL, 1, 1, SEMAPHORE_MUTEX);
-	if (sem_mutex == NULL) {
-		_tprintf(TEXT("\n[ERRO] Erro ao criar Semáforo!\n"));
-		return;
-	}
-	ptr_register((TCHAR*)SEMAPHORE_MUTEX, 3);
 	sem_itens = CreateSemaphore(NULL, 0, MAX_PASS, SEMAPHORE_ITENS);
 	if (sem_itens == NULL) {
 		_tprintf(TEXT("\n[ERRO] Erro ao criar Semáforo!\n"));
