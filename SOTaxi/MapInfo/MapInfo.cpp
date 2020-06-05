@@ -6,6 +6,7 @@
 
 HKEY chave;
 HINSTANCE hLib;
+HWND gHwnd;
 
 HANDLE hThreadAtualizaMapa;
 DADOS dados;
@@ -104,6 +105,7 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 	switch (messg) {
 	case WM_CREATE:
 		inicializaVariaveis();
+		gHwnd = hWnd;
 
 		hdc = GetDC(hWnd);
 		
@@ -208,7 +210,7 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		}
 		break;
 	}
-					   //SE FOR TAXI MOSTRA MATRICULA E (DESTINO)
+	//SE FOR TAXI MOSTRA MATRICULA E (DESTINO)
 	case WM_MOUSEMOVE: {
 		xPos = GET_X_LPARAM(lParam);
 		yPos = GET_Y_LPARAM(lParam);
@@ -552,7 +554,7 @@ DWORD WINAPI ThreadAtualizaMapa(LPVOID param) {
 
 		ReleaseMutex(hMutex);
 
-		Sleep(3000);
+		InvalidateRect(gHwnd, NULL, TRUE);
 	}
 	Sleep(500);
 
