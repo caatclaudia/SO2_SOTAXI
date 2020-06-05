@@ -413,9 +413,12 @@ DWORD WINAPI ThreadComandos(LPVOID param) {
 //MANDA TAXI AO ADMIN
 DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {
 	DADOS* dados = ((DADOS*)param);
-	int val, valido;
+	int val=-1, valido;
 	int quad = 0;
 	int paralela = 0;
+	int cruzamento = 0;
+	int possoDir = 0, possoEsq = 0, possoCima = 0, possoBaixo = 0;
+	int ir=-1, atras=-1;
 
 	do {
 		valido = 0;
@@ -426,38 +429,85 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {
 		//SEM PASSAGEIRO -> TENDÊNCIA PARA SE DESLOCAR PARA A FRENTE
 		if (dados->taxi->velocidade != 0 && dados->taxi->disponivel == 1 && irParaX == -1 && irParaY == -1) {
 			quad = (int)dados->taxi->velocidade;
+			cruzamento = 0;
+			//VERIFICA SE É CRUZAMENTO
 			if (dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X + quad].caracter == '_') {
-				_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X + quad, dados->taxi->Y);
-				dados->taxi->X += quad;
+				cruzamento++;
+				possoDir = 1;
 			}
-			else {
-				do {
+			if (dados->mapa[tamanhoMapa * (dados->taxi->Y + quad) + (dados->taxi->Y + quad) + dados->taxi->X].caracter == '_') {
+				cruzamento++;
+				possoBaixo = 1;
+			}
+			if (dados->mapa[tamanhoMapa * (dados->taxi->Y - quad) + (dados->taxi->Y - quad) + dados->taxi->X].caracter == '_'){
+				cruzamento++;
+				possoCima = 1;
+			}
+			if (dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X - quad].caracter == '_') {
+				cruzamento++;
+				possoEsq = 1;
+			}
+			if (cruzamento <= 2) {
+				if (ir == -1 && possoDir == 1) {
+					ir = 3;
+					atras = 2;
+				}
+				else if (ir == -1 && possoBaixo == 1) {
+					ir = 1;
+					atras = 0;
+				}
+				else if (ir == -1 && possoCima == 1) {
+					ir = 0;
+					atras = 1;
+				}
+				else if (ir == -1 && possoEsq == 1) {
+					ir = 2;
+					atras = 3;
+				}
+				val = ir;
+			}
+			
+			do {
+				if (cruzamento > 2)
 					val = rand() % 3;
-					switch (val) {
-					case 0: //CIMA
-						if (dados->mapa[tamanhoMapa * (dados->taxi->Y - quad) + (dados->taxi->Y - quad) + dados->taxi->X].caracter == '_') {
-							_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X, dados->taxi->Y - quad);
-							dados->taxi->Y -= quad;
-							valido = 1;
-						}
-						break;
-					case 1: //BAIXO
-						if (dados->mapa[tamanhoMapa * (dados->taxi->Y + quad) + (dados->taxi->Y + quad) + dados->taxi->X].caracter == '_') {
-							_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X, dados->taxi->Y + quad);
-							dados->taxi->Y += quad;
-							valido = 1;
-						}
-						break;
-					case 2: //ESQUERDA
-						if (dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X - quad].caracter == '_') {
-							_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X - quad, dados->taxi->Y);
-							dados->taxi->X -= quad;
-							valido = 1;
-						}
-						break;
+				switch (val) {
+				case 0: //CIMA
+					if (val!=atras && possoCima==1) {
+						_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X, dados->taxi->Y - quad);
+						dados->taxi->Y -= quad;
+						ir = val;
+						atras = 1;
+						valido = 1;
 					}
-				} while (!valido);
-			}
+					break;
+				case 1: //BAIXO
+					if (val != atras && possoBaixo==1) {
+						_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X, dados->taxi->Y + quad);
+						dados->taxi->Y += quad;
+						ir = val;
+						atras =0;
+						valido = 1;
+					}
+					break;
+				case 2: //ESQUERDA
+					if (val != atras && possoEsq==1) {
+						_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X - quad, dados->taxi->Y);
+						dados->taxi->X -= quad;
+						ir = val;
+						atras = 3;
+						valido = 1;
+					}
+					break;
+				case 3: //DIREITA
+					if (val != atras && possoDir==1) {
+						_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X + quad, dados->taxi->Y);
+						dados->taxi->X += quad;
+						ir = val;
+						atras = 2;
+						valido = 1;
+					}
+				}
+			} while (!valido);
 			avisaMovimentoTaxi(dados);
 		}
 		//COM PASSAGEIRO
