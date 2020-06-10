@@ -26,6 +26,7 @@ HANDLE pipeT;
 unsigned int NQ = NQ_INICIAL;
 
 int tamanhoMapa = -1;
+int irParaX = -1, irParaY = -1;
 
 void ajuda();
 int calculaDistancia(int inicioX, int inicioY, int fimX, int fimY);

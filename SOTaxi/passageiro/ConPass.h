@@ -7,6 +7,7 @@
 #include <stdlib.h>
 
 #define PATH_DLL TEXT("..\\SO2_TP_DLL_32.dll")
+void(*ptr_register)(TCHAR*, int);
 
 #define TAM 200
 #define MAX_PASS 20

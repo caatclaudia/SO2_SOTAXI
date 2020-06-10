@@ -1,7 +1,5 @@
 #include "ConPass.h"
 
-void(*ptr_register)(TCHAR*, int);
-
 int _tmain() {
 	HANDLE hThreadComandos, hThreadMovimentaPassageiro, hThreadRespostaTransporte;
 	DADOS dados;

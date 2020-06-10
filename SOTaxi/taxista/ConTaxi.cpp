@@ -1,7 +1,5 @@
 #include "ConTaxi.h"
 
-int irParaX = -1, irParaY = -1;
-
 int _tmain() {
 	HANDLE hThreadComandos, hThreadMovimentaTaxi, hThreadTransporte, hThreadInfoAdmin, hThreadVerificaAdmin, hThreadRespostaTransporte;
 	DADOS dados;

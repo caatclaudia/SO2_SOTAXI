@@ -36,7 +36,6 @@ HDC hdcEdificio, hdcEstrada, hdcTaxiLivre, hdcTaxiOcupado, hdcPessoaSemTaxi, hdc
 #define WND_HEIGHT 600
 
 // "Double Buffering"
-
 HDC memDc = NULL;
 HBITMAP fundo;
 
