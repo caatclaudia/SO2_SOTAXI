@@ -423,7 +423,7 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {
 			quad = (int)dados->taxi->velocidade;
 			cruzamento = 0;
 			//VERIFICA SE É CRUZAMENTO
-			if (dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X + quad].caracter == '_') {
+			if (dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X + quad].caracter == '_' && (dados->taxi->X+quad) < tamanhoMapa) {
 				cruzamento++;
 				possoDir = 1;
 			}
@@ -530,7 +530,7 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {
 					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X - quad, dados->taxi->Y);
 					dados->taxi->X -= quad;
 				}
-				else if (dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X + quad].caracter == '_') {
+				else if (dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X + quad].caracter == '_' && (dados->taxi->X + quad) < tamanhoMapa) {
 					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X + quad, dados->taxi->Y);
 					dados->taxi->X += quad;
 				}
@@ -541,7 +541,7 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {
 					dados->taxi->X -= quad;
 					paralela = 0;
 				}
-				else if (dados->taxi->X < Xfinal && dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X + quad].caracter == '_') {
+				else if (dados->taxi->X < Xfinal && dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X + quad].caracter == '_' && (dados->taxi->X + quad) < tamanhoMapa) {
 					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X + quad, dados->taxi->Y);
 					dados->taxi->X += quad;
 					paralela = 0;

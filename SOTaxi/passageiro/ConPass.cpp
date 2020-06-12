@@ -61,13 +61,13 @@ int _tmain() {
 	ResetEvent(respostaMov);
 
 	if (!WaitNamedPipe(PIPE_NAME, NMPWAIT_WAIT_FOREVER)) {
-		_tprintf(TEXT("[ERRO] Ligar ao pipe '%s'! (WaitNamedPipe)\n"), PIPE_NAME);
+		_tprintf(TEXT("[ERRO] Ligar ao pipe '%s'!\n"), PIPE_NAME);
 		return 0;
 	}
-	_tprintf(TEXT("[LEITOR] Ligação ao pipe do escritor... (CreateFile)\n"));
+	_tprintf(TEXT("[ConPass] Ligação ao pipe da Central...\n"));
 	hPipe = CreateFile(PIPE_NAME, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hPipe == NULL) {
-		_tprintf(TEXT("[ERRO] Ligar ao pipe '%s'! (CreateFile)\n"), PIPE_NAME);
+		_tprintf(TEXT("[ERRO] Ligar ao pipe '%s'!\n"), PIPE_NAME);
 		return 0;
 	}
 
