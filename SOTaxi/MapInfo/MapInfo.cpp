@@ -194,10 +194,10 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		xPos = GET_X_LPARAM(lParam);
 		yPos = GET_Y_LPARAM(lParam);
 
-		int x = (xPos - 80) / 8;
-		int y = (yPos - 15) / 9;
+		int x = (xPos - 80) / 15;
+		int y = (yPos - 15) / 10;
 		for (int i = 0; i < info.npassageiros; i++) {
-			if (info.passageiros[i].X == x && info.passageiros[i].Y == y) {
+			if (dados.mapa[tamanhoMapa * y + y + x].caracter == info.passageiros[i].id_mapa) {
 				//MOSTRA DESTINO E (TAXI QUE O FOR BUSCAR)
 				TCHAR aux[TAM];
 				if (info.passageiros[i].tempoEspera != -1) 	//ESTA A ESPERA DO TAXI
@@ -214,10 +214,10 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		xPos = GET_X_LPARAM(lParam);
 		yPos = GET_Y_LPARAM(lParam);
 
-		int x = (xPos - 80) / 8;
-		int y = (yPos - 15) / 9;
+		int x = (xPos - 80) / 15;
+		int y = (yPos - 15) / 10;
 		for (int i = 0; i < info.ntaxis; i++) {
-			if (info.taxis[i].X == x && info.taxis[i].Y == y) {
+			if (dados.mapa[tamanhoMapa * y + y + x].caracter == info.taxis[i].id_mapa) {
 				//MOSTRA MATRICULA E (DESTINO)
 				TCHAR aux[TAM];
 				if (!info.taxis[i].disponivel) 	//SE TIVER UM PASSAGEIRO ATRIBUIDO
