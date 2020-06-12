@@ -1,2 +1,4 @@
 ﻿  Source.cpp
+  LINK : C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Debug\DLL.dll not found or not built by the last incremental link; performing full link
+     Creating library C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Debug\DLL.lib and object C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Debug\DLL.exp
   DLL.vcxproj -> C:\Users\Claudia Tavares\Documents\GitHub\SO2\SOTaxi\Debug\DLL.dll

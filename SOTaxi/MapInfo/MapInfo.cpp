@@ -217,7 +217,7 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		int x = (xPos - 80) / 15;
 		int y = (yPos - 15) / 10;
 		for (int i = 0; i < info.ntaxis; i++) {
-			if (dados.mapa[tamanhoMapa * y + y + x].caracter == info.taxis[i].id_mapa) {
+			if (info.taxis[i].X == x && info.taxis[i].Y == y){
 				//MOSTRA MATRICULA E (DESTINO)
 				TCHAR aux[TAM];
 				if (!info.taxis[i].disponivel) 	//SE TIVER UM PASSAGEIRO ATRIBUIDO

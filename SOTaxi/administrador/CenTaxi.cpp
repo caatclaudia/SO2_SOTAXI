@@ -453,8 +453,6 @@ void leMapa(DADOS* dados) {
 
 	for (int i = 0; i < tamanhoMapa * tamanhoMapa; i++) {
 		dados->mapa[i].caracter = dados->sharedMapa[i].caracter;
-		if (i >= 2547)
-			dados->mapa[i].caracter = ' ';
 	}
 	verMapa(dados);
 
