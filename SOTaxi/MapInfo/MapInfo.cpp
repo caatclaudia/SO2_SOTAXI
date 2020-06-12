@@ -231,6 +231,7 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 		break;
 	}
 	case WM_PAINT: {
+		if (dados.mapa != NULL) {
 			hdc = BeginPaint(hWnd, &ps);
 			SetTextColor(hdc, RGB(0, 0, 0));
 			SelectObject(hdc, hFont);
@@ -251,7 +252,7 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 				rect.top = 15 + (10 * yPos);
 				if (caract == '_')
 					BitBlt(memDc, rect.left, rect.top, 100, 100, hdcEstrada, 0, 0, SRCCOPY);
-				else if(caract == 'X')
+				else if (caract == 'X')
 					BitBlt(memDc, rect.left, rect.top, 100, 100, hdcEdificio, 0, 0, SRCCOPY);
 				else {
 					for (int i = 0; i < info.ntaxis; i++) {
@@ -278,6 +279,7 @@ LRESULT CALLBACK TrataEventos(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lPara
 			ReleaseMutex(hMutex);
 			BitBlt(hdc, 0, 0, area.right, area.bottom, memDc, 0, 0, SRCCOPY);
 			EndPaint(hWnd, &ps);
+		}
 		break;
 	}
 	case  WM_COMMAND: {
@@ -480,6 +482,8 @@ LRESULT CALLBACK TrataConfPessoaC(HWND hWnd, UINT messg, WPARAM wParam, LPARAM l
 void recebeMapa(DADOS* dados) {
 	MAPA* aux = NULL;
 	CopyMemory(&aux, shared, sizeof(shared));
+	if (aux == NULL) 
+		return;
 	for (int i = 0; tamanhoMapa == -1; i++)
 		if (shared[i].caracter == '\n')
 			tamanhoMapa = i;

@@ -279,7 +279,7 @@ int _tmain(int argc, LPTSTR argv[]) {
 		WriteFile(pipeT[dados.info->taxis[i].id_mapa], (LPVOID)&dados.info->taxis[i], sizeof(TAXI), &n, NULL);
 		ptr_log((TCHAR*)TEXT("CenTaxi envia Taxi por Named Pipe!"));
 		SetEvent(dados.saiuAdmin);
-		Sleep(2000);
+		Sleep(500);
 		ResetEvent(dados.saiuAdmin);
 	}
 	for (int i = 0; i < dados.info->nPassageiros; i++)
@@ -292,8 +292,6 @@ int _tmain(int argc, LPTSTR argv[]) {
 	SetEvent(dados.respostaMov);
 	Sleep(500);
 	ResetEvent(dados.respostaMov);
-
-	Sleep(1000);
 
 	_tprintf(_T("Administrador vai encerrar!\n"));
 	_tprintf(TEXT("Prima uma tecla...\n"));
