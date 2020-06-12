@@ -532,22 +532,22 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {
 					dados->taxi->Y += quad;
 					paralela = 0;
 				}
-				else if (dados->taxi->X <= (unsigned)(tamanhoMapa / 2) && dados->taxi->Xfinal && dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X - quad].caracter == '_' && (dados->taxi->X - quad) >= 0) {
+				else if (dados->taxi->X <= (unsigned)(tamanhoMapa / 2) && dados->taxi->Xfinal && dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X - quad].caracter == '_') {
 					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X - quad, dados->taxi->Y);
 					dados->taxi->X -= quad;
 				}
-				else if (dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X + quad].caracter == '_' && (dados->taxi->X + quad) < (unsigned)tamanhoMapa) {
+				else if (dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X + quad].caracter == '_') {
 					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X + quad, dados->taxi->Y);
 					dados->taxi->X += quad;
 				}
 			}
 			else if (paralela == 2) {
-				if (dados->taxi->X > Xfinal && dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X - quad].caracter == '_' && (dados->taxi->X - quad) >= 0) {
+				if (dados->taxi->X > Xfinal && dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X - quad].caracter == '_') {
 					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X - quad, dados->taxi->Y);
 					dados->taxi->X -= quad;
 					paralela = 0;
 				}
-				else if (dados->taxi->X < Xfinal && dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X + quad].caracter == '_' && (dados->taxi->X + quad) < (unsigned)tamanhoMapa) {
+				else if (dados->taxi->X < Xfinal && dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X + quad].caracter == '_') {
 					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X + quad, dados->taxi->Y);
 					dados->taxi->X += quad;
 					paralela = 0;
@@ -570,11 +570,11 @@ DWORD WINAPI ThreadMovimentaTaxi(LPVOID param) {
 					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X, dados->taxi->Y + quad);
 					dados->taxi->Y += quad;
 				}
-				else if (dados->taxi->X > Xfinal && dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X - quad].caracter == '_' && (dados->taxi->X - quad) >= 0) {
+				else if (dados->taxi->X > Xfinal && dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X - quad].caracter == '_') {
 					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X - quad, dados->taxi->Y);
 					dados->taxi->X -= quad;
 				}
-				else if (dados->taxi->X < Xfinal && dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X + quad].caracter == '_' && (dados->taxi->X + quad) < (unsigned)tamanhoMapa) {
+				else if (dados->taxi->X < Xfinal && dados->mapa[tamanhoMapa * dados->taxi->Y + dados->taxi->Y + dados->taxi->X + quad].caracter == '_') {
 					_tprintf(_T("\n[MOVIMENTO] (%d,%d) -> (%d,%d)"), dados->taxi->X, dados->taxi->Y, dados->taxi->X + quad, dados->taxi->Y);
 					dados->taxi->X += quad;
 				}
