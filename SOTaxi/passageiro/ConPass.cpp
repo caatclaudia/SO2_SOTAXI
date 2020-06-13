@@ -284,7 +284,9 @@ DWORD WINAPI ThreadRespostaTransporte(LPVOID param) {
 				if (dados->passageiros[i].terminar)
 					_tprintf(_T("\n[NOVO] Passageiro '%s' terá de aguardar!"), dados->passageiros[i].id);
 				else {
-					if (dados->passageiros[i].tempoEspera != -1) {
+					if (dados->passageiros[i].movimento)
+						_tprintf(_T("\n[PASS] '%s' em movimento!"), dados->passageiros[i].id);
+					else if (dados->passageiros[i].tempoEspera != -1) {
 						_tprintf(_T("\n[NOVO]  Houve interesse no transporte de '%s'!"), dados->passageiros[i].id);
 						_tprintf(_T("\n[NOVO]  Tempo estimado de espera pelo Taxi '%s' é %d s"), dados->passageiros[i].matriculaTaxi, dados->passageiros[i].tempoEspera);
 					}
