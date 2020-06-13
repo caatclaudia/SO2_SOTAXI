@@ -1034,7 +1034,6 @@ DWORD WINAPI ThreadMovimento(LPVOID param) {
 							VALIDO = 1;
 
 							dados->info->passageiros[j].movimento = 1;
-							dados->info->passageiros[j].tempoEspera = -1;
 
 							WriteFile(hPipe, (LPVOID)&dados->info->passageiros[j], sizeof(PASSAGEIRO), &n, NULL);
 							SetEvent(dados->respostaMov);
