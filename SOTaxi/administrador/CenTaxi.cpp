@@ -412,7 +412,7 @@ void leMapa(DADOS* dados) {
 		return;
 	}
 
-	dados->EspMapa = CreateFileMapping(dados->hFile, NULL, PAGE_READWRITE, 0, sizeof(dados->mapa), SHM_MAPA);
+	dados->EspMapa = CreateFileMapping(dados->hFile, NULL, PAGE_READWRITE, 0, sizeof(dados->mapa), SHM_MAPA_INICIAL);
 	if (dados->EspMapa == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro ao criar FileMapping!\n"));
@@ -426,10 +426,10 @@ void leMapa(DADOS* dados) {
 		CloseHandle(dados->hFile);
 		return;
 	}
-	ptr_register((TCHAR*)SHM_MAPA, 6);
+	ptr_register((TCHAR*)SHM_MAPA_INICIAL, 6);
 
-	dados->sharedMapa = (MAPA*)MapViewOfFile(dados->EspMapa, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(dados->mapa));
-	if (dados->sharedMapa == NULL)
+	dados->sharedMapaInicial = (MAPA*)MapViewOfFile(dados->EspMapa, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(dados->mapa));
+	if (dados->sharedMapaInicial == NULL)
 	{
 		_tprintf(TEXT("\n[ERRO] Erro em MapViewOfFile!\n"));
 		CloseHandle(Semaphore);
@@ -443,16 +443,34 @@ void leMapa(DADOS* dados) {
 		CloseHandle(dados->EspMapa);
 		return;
 	}
+	ptr_register((TCHAR*)SHM_MAPA_INICIAL, 7);
+
+	dados->EspMapaAtual = CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(dados->mapa), SHM_MAPA);
+	if (dados->EspMapaAtual == NULL)
+	{
+		_tprintf(TEXT("\n[ERRO] Erro ao criar FileMapping!\n"));
+		return;
+	}
+	ptr_register((TCHAR*)SHM_MAPA, 6);
+
+	dados->sharedMapa = (MAPA*)MapViewOfFile(dados->EspMapaAtual, FILE_MAP_ALL_ACCESS, 0, 0, sizeof(dados->mapa));
+	if (dados->sharedMapa == NULL)
+	{
+		_tprintf(TEXT("\n[ERRO] Erro em MapViewOfFile!\n"));
+		CloseHandle(dados->EspMapaAtual);
+		return;
+	}
 	ptr_register((TCHAR*)SHM_MAPA, 7);
 
 	for (int i = 0; tamanhoMapa == -1; i++)
-		if (dados->sharedMapa[i].caracter == '\n')
+		if (dados->sharedMapaInicial[i].caracter == '\n')
 			tamanhoMapa = i;
 
 	dados->mapa = (MAPA*)malloc(sizeof(MAPA) * tamanhoMapa * tamanhoMapa);
 
 	for (int i = 0; i < tamanhoMapa * tamanhoMapa; i++) {
-		dados->mapa[i].caracter = dados->sharedMapa[i].caracter;
+		dados->mapa[i].caracter = dados->sharedMapaInicial[i].caracter;
+		dados->sharedMapa[i].caracter = dados->sharedMapaInicial[i].caracter;
 	}
 	verMapa(dados);
 
@@ -551,7 +569,7 @@ void transportePassageiro(DADOS* dados, int indice) {
 
 	}
 	else
-		_tprintf(_T("\n[PASS]  Não houve interesse de nenhum Taxi o transporte de '%s'!"), dados->info->passageiros[indice].id);
+		_tprintf(_T("\n[PASS]  Não houve interesse de nenhum Taxi no transporte de '%s'!"), dados->info->passageiros[indice].id);
 	transporteAceite(dados);
 
 	return;

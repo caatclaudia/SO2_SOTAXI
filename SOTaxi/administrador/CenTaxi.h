@@ -112,6 +112,7 @@ INFO* sharedInfo = NULL;
 
 #define SHM_TAXI TEXT("EspacoTaxis")
 #define SHM_MAPA TEXT("EspacoMapa")
+#define SHM_MAPA_INICIAL TEXT("EspacoMapaInicial")
 
 #define NOME_MUTEX_DADOS TEXT("MutexDados")
 typedef struct {
@@ -133,8 +134,10 @@ typedef struct {
 
 	MAPA* mapa;
 	HANDLE hFile;
+	HANDLE EspMapaAtual;	//FileMapping
 	HANDLE EspMapa;	//FileMapping
 	MAPA* sharedMapa = NULL;
+	MAPA* sharedMapaInicial = NULL;
 	HANDLE atualizaMap;
 
 	int terminar;

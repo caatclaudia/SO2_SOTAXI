@@ -8,7 +8,7 @@ HANDLE hMutex;
 HANDLE pipeT;
 
 #define SHM_NAME TEXT("EspacoTaxis")
-#define SHM_NAME_MAP TEXT("EspacoMapa")
+#define SHM_NAME_MAP TEXT("EspacoMapaInicial")
 
 //SEMAFOROS
 #define EVENT_NOVOT TEXT("NovoTaxi")

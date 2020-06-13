@@ -164,7 +164,7 @@ void novoPassageiro(DADOS* dados) {
 	novo.matriculaTaxi[6] = '\0';
 
 	//VAI AO ADMIN VER SE PODE CRIAR
-	WriteFile(hPipe, (LPVOID)&novo, sizeof(PASSAGEIRO), &n, NULL);
+	WriteFile(hPipe, (LPVOID)&novo, sizeof(PASSAGEIRO), &n, NULL);		//A SEGUNDA VEZ NAO CONSEGUE ESCREVER AQUIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
 
 	SetEvent(novoPass);
 	Sleep(500);
